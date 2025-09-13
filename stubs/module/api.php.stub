@@ -1,0 +1,20 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Modules\{{ moduleStudly }}\Models\{{ moduleStudly }};
+use App\Modules\{{ moduleStudly }}\Http\Resources\{{ moduleStudly }}Resource;
+
+// Module API routes (explicitly prefixed with /api and using the 'api' middleware)
+Route::middleware(['api'])
+    ->prefix('api/modules/{{ moduleKebab }}')
+    ->name('api.modules.{{ moduleKebab }}.')
+    ->group(function () {
+        Route::get('/', function () {
+            return {{ moduleStudly }}Resource::collection({{ moduleStudly }}::query()->latest('id')->paginate());
+        })->middleware('permission:{{ moduleKebab }}.view')->name('index');
+
+        Route::get('/{id}', function (int $id) {
+            $model = {{ moduleStudly }}::findOrFail($id);
+            return new {{ moduleStudly }}Resource($model);
+        })->middleware('permission:{{ moduleKebab }}.view')->name('show');
+    });

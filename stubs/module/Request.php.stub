@@ -1,0 +1,35 @@
+<?php
+
+namespace App\Modules\{{ moduleStudly }}\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class Store{{ moduleStudly }}Request extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user()?->can('{{ moduleKebab }}.create') ?? false;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+        ];
+    }
+}
+
+class Update{{ moduleStudly }}Request extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user()?->can('{{ moduleKebab }}.edit') ?? false;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+        ];
+    }
+}

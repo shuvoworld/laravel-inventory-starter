@@ -1,0 +1,78 @@
+<?php
+
+namespace App\Modules\{{ moduleStudly }}\Http\Controllers;
+
+use App\Modules\{{ moduleStudly }}\Http\Requests\Store{{ moduleStudly }}Request;
+use App\Modules\{{ moduleStudly }}\Http\Requests\Update{{ moduleStudly }}Request;
+use App\Modules\{{ moduleStudly }}\Models\{{ moduleStudly }};
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\View\View;
+use Yajra\DataTables\Facades\DataTables;
+
+class {{ moduleStudly }}Controller
+{
+    public function index(Request $request): View
+    {
+        return view('{{ moduleKebab }}::index');
+    }
+
+    /** DataTables server-side endpoint (Yajra) */
+    public function data(Request $request): Response
+    {
+        $query = {{ moduleStudly }}::query();
+
+        $dt = DataTables::eloquent($query)
+            ->addColumn('actions', function ($row) {
+                return view('{{ moduleKebab }}::partials.actions', ['id' => $row->id])->render();
+            })
+            ->editColumn('created_at', function ($row) {
+                return optional($row->created_at)->toDateTimeString();
+            })
+            ->editColumn('updated_at', function ($row) {
+                return optional($row->updated_at)->toDateTimeString();
+            })
+            ->rawColumns(['actions'])
+            ->toJson();
+
+        return response($dt->getData(true));
+    }
+
+    public function create(): View
+    {
+        return view('{{ moduleKebab }}::create');
+    }
+
+    public function store(Store{{ moduleStudly }}Request $request): RedirectResponse
+    {
+        $item = {{ moduleStudly }}::create($request->validated());
+        return redirect()->route('modules.{{ moduleKebab }}.index')->with('status', '{{ moduleStudly }} created.');
+    }
+
+    public function show(int $id): View
+    {
+        $item = {{ moduleStudly }}::findOrFail($id);
+        return view('{{ moduleKebab }}::show', compact('item'));
+    }
+
+    public function edit(int $id): View
+    {
+        $item = {{ moduleStudly }}::findOrFail($id);
+        return view('{{ moduleKebab }}::edit', compact('item'));
+    }
+
+    public function update(Update{{ moduleStudly }}Request $request, int $id): RedirectResponse
+    {
+        $item = {{ moduleStudly }}::findOrFail($id);
+        $item->update($request->validated());
+        return redirect()->route('modules.{{ moduleKebab }}.index')->with('status', '{{ moduleStudly }} updated.');
+    }
+
+    public function destroy(int $id): RedirectResponse
+    {
+        $item = {{ moduleStudly }}::findOrFail($id);
+        $item->delete();
+        return redirect()->route('modules.{{ moduleKebab }}.index')->with('status', '{{ moduleStudly }} deleted.');
+    }
+}

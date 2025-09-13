@@ -1,0 +1,15 @@
+<div class="d-flex gap-2">
+    @can('{{ moduleKebab }}.view')
+        <a href="{{ route('modules.{{ moduleKebab }}.show', $id) }}" class="btn btn-sm btn-outline-primary">View</a>
+    @endcan
+    @can('{{ moduleKebab }}.edit')
+        <a href="{{ route('modules.{{ moduleKebab }}.edit', $id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+    @endcan
+    @can('{{ moduleKebab }}.delete')
+        <form method="POST" action="{{ route('modules.{{ moduleKebab }}.destroy', $id) }}" onsubmit="return confirm('Delete?')">
+            @csrf
+            @method('DELETE')
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+        </form>
+    @endcan
+</div>

@@ -1,0 +1,35 @@
+@extends('layouts.module')
+
+@section('content')
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="h3 mb-0">Type #{{ $item->id }}</h1>
+    <div>
+        @can('types.edit')
+            <a href="{{ route('modules.types.edit', $item->id) }}" class="btn btn-indigo btn-primary">Edit</a>
+        @endcan
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="text-muted small">ID</div>
+                <div class="fw-semibold">{{ $item->id }}</div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Name</div>
+                <div class="fw-semibold">{{ $item->name }}</div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Created At</div>
+                <div class="fw-semibold">{{ $item->created_at }}</div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Updated At</div>
+                <div class="fw-semibold">{{ $item->updated_at }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection

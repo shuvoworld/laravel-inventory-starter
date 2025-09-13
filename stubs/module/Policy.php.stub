@@ -1,0 +1,11 @@
+<?php
+
+namespace App\Modules\{{ moduleStudly }}\Policies;
+
+use App\Support\Modules\BaseModulePolicy;
+
+class {{ moduleStudly }}Policy extends BaseModulePolicy
+{
+    // Inherit CRUD checks from BaseModulePolicy mapping to "{{ moduleKebab }}.*" permissions
+    protected string $module = '{{ moduleKebab }}';
+}

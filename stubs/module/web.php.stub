@@ -1,0 +1,39 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Modules\{{ moduleStudly }}\Http\Controllers\{{ moduleStudly }}Controller;
+
+Route::middleware(['auth'])->prefix('modules/{{ moduleKebab }}')->name('modules.{{ moduleKebab }}.')->group(function () {
+    Route::get('/', [{{ moduleStudly }}Controller::class, 'index'])
+        ->middleware('permission:{{ moduleKebab }}.view')
+        ->name('index');
+
+    // Server-side data endpoint for DataTables
+    Route::get('/data', [{{ moduleStudly }}Controller::class, 'data'])
+        ->middleware('permission:{{ moduleKebab }}.view')
+        ->name('data');
+
+    Route::get('/create', [{{ moduleStudly }}Controller::class, 'create'])
+        ->middleware('permission:{{ moduleKebab }}.create')
+        ->name('create');
+
+    Route::post('/', [{{ moduleStudly }}Controller::class, 'store'])
+        ->middleware('permission:{{ moduleKebab }}.create')
+        ->name('store');
+
+    Route::get('/{id}', [{{ moduleStudly }}Controller::class, 'show'])
+        ->middleware('permission:{{ moduleKebab }}.view')
+        ->name('show');
+
+    Route::get('/{id}/edit', [{{ moduleStudly }}Controller::class, 'edit'])
+        ->middleware('permission:{{ moduleKebab }}.edit')
+        ->name('edit');
+
+    Route::put('/{id}', [{{ moduleStudly }}Controller::class, 'update'])
+        ->middleware('permission:{{ moduleKebab }}.edit')
+        ->name('update');
+
+    Route::delete('/{id}', [{{ moduleStudly }}Controller::class, 'destroy'])
+        ->middleware('permission:{{ moduleKebab }}.delete')
+        ->name('destroy');
+});

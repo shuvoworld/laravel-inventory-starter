@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Modules\{{ moduleStudly }}\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class {{ moduleStudly }} extends Model
+{
+    use HasFactory;
+
+    protected $table = '{{ moduleTable }}';
+
+    protected $fillable = [
+        'name', // example field; adjust as needed
+    ];
+}
