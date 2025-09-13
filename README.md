@@ -4,7 +4,7 @@
 
 ## Introduction
 
-Laravel 12 + Blade starter kit from laraveldaily. Tailored to integrate Spatie user permission and a custom modular architecture.
+Laravel 12 + Blade starter kit originated from laraveldaily. Tailored to integrate Spatie user permission and a custom modular architecture.
 
 ---
 
@@ -28,11 +28,7 @@ Inside you will find all the functions that you would expect:
 
 ## How to use it?
 
-To use this kit, you can install it using:
-
-```bash
-laravel new --using=laraveldaily/starter-kit
-```
+To use this kit, you can install it in standard laravel project installation approach.
 
 From there, you can modify the kit to your needs.
 
