@@ -99,12 +99,6 @@ Structure:
   - database/migrations (auto-loaded)
   - resources/lang (optional, auto-loaded with same namespace)
 
-Auto-discovery:
-- The ModulesServiceProvider scans app/Modules/* and automatically loads module routes, views, migrations, and translations.
-
-Example module included:
-- Types: Full CRUD under /modules/types, protected by permissions types.view/create/edit/delete.
-
 Standard permissions per module:
 - <module>.view
 - <module>.create
