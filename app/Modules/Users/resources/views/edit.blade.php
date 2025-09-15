@@ -60,4 +60,6 @@
         </div>
     </form>
 </div>
+
+<x-audits.table :model="$user" title="Last 10 Audits" />
 @endsection

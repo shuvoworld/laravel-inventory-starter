@@ -1,111 +1,204 @@
 <x-layouts.app>
 
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ __('Dashboard')}}</h1>
-        <p class="text-gray-600 dark:text-gray-400 mt-1">{{ __('Welcome to the dashboard') }}</p>
+    <div class="mb-3">
+        <h1 class="h3 mb-0">{{ __('Dashboard') }}</h1>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ __('Total Users') }}</p>
-                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">--</p>
-                    <p class="text-xs text-gray-500 flex items-center mt-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                        </svg>
-                        {{ __('No data') }}
-                    </p>
-                </div>
-                <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500 dark:text-blue-300"
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
+    <style>
+        /* Smaller dashboard tiles using simple Bootstrap-friendly CSS */
+        .tile-card-sm {
+            aspect-ratio: 9 / 5;           /* slightly shorter than square to look smaller */
+            border-radius: .5rem;          /* rounded corners */
+        }
+        .tile-card-sm .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;       /* center content vertically */
+            padding: .6rem;                /* more compact padding */
+        }
+        .tile-icon { width: 28px; height: 28px; } /* smaller icon circle */
+        /* Make the number smaller without changing markup */
+        .tile-card-sm .fs-4 { font-size: 1.1rem !important; }
+        @media (max-width: 575.98px) {
+            /* allow flexible height on extra small screens */
+            .tile-card-sm { aspect-ratio: auto; }
+        }
+    </style>
 
-        <!-- Revenue Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ __('Total Revenue') }}</p>
-                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">--</p>
-                    <p class="text-xs text-gray-500 flex items-center mt-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                        </svg>
-                        {{ __('No data') }}
-                    </p>
-                </div>
-                <div class="bg-green-100 dark:bg-green-900 p-3 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500 dark:text-green-300"
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
+    <div class="row g-3">
+        @can('users.view')
+            <div class="col-3 col-sm-3">
+                <a href="{{ route('modules.users.index') }}" class="text-decoration-none">
+                    <!-- Smaller, colored card for Users -->
+                    <div class="card tile-card-sm shadow-sm bg-primary-subtle border-0">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-muted small">{{ __('Users') }}</div>
+                                    <div class="fs-4 fw-semibold mt-1">{{ \App\Models\User::count() }}</div>
+                                </div>
+                                <div class="bg-white text-primary p-2 rounded-circle d-inline-flex align-items-center justify-content-center tile-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                            <div class="small text-muted mt-2">{{ __('Manage users') }}</div>
+                        </div>
+                    </div>
+                </a>
             </div>
-        </div>
+        @endcan
 
-        <!-- Orders Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ __('Total Orders') }}</p>
-                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">--</p>
-                    <p class="text-xs text-gray-500 flex items-center mt-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                        </svg>
-                        {{ __('No data') }}
-                    </p>
-                </div>
-                <div class="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-500 dark:text-purple-300"
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                    </svg>
-                </div>
+        @can('contact.view')
+            <div class="col-3 col-sm-3">
+                <a href="{{ route('modules.contact.index') }}" class="text-decoration-none">
+                    <!-- Smaller, colored card for Contacts -->
+                    <div class="card tile-card-sm shadow-sm bg-success-subtle border-0">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-muted small">{{ __('Contacts') }}</div>
+                                    <div class="fs-4 fw-semibold mt-1">{{ \App\Modules\Contact\Models\Contact::count() }}</div>
+                                </div>
+                                <div class="bg-white text-success p-2 rounded-circle d-inline-flex align-items-center justify-content-center tile-icon">
+                                    <i class="fas fa-address-book"></i>
+                                </div>
+                            </div>
+                            <div class="small text-muted mt-2">{{ __('Manage contacts') }}</div>
+                        </div>
+                    </div>
+                </a>
             </div>
-        </div>
+        @endcan
 
-        <!-- Visitors Card -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ __('Total Visitors') }}</p>
-                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">--</p>
-                    <p class="text-xs text-gray-500 flex items-center mt-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                        </svg>
-                        {{ __('No data') }}
-                    </p>
-                </div>
-                <div class="bg-orange-100 dark:bg-orange-900 p-3 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-500 dark:text-orange-300"
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                </div>
+        @can('blog-category.view')
+            <div class="col-3 col-sm-3">
+                <a href="{{ route('modules.blog-category.index') }}" class="text-decoration-none">
+                    <!-- Smaller, colored card for Blog Categories -->
+                    <div class="card tile-card-sm shadow-sm bg-warning-subtle border-0">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-muted small">{{ __('Blog Categories') }}</div>
+                                    <div class="fs-4 fw-semibold mt-1">{{ \App\Modules\BlogCategory\Models\BlogCategory::count() }}</div>
+                                </div>
+                                <div class="bg-white text-warning p-2 rounded-circle d-inline-flex align-items-center justify-content-center tile-icon">
+                                    <i class="fas fa-folder-tree"></i>
+                                </div>
+                            </div>
+                            <div class="small text-muted mt-2">{{ __('Manage blog categories') }}</div>
+                        </div>
+                    </div>
+                </a>
             </div>
-        </div>
+        @endcan
     </div>
+
+    <div class="row g-3 mt-1">
+        @can('users.view')
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between py-2">
+                    <h2 class="h6 mb-0">{{ __('Recent Users') }}</h2>
+                    <a href="{{ route('modules.users.index') }}" class="small">{{ __('View all') }}</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="dashboard-users-table" class="table table-hover align-middle datatable-minimal table-sm w-100">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Roles</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endcan
+
+        @can('contact.view')
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between py-2">
+                    <h2 class="h6 mb-0">{{ __('Recent Contacts') }}</h2>
+                    <a href="{{ route('modules.contact.index') }}" class="small">{{ __('View all') }}</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="dashboard-contacts-table" class="table table-hover align-middle datatable-minimal table-sm w-100">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Created</th>
+                                    <th>Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endcan
+    </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Users table on dashboard
+            const usersEl = document.querySelector('#dashboard-users-table');
+            if (usersEl) {
+                new DataTable(usersEl, {
+                    serverSide: true,
+                    processing: true,
+                    ajax: { url: '{{ route('modules.users.data') }}', dataSrc: 'data' },
+                    columns: [
+                        { data: 'id' },
+                        { data: 'name' },
+                        { data: 'email' },
+                        { data: 'roles' },
+                        { data: 'actions', orderable: false, searchable: false },
+                    ],
+                    order: [[0, 'desc']],
+                    lengthChange: false,
+                    searching: false,
+                    pageLength: 5,
+                    pagingType: 'simple_numbers',
+                    layout: { topStart: null, topEnd: null, bottomStart: 'info', bottomEnd: 'paging' }
+                });
+            }
+
+            // Contacts table on dashboard
+            const contactsEl = document.querySelector('#dashboard-contacts-table');
+            if (contactsEl) {
+                new DataTable(contactsEl, {
+                    serverSide: true,
+                    processing: true,
+                    ajax: { url: '{{ route('modules.contact.data') }}', dataSrc: 'data' },
+                    columns: [
+                        { data: 'id' },
+                        { data: 'name' },
+                        { data: 'created_at' },
+                        { data: 'updated_at' },
+                        { data: 'actions', orderable: false, searchable: false },
+                    ],
+                    order: [[0, 'desc']],
+                    lengthChange: false,
+                    searching: false,
+                    pageLength: 5,
+                    pagingType: 'simple_numbers',
+                    layout: { topStart: null, topEnd: null, bottomStart: 'info', bottomEnd: 'paging' }
+                });
+            }
+        });
+    </script>
+    @endpush
 
 </x-layouts.app>

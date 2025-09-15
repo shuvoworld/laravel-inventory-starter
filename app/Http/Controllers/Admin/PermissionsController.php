@@ -28,13 +28,13 @@ class PermissionsController extends Controller
             'role' => ['required', 'string', 'exists:roles,name'],
         ]);
         $user->assignRole($data['role']);
-        return back()->with('status', __('Role assigned.'));
+        return back()->with('success', __('Role assigned.'));
     }
 
     public function revokeRole(Request $request, User $user, Role $role): RedirectResponse
     {
         $user->removeRole($role->name);
-        return back()->with('status', __('Role revoked.'));
+        return back()->with('success', __('Role revoked.'));
     }
 
     public function givePermission(Request $request, Role $role): RedirectResponse
@@ -43,13 +43,13 @@ class PermissionsController extends Controller
             'permission' => ['required', 'string', 'exists:permissions,name'],
         ]);
         $role->givePermissionTo($data['permission']);
-        return back()->with('status', __('Permission granted to role.'));
+        return back()->with('success', __('Permission granted to role.'));
     }
 
     public function revokePermission(Role $role, Permission $permission): RedirectResponse
     {
         $role->revokePermissionTo($permission->name);
-        return back()->with('status', __('Permission revoked from role.'));
+        return back()->with('success', __('Permission revoked from role.'));
     }
 
     public function createRole(Request $request): RedirectResponse
@@ -58,7 +58,7 @@ class PermissionsController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
         ]);
         Role::create(['name' => $data['name'], 'guard_name' => config('auth.defaults.guard', 'web')]);
-        return back()->with('status', __('Role created.'));
+        return back()->with('success', __('Role created.'));
     }
 
     public function deleteRole(Role $role): RedirectResponse
@@ -67,7 +67,7 @@ class PermissionsController extends Controller
             $role->permissions()->detach();
             $role->delete();
         });
-        return back()->with('status', __('Role deleted.'));
+        return back()->with('success', __('Role deleted.'));
     }
 
     public function createPermission(Request $request): RedirectResponse
@@ -76,7 +76,7 @@ class PermissionsController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:permissions,name'],
         ]);
         Permission::create(['name' => $data['name'], 'guard_name' => config('auth.defaults.guard', 'web')]);
-        return back()->with('status', __('Permission created.'));
+        return back()->with('success', __('Permission created.'));
     }
 
     public function deletePermission(Permission $permission): RedirectResponse
@@ -85,7 +85,7 @@ class PermissionsController extends Controller
             $permission->roles()->detach();
             $permission->delete();
         });
-        return back()->with('status', __('Permission deleted.'));
+        return back()->with('success', __('Permission deleted.'));
     }
 
     public function createModulePermissions(Request $request): RedirectResponse
@@ -105,6 +105,6 @@ class PermissionsController extends Controller
             Permission::firstOrCreate(['name' => "$name.$action", 'guard_name' => $guard]);
         }
 
-        return back()->with('status', __('Module CRUD permissions created for ":name"', ['name' => $name]));
+        return back()->with('success', __('Module CRUD permissions created for ":name"', ['name' => $name]));
     }
 }

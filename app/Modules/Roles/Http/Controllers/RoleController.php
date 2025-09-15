@@ -59,7 +59,7 @@ class RoleController extends Controller
             $role->syncPermissions($validated['permissions']);
         }
 
-        return redirect()->route('modules.roles.index')->with('status', 'Role created successfully');
+        return redirect()->route('modules.roles.index')->with('success', 'Role created successfully');
     }
 
     public function show(int $id)
@@ -92,7 +92,7 @@ class RoleController extends Controller
         // Sync permissions
         $role->syncPermissions($validated['permissions'] ?? []);
 
-        return redirect()->route('modules.roles.index')->with('status', 'Role updated successfully');
+        return redirect()->route('modules.roles.index')->with('success', 'Role updated successfully');
     }
 
     public function destroy(int $id)
@@ -100,9 +100,9 @@ class RoleController extends Controller
         $role = Role::findOrFail($id);
         // Protect core admin role name if desired
         if ($role->name === 'admin') {
-            return back()->with('status', 'Cannot delete core admin role.');
+            return back()->with('error', 'Cannot delete core admin role.');
         }
         $role->delete();
-        return redirect()->route('modules.roles.index')->with('status', 'Role deleted successfully');
+        return redirect()->route('modules.roles.index')->with('success', 'Role deleted successfully');
     }
 }

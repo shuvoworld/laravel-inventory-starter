@@ -44,6 +44,27 @@ From there, you can modify the kit to your needs.
 - DataTables: doc/datatables.md
 - UI and Layout: doc/ui-and-layout.md
 - Chained Selects: doc/chained-selects.md
+- Debugging: See below for Laravel Debugbar usage
+
+### Debugging with Laravel Debugbar
+This project includes barryvdh/laravel-debugbar for local development.
+
+- Installed as a dev dependency and auto-discovered.
+- Configuration: config/debugbar.php (published)
+- Enable/Disable via .env:
+  - APP_ENV=local and APP_DEBUG=true will enable it by default
+  - Override explicitly with DEBUGBAR_ENABLED=true|false
+- Do not enable on production. Set DEBUGBAR_ENABLED=false on staging/prod if needed.
+
+---
+
+### API Quick Start
+This starter does not ship with a global API layer by default. If you need APIs, you can:
+
+- Create per-module API routes in app/Modules/<Module>/routes/api.php (see stubs/module/api.php.stub for a minimal example that returns resources using Laravel API Resources).
+- Or add your preferred API package and wire its routes under routes/api.php.
+
+By default, routes/api.php simply auto-loads each module's api.php so your module APIs are available under the /api prefix when needed.
 
 ---
 

@@ -39,7 +39,7 @@ class PermissionController extends Controller
 
         Permission::create(['name' => $validated['name']]);
 
-        return redirect()->route('modules.permissions.index')->with('status', 'Permission created successfully');
+        return redirect()->route('modules.permissions.index')->with('success', 'Permission created successfully');
     }
 
     public function show(int $id)
@@ -65,13 +65,13 @@ class PermissionController extends Controller
         $permission->name = $validated['name'];
         $permission->save();
 
-        return redirect()->route('modules.permissions.index')->with('status', 'Permission updated successfully');
+        return redirect()->route('modules.permissions.index')->with('success', 'Permission updated successfully');
     }
 
     public function destroy(int $id)
     {
         $permission = Permission::findOrFail($id);
         $permission->delete();
-        return redirect()->route('modules.permissions.index')->with('status', 'Permission deleted successfully');
+        return redirect()->route('modules.permissions.index')->with('success', 'Permission deleted successfully');
     }
 }

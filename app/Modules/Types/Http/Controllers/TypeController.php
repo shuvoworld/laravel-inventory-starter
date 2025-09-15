@@ -2,16 +2,19 @@
 
 namespace App\Modules\Types\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Modules\Types\Http\Requests\StoreTypeRequest;
 use App\Modules\Types\Http\Requests\UpdateTypeRequest;
 use App\Modules\Types\Models\Type;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Yajra\DataTables\Facades\DataTables;
 
-class TypeController
+/**
+ * Controller for managing Types CRUD and DataTables endpoint.
+ */
+class TypeController extends Controller
 {
     public function index(Request $request): View
     {
@@ -19,24 +22,22 @@ class TypeController
     }
 
     /** DataTables server-side endpoint (Yajra) */
-    public function data(Request $request): Response
+    public function data(Request $request)
     {
         $query = Type::query();
 
-        $dt = DataTables::eloquent($query)
-            ->addColumn('actions', function ($row) {
-                return view('types::partials.actions', ['id' => $row->id])->render();
+        return DataTables::eloquent($query)
+            ->addColumn('actions', function (Type $type) {
+                return view('types::partials.actions', ['id' => $type->id])->render();
             })
-            ->editColumn('created_at', function ($row) {
-                return optional($row->created_at)->toDateTimeString();
+            ->editColumn('created_at', function (Type $type) {
+                return $type->created_at?->toDateTimeString();
             })
-            ->editColumn('updated_at', function ($row) {
-                return optional($row->updated_at)->toDateTimeString();
+            ->editColumn('updated_at', function (Type $type) {
+                return $type->updated_at?->toDateTimeString();
             })
             ->rawColumns(['actions'])
             ->toJson();
-
-        return response($dt->getData(true));
     }
 
     public function create(): View
@@ -47,7 +48,7 @@ class TypeController
     public function store(StoreTypeRequest $request): RedirectResponse
     {
         Type::create($request->validated());
-        return redirect()->route('modules.types.index')->with('status', 'Type created.');
+        return redirect()->route('modules.types.index')->with('success', 'Type created.');
     }
 
     public function show(int $id): View
@@ -66,13 +67,13 @@ class TypeController
     {
         $item = Type::findOrFail($id);
         $item->update($request->validated());
-        return redirect()->route('modules.types.index')->with('status', 'Type updated.');
+        return redirect()->route('modules.types.index')->with('success', 'Type updated.');
     }
 
     public function destroy(int $id): RedirectResponse
     {
         $item = Type::findOrFail($id);
         $item->delete();
-        return redirect()->route('modules.types.index')->with('status', 'Type deleted.');
+        return redirect()->route('modules.types.index')->with('success', 'Type deleted.');
     }
 }

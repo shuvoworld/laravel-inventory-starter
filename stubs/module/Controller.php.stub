@@ -2,16 +2,19 @@
 
 namespace App\Modules\{{ moduleStudly }}\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Modules\{{ moduleStudly }}\Http\Requests\Store{{ moduleStudly }}Request;
 use App\Modules\{{ moduleStudly }}\Http\Requests\Update{{ moduleStudly }}Request;
 use App\Modules\{{ moduleStudly }}\Models\{{ moduleStudly }};
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Yajra\DataTables\Facades\DataTables;
 
-class {{ moduleStudly }}Controller
+/**
+ * Controller for managing {{ moduleStudly }} CRUD pages and DataTables endpoint.
+ */
+class {{ moduleStudly }}Controller extends Controller
 {
     public function index(Request $request): View
     {
@@ -19,24 +22,22 @@ class {{ moduleStudly }}Controller
     }
 
     /** DataTables server-side endpoint (Yajra) */
-    public function data(Request $request): Response
+    public function data(Request $request)
     {
         $query = {{ moduleStudly }}::query();
 
-        $dt = DataTables::eloquent($query)
-            ->addColumn('actions', function ($row) {
-                return view('{{ moduleKebab }}::partials.actions', ['id' => $row->id])->render();
+        return DataTables::eloquent($query)
+            ->addColumn('actions', function ({{ moduleStudly }} $item) {
+                return view('{{ moduleKebab }}::partials.actions', ['id' => $item->id])->render();
             })
-            ->editColumn('created_at', function ($row) {
-                return optional($row->created_at)->toDateTimeString();
+            ->editColumn('created_at', function ({{ moduleStudly }} $item) {
+                return $item->created_at?->toDateTimeString();
             })
-            ->editColumn('updated_at', function ($row) {
-                return optional($row->updated_at)->toDateTimeString();
+            ->editColumn('updated_at', function ({{ moduleStudly }} $item) {
+                return $item->updated_at?->toDateTimeString();
             })
             ->rawColumns(['actions'])
             ->toJson();
-
-        return response($dt->getData(true));
     }
 
     public function create(): View
@@ -47,7 +48,7 @@ class {{ moduleStudly }}Controller
     public function store(Store{{ moduleStudly }}Request $request): RedirectResponse
     {
         $item = {{ moduleStudly }}::create($request->validated());
-        return redirect()->route('modules.{{ moduleKebab }}.index')->with('status', '{{ moduleStudly }} created.');
+        return redirect()->route('modules.{{ moduleKebab }}.index')->with('success', '{{ moduleStudly }} created.');
     }
 
     public function show(int $id): View
@@ -66,13 +67,13 @@ class {{ moduleStudly }}Controller
     {
         $item = {{ moduleStudly }}::findOrFail($id);
         $item->update($request->validated());
-        return redirect()->route('modules.{{ moduleKebab }}.index')->with('status', '{{ moduleStudly }} updated.');
+        return redirect()->route('modules.{{ moduleKebab }}.index')->with('success', '{{ moduleStudly }} updated.');
     }
 
     public function destroy(int $id): RedirectResponse
     {
         $item = {{ moduleStudly }}::findOrFail($id);
         $item->delete();
-        return redirect()->route('modules.{{ moduleKebab }}.index')->with('status', '{{ moduleStudly }} deleted.');
+        return redirect()->route('modules.{{ moduleKebab }}.index')->with('success', '{{ moduleStudly }} deleted.');
     }
 }

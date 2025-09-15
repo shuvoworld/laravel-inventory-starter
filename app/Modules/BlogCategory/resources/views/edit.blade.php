@@ -25,4 +25,6 @@
         </div>
     </form>
 </div>
+
+<x-audits.table :model="$item" title="Last 10 Audits" />
 @endsection

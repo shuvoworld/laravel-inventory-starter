@@ -56,7 +56,7 @@ class UserController extends Controller
             $user->syncRoles([$validated['role']]);
         }
 
-        return redirect()->route('modules.users.index')->with('status', 'User created successfully');
+        return redirect()->route('modules.users.index')->with('success', 'User created successfully');
     }
 
     public function show(int $id)
@@ -98,7 +98,7 @@ class UserController extends Controller
             }
         }
 
-        return redirect()->route('modules.users.index')->with('status', 'User updated successfully');
+        return redirect()->route('modules.users.index')->with('success', 'User updated successfully');
     }
 
     public function destroy(int $id)
@@ -106,9 +106,9 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         // prevent self-delete for safety
         if (auth()->id() === $user->id) {
-            return back()->with('status', 'You cannot delete your own account.');
+            return back()->with('error', 'You cannot delete your own account.');
         }
         $user->delete();
-        return redirect()->route('modules.users.index')->with('status', 'User deleted successfully');
+        return redirect()->route('modules.users.index')->with('success', 'User deleted successfully');
     }
 }

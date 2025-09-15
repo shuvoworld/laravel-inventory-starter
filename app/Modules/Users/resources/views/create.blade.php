@@ -5,7 +5,7 @@
     <div class="card-header">
         <h3 class="card-title mb-0">Create User</h3>
     </div>
-    <form method="POST" action="{{ route('modules.users.store') }}" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
+    <form method="POST" action="{{ route('modules.users.store') }}" class="form-minimal" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
         @csrf
         <div class="card-body">
             <div class="mb-3">

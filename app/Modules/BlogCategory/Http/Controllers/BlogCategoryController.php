@@ -2,16 +2,19 @@
 
 namespace App\Modules\BlogCategory\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Modules\BlogCategory\Http\Requests\StoreBlogCategoryRequest;
 use App\Modules\BlogCategory\Http\Requests\UpdateBlogCategoryRequest;
 use App\Modules\BlogCategory\Models\BlogCategory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Yajra\DataTables\Facades\DataTables;
 
-class BlogCategoryController
+/**
+ * Controller for managing Blog Categories CRUD and DataTables endpoint.
+ */
+class BlogCategoryController extends Controller
 {
     public function index(Request $request): View
     {
@@ -19,24 +22,22 @@ class BlogCategoryController
     }
 
     /** DataTables server-side endpoint (Yajra) */
-    public function data(Request $request): Response
+    public function data(Request $request)
     {
         $query = BlogCategory::query();
 
-        $dt = DataTables::eloquent($query)
-            ->addColumn('actions', function ($row) {
-                return view('blog-category::partials.actions', ['category' => $row])->render();
+        return DataTables::eloquent($query)
+            ->addColumn('actions', function (BlogCategory $category) {
+                return view('blog-category::partials.actions', compact('category'))->render();
             })
-            ->editColumn('created_at', function ($row) {
-                return optional($row->created_at)->toDateTimeString();
+            ->editColumn('created_at', function (BlogCategory $category) {
+                return $category->created_at?->toDateTimeString();
             })
-            ->editColumn('updated_at', function ($row) {
-                return optional($row->updated_at)->toDateTimeString();
+            ->editColumn('updated_at', function (BlogCategory $category) {
+                return $category->updated_at?->toDateTimeString();
             })
             ->rawColumns(['actions'])
             ->toJson();
-
-        return response($dt->getData(true));
     }
 
     public function create(): View
@@ -47,7 +48,7 @@ class BlogCategoryController
     public function store(StoreBlogCategoryRequest $request): RedirectResponse
     {
         $item = BlogCategory::create($request->validated());
-        return redirect()->route('modules.blog-category.index')->with('status', 'BlogCategory created.');
+        return redirect()->route('modules.blog-category.index')->with('success', 'BlogCategory created.');
     }
 
     public function show(int $id): View
@@ -66,13 +67,13 @@ class BlogCategoryController
     {
         $item = BlogCategory::findOrFail($id);
         $item->update($request->validated());
-        return redirect()->route('modules.blog-category.index')->with('status', 'BlogCategory updated.');
+        return redirect()->route('modules.blog-category.index')->with('success', 'BlogCategory updated.');
     }
 
     public function destroy(int $id): RedirectResponse
     {
         $item = BlogCategory::findOrFail($id);
         $item->delete();
-        return redirect()->route('modules.blog-category.index')->with('status', 'BlogCategory deleted.');
+        return redirect()->route('modules.blog-category.index')->with('success', 'BlogCategory deleted.');
     }
 }

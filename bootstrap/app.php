@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withProviders([
         App\Providers\ModulesServiceProvider::class,
+        OwenIt\Auditing\AuditingServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
@@ -23,6 +24,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
+        // Append global auto flash success middleware to the web group
+        if (method_exists($middleware, 'appendToGroup')) {
+            $middleware->appendToGroup('web', \App\Http\Middleware\AutoFlashSuccess::class);
+        } else {
+            // Fallback for older API: try generic append
+            $middleware->append(\App\Http\Middleware\AutoFlashSuccess::class);
+        }
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

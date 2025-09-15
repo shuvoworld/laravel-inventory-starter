@@ -42,6 +42,45 @@
     <!-- Select2 CSS (core and Bootstrap 5 theme) -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <!-- Toastr CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+    <!-- DataTables CSS (global) -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+
+    @stack('styles')
+
+    <style>
+        /* Sidebar typography normalization */
+        aside .sidebar-transition a,
+        aside .sidebar-transition button,
+        aside nav a {
+            font-size: 0.9rem; /* ~fs-6 */
+            line-height: 1.25rem;
+        }
+        /* Ensure icon and label alignment */
+        aside nav a .ml-3 { line-height: 1.25rem; }
+
+        /* Minimal table (Bootstrap + DataTables) */
+        table.table.datatable-minimal { border-color: rgba(0,0,0,.06); font-size: 0.9rem; }
+        table.table.datatable-minimal th,
+        table.table.datatable-minimal td {
+            padding-top: .3rem;
+            padding-bottom: .3rem;
+            vertical-align: middle;
+        }
+        table.table.datatable-minimal thead th { font-weight: 600; }
+        table.table.datatable-minimal tbody tr:hover { background-color: rgba(0,0,0,.02); }
+        /* Hide DataTables default clutter when minimal */
+        .dt-length, .dt-search { display: none !important; }
+        .dt-paging .dt-paging-button { padding: .2rem .4rem; border-radius: .25rem; }
+        .dt-info { font-size: .85rem; }
+
+        /* Minimal forms */
+        .form-minimal .form-label { margin-bottom: .25rem; font-weight: 500; }
+        .form-minimal .form-control, .form-minimal .form-select { border-radius: .375rem; }
+        .form-minimal .form-text { color: #6c757d; }
+        .form-minimal .form-group + .form-group { margin-top: .75rem; }
+    </style>
 </head>
 
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 antialiased" x-data="{
@@ -72,45 +111,7 @@
             <!-- Main Content -->
             <main class="flex-1 overflow-auto bg-gray-100 dark:bg-gray-900 content-transition">
                 <div class="p-6">
-                    <!-- Success Message -->
-                    @session('status')
-                        <div x-data="{ showStatusMessage: true }" x-show="showStatusMessage"
-                            x-transition:enter="transition ease-out duration-300"
-                            x-transition:enter-start="opacity-0 transform -translate-y-2"
-                            x-transition:enter-end="opacity-100 transform translate-y-0"
-                            x-transition:leave="transition ease-in duration-300"
-                            x-transition:leave-start="opacity-100 transform translate-y-0"
-                            x-transition:leave-end="opacity-0 transform -translate-y-2"
-                            class="mb-6 bg-green-50 dark:bg-green-900 border-l-4 border-green-500 p-4 rounded-md">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-green-500 dark:text-green-400"
-                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd"
-                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                            clip-rule="evenodd" />
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm text-green-700 dark:text-green-200">{{ session('status') }}</p>
-                                </div>
-                                <div class="ml-auto pl-3">
-                                    <div class="-mx-1.5 -my-1.5">
-                                        <button @click="showStatusMessage = false"
-                                            class="inline-flex rounded-md p-1.5 text-green-500 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                            <span class="sr-only">{{ __('Dismiss') }}</span>
-                                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-                                                fill="currentColor">
-                                                <path fill-rule="evenodd"
-                                                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                                    clip-rule="evenodd" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @endsession
+                    <!-- Toast notifications are handled globally via Toastr (see scripts at the bottom) -->
 
                     {{ $slot }}
 
@@ -125,6 +126,10 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Toastr JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <!-- DataTables JS (global) -->
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
 
     <script>
         // Auto-initialize Select2 on elements with .select2
@@ -265,6 +270,42 @@
             window.initChainSelects = init;
         })();
     </script>
+
+    <script>
+        (function(){
+            document.addEventListener('DOMContentLoaded', function() {
+                if (!window.toastr) return;
+                // Global Toastr options
+                toastr.options = {
+                    closeButton: true,
+                    progressBar: true,
+                    positionClass: 'toast-bottom-right',
+                    timeOut: 4000,
+                    extendedTimeOut: 2000,
+                    newestOnTop: true,
+                    preventDuplicates: true,
+                };
+
+                // Laravel flash messages
+                @if (session('status'))
+                    toastr.success(@json(session('status')));
+                @endif
+
+                @php($types = ['success','error','warning','info'])
+                @foreach ($types as $t)
+                    @if (session()->has($t))
+                        toastr['{{ $t }}'](@json(session($t)));
+                    @endif
+                @endforeach
+
+                // Validation errors (show as one toast with line breaks)
+                @if ($errors && $errors->any())
+                    toastr.error(@json(implode("\n", $errors->all())));
+                @endif
+            });
+        })();
+    </script>
+
 
     @stack('scripts')
 </body>
