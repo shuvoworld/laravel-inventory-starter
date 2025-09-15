@@ -2,15 +2,25 @@
 
 use App\Http\Controllers\Settings;
 use App\Http\Controllers\Admin\PermissionsController;
+use App\Http\Controllers\Admin\ModulesRegistryController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
+use App\Models\Module;
 
 Route::get('/', function () {
-    return view('welcome');
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    return view('public.home');
 })->name('home');
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+Route::get('/me', function () {
+    return view('me');
+})->middleware(['auth'])->name('me');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('settings/profile', [Settings\ProfileController::class, 'edit'])->name('settings.profile.edit');
@@ -39,13 +49,30 @@ Route::middleware(['auth'])->group(function () {
 
         // Helper: Generate CRUD permission set for a module
         Route::post('permissions/modules', [PermissionsController::class, 'createModulePermissions'])->name('permissions.modules.create');
+
+        // Module Dictionary (Modules Registry)
+        Route::get('modules', [ModulesRegistryController::class, 'index'])->name('modules.index');
+        Route::patch('modules/{module}/toggle', [ModulesRegistryController::class, 'toggle'])->name('modules.toggle');
     });
 });
 
-// Auto-load Web routes from all modules so they are included in route cache.
+// Auto-load Web routes from all modules, but include only those marked active in the central registry.
 $modulesPath = app_path('Modules');
 if (is_dir($modulesPath)) {
     foreach (glob($modulesPath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) as $moduleDir) {
+        $name = basename($moduleDir);
+        $kebab = \Illuminate\Support\Str::kebab($name);
+        $isActive = true;
+        try {
+            if (DB::getSchemaBuilder()->hasTable('modules')) {
+                $isActive = Module::isActive($kebab);
+            }
+        } catch (\Throwable $e) {
+            $isActive = true; // fail-open if any DB issues
+        }
+        if (!$isActive) {
+            continue;
+        }
         $routesWeb = $moduleDir . DIRECTORY_SEPARATOR . 'routes' . DIRECTORY_SEPARATOR . 'web.php';
         if (file_exists($routesWeb)) {
             require $routesWeb;

@@ -28,6 +28,27 @@ class ModulesServiceProvider extends ServiceProvider
             if (in_array($name, ['Posts', 'Authors'], true)) {
                 continue;
             }
+
+            // Sync into central modules registry table (fail-open if table missing)
+            try {
+                /** @var \Illuminate\Database\Schema\Builder $schema */
+                $schema = $this->app['db']->getSchemaBuilder();
+                if ($schema->hasTable('modules')) {
+                    $kebab = \Illuminate\Support\Str::kebab($name);
+                    \App\Models\Module::query()->updateOrCreate(
+                        ['name' => $kebab],
+                        [
+                            'namespace' => $name,
+                            'title' => str_replace('-', ' ', ucfirst($kebab)),
+                            'path' => $moduleDir,
+                            // do not override is_active if entry exists
+                        ]
+                    );
+                }
+            } catch (\Throwable $e) {
+                // ignore errors so boot continues
+            }
+
             $this->bootModule($name, $moduleDir);
         }
     }
