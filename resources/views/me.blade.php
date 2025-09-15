@@ -37,9 +37,14 @@
             <div class="col-12 col-lg-4">
                 <div class="card shadow-sm">
                     <div class="card-body text-center">
-                        <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width:64px;height:64px;">
-                            <span class="fw-semibold">{{ auth()->user()->initials() }}</span>
-                        </div>
+                        @php($photo = auth()->user()->profile_photo_path ?? null)
+                        @if($photo)
+                            <img src="{{ asset('storage/' . $photo) }}" alt="Profile picture" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;">
+                        @else
+                            <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width:64px;height:64px;">
+                                <span class="fw-semibold">{{ auth()->user()->initials() }}</span>
+                            </div>
+                        @endif
                         <div class="mt-2 small text-muted">Logged in as</div>
                         <div class="fw-semibold">{{ auth()->user()->name }}</div>
                     </div>

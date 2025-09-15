@@ -5,7 +5,7 @@
     <div class="card-header">
         <h3 class="card-title mb-0">Create User</h3>
     </div>
-    <form method="POST" action="{{ route('modules.users.store') }}" class="form-minimal" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
+    <form method="POST" action="{{ route('modules.users.store') }}" class="form-minimal" enctype="multipart/form-data" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
         @csrf
         <div class="card-body">
             <div class="mb-3">
@@ -47,6 +47,14 @@
                     :includeEmpty="true"
                     class="form-select"
                 />
+            </div>
+            <div class="mt-3">
+                <label for="avatar" class="form-label">Profile Picture</label>
+                <input id="avatar" type="file" name="avatar" accept="image/*" class="form-control @error('avatar') is-invalid @enderror">
+                @error('avatar')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+                <div class="form-text">Optional. JPG, PNG, or WEBP up to 2MB.</div>
             </div>
         </div>
         <div class="card-footer d-flex gap-2">

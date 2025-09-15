@@ -44,6 +44,7 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', 'min:6'],
             'role' => ['nullable', 'string', 'exists:roles,name'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
         $user = User::create([
@@ -51,6 +52,13 @@ class UserController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
+
+        // Handle optional profile picture upload
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $user->profile_photo_path = $path;
+            $user->save();
+        }
 
         if (!empty($validated['role'])) {
             $user->syncRoles([$validated['role']]);
@@ -81,12 +89,18 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'confirmed', 'min:6'],
             'role' => ['nullable', 'string', 'exists:roles,name'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
         $user->name = $validated['name'];
         $user->email = $validated['email'];
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
+        }
+        // Handle optional profile picture upload (replace existing)
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $user->profile_photo_path = $path;
         }
         $user->save();
 

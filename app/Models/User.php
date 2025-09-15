@@ -25,6 +25,7 @@ class User extends Authenticatable implements AuditableContract
         'name',
         'email',
         'password',
+        'profile_photo_path',
     ];
 
     /**
@@ -53,6 +54,7 @@ class User extends Authenticatable implements AuditableContract
     protected $auditInclude = [
         'name',
         'email',
+        'profile_photo_path',
     ];
 
     /**

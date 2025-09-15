@@ -91,6 +91,28 @@
                 </a>
             </div>
         @endcan
+
+        @role('admin')
+            <div class="col-3 col-sm-3">
+                <a href="{{ route('admin.modules.index') }}" class="text-decoration-none">
+                    <!-- Smaller, colored card for Modules (Module Dictionary) -->
+                    <div class="card tile-card-sm shadow-sm bg-info-subtle border-0">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="text-muted small">{{ __('Modules') }}</div>
+                                    <div class="fs-4 fw-semibold mt-1">{{ \App\Models\Module::count() }}</div>
+                                </div>
+                                <div class="bg-white text-info p-2 rounded-circle d-inline-flex align-items-center justify-content-center tile-icon">
+                                    <i class="fas fa-cubes"></i>
+                                </div>
+                            </div>
+                            <div class="small text-muted mt-2">{{ __('Manage modules') }}</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        @endrole
     </div>
 
     <div class="row g-3 mt-1">

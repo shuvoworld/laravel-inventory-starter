@@ -5,7 +5,7 @@
     <div class="card-header">
         <h3 class="card-title mb-0">Edit User</h3>
     </div>
-    <form method="POST" action="{{ route('modules.users.update', $user->id) }}">
+    <form method="POST" action="{{ route('modules.users.update', $user->id) }}" enctype="multipart/form-data">
         @csrf
         @method('PUT')
         <div class="card-body">
@@ -50,6 +50,20 @@
                     :includeEmpty="true"
                     class="form-select"
                 />
+            </div>
+            <div class="mt-3">
+                <label for="avatar" class="form-label">Profile Picture</label>
+                @php($photo = $user->profile_photo_path ?? null)
+                @if($photo)
+                    <div class="mb-2">
+                        <img src="{{ asset('storage/' . $photo) }}" alt="Current profile picture" class="rounded" style="max-width: 96px; max-height: 96px; object-fit: cover;">
+                    </div>
+                @endif
+                <input id="avatar" type="file" name="avatar" accept="image/*" class="form-control @error('avatar') is-invalid @enderror">
+                @error('avatar')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+                <div class="form-text">Optional. Upload to replace current. JPG, PNG, or WEBP up to 2MB.</div>
             </div>
         </div>
         <div class="card-footer d-flex gap-2">
