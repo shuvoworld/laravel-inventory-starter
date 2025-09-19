@@ -18,9 +18,17 @@ class PermissionController extends Controller
     {
         $query = Permission::query();
 
+        $tz = optional(auth()->user())->timezone ?? config('app.timezone');
+
         return DataTables::eloquent($query)
             ->addColumn('actions', function (Permission $permission) {
                 return view('permissions::partials.actions', compact('permission'))->render();
+            })
+            ->editColumn('created_at', function (Permission $permission) use ($tz) {
+                return $permission->created_at?->timezone($tz)->format('Y-m-d H:i');
+            })
+            ->editColumn('updated_at', function (Permission $permission) use ($tz) {
+                return $permission->updated_at?->timezone($tz)->format('Y-m-d H:i');
             })
             ->rawColumns(['actions'])
             ->toJson();
@@ -45,12 +53,14 @@ class PermissionController extends Controller
     public function show(int $id)
     {
         $permission = Permission::findOrFail($id);
+
         return view('permissions::show', compact('permission'));
     }
 
     public function edit(int $id)
     {
         $permission = Permission::findOrFail($id);
+
         return view('permissions::edit', compact('permission'));
     }
 
@@ -59,7 +69,7 @@ class PermissionController extends Controller
         $permission = Permission::findOrFail($id);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:permissions,name,' . $permission->id],
+            'name' => ['required', 'string', 'max:255', 'unique:permissions,name,'.$permission->id],
         ]);
 
         $permission->name = $validated['name'];
@@ -72,6 +82,7 @@ class PermissionController extends Controller
     {
         $permission = Permission::findOrFail($id);
         $permission->delete();
+
         return redirect()->route('modules.permissions.index')->with('success', 'Permission deleted successfully');
     }
 }

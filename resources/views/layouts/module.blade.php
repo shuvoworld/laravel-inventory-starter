@@ -1,3 +1,5 @@
-<x-layouts.app>
+@extends('layouts.adminlte')
+
+@section('content')
     @yield('content')
-</x-layouts.app>
+@endsection

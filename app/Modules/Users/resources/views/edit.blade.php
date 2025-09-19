@@ -37,19 +37,18 @@
                     <input id="password_confirmation" type="password" name="password_confirmation" class="form-control">
                 </div>
             </div>
-            <div class="mt-3">
+            <div class="mb-3">
                 @php($selectedRole = old('role', $user->roles->pluck('name')->first()))
-                <x-form.select
-                    name="role"
-                    label="Role"
-                    :model="Spatie\Permission\Models\Role::class"
-                    optionValue="name"
-                    optionLabel="name"
-                    :selected="$selectedRole"
-                    placeholder="— No Role —"
-                    :includeEmpty="true"
-                    class="form-select"
-                />
+                <label for="role" class="form-label">Role</label>
+                <select id="role" name="role" class="form-control select2 @error('role') is-invalid @enderror" data-placeholder="— No Role —" data-allow-clear>
+                    <option value=""></option>
+                    @foreach(($roles ?? []) as $r)
+                        <option value="{{ $r->name }}" {{ (string)$selectedRole === (string)$r->name ? 'selected' : '' }}>{{ $r->name }}</option>
+                    @endforeach
+                </select>
+                @error('role')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
             <div class="mt-3">
                 <label for="avatar" class="form-label">Profile Picture</label>

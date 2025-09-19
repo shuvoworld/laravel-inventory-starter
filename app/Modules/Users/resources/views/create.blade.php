@@ -35,18 +35,17 @@
                     <input id="password_confirmation" type="password" name="password_confirmation" class="form-control" required>
                 </div>
             </div>
-            <div class="mt-3">
-                <x-form.select
-                    name="role"
-                    label="Role"
-                    :model="Spatie\Permission\Models\Role::class"
-                    optionValue="name"
-                    optionLabel="name"
-                    :selected="old('role')"
-                    placeholder="— No Role —"
-                    :includeEmpty="true"
-                    class="form-select"
-                />
+            <div class="mb-3">
+                <label for="role" class="form-label">Role</label>
+                <select id="role" name="role" class="form-control select2 @error('role') is-invalid @enderror" data-placeholder="— No Role —" data-allow-clear>
+                    <option value=""></option>
+                    @foreach(($roles ?? []) as $r)
+                        <option value="{{ $r->name }}" {{ (string)old('role') === (string)$r->name ? 'selected' : '' }}>{{ $r->name }}</option>
+                    @endforeach
+                </select>
+                @error('role')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
             <div class="mt-3">
                 <label for="avatar" class="form-label">Profile Picture</label>

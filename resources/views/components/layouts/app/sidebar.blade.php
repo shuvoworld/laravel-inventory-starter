@@ -32,16 +32,6 @@
                             @endif
                             @endcan
 
-                            @can('contact.view')
-                            @if(\App\Models\Module::isActive('contact'))
-                            <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.contact.*') ? 'active' : '' }}" href="{{ route('modules.contact.index') }}">
-                                    <i class="fas fa-address-book me-2"></i>
-                                    <span x-show="sidebarOpen">Contacts</span>
-                                </a>
-                            </li>
-                            @endif
-                            @endcan
 
                             @can('users.view')
                             @if(\App\Models\Module::isActive('users'))

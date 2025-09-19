@@ -1,226 +1,97 @@
-<x-layouts.app>
+@extends('layouts.adminlte')
 
-    <div class="mb-3">
-        <h1 class="h3 mb-0">{{ __('Dashboard') }}</h1>
+@section('title', __('Dashboard'))
+@section('page-title', __('Dashboard'))
+
+@section('content')
+<div class="row">
+    @can('users.view')
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>{{ \App\Models\User::count() }}</h3>
+                <p>{{ __('Users') }}</p>
+            </div>
+            <div class="icon"><i class="fas fa-users"></i></div>
+            <a href="{{ route('modules.users.index') }}" class="small-box-footer">{{ __('Manage users') }} <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
     </div>
+    @endcan
 
-    <style>
-        /* Smaller dashboard tiles using simple Bootstrap-friendly CSS */
-        .tile-card-sm {
-            aspect-ratio: 9 / 5;           /* slightly shorter than square to look smaller */
-            border-radius: .5rem;          /* rounded corners */
-        }
-        .tile-card-sm .card-body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;       /* center content vertically */
-            padding: .6rem;                /* more compact padding */
-        }
-        .tile-icon { width: 28px; height: 28px; } /* smaller icon circle */
-        /* Make the number smaller without changing markup */
-        .tile-card-sm .fs-4 { font-size: 1.1rem !important; }
-        @media (max-width: 575.98px) {
-            /* allow flexible height on extra small screens */
-            .tile-card-sm { aspect-ratio: auto; }
-        }
-    </style>
 
-    <div class="row g-3">
-        @can('users.view')
-            <div class="col-3 col-sm-3">
-                <a href="{{ route('modules.users.index') }}" class="text-decoration-none">
-                    <!-- Smaller, colored card for Users -->
-                    <div class="card tile-card-sm shadow-sm bg-primary-subtle border-0">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-muted small">{{ __('Users') }}</div>
-                                    <div class="fs-4 fw-semibold mt-1">{{ \App\Models\User::count() }}</div>
-                                </div>
-                                <div class="bg-white text-primary p-2 rounded-circle d-inline-flex align-items-center justify-content-center tile-icon">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                            </div>
-                            <div class="small text-muted mt-2">{{ __('Manage users') }}</div>
-                        </div>
-                    </div>
-                </a>
+    @role('admin')
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-primary">
+            <div class="inner">
+                <h3>{{ \App\Models\Module::count() }}</h3>
+                <p>{{ __('Modules') }}</p>
             </div>
-        @endcan
-
-        @can('contact.view')
-            <div class="col-3 col-sm-3">
-                <a href="{{ route('modules.contact.index') }}" class="text-decoration-none">
-                    <!-- Smaller, colored card for Contacts -->
-                    <div class="card tile-card-sm shadow-sm bg-success-subtle border-0">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-muted small">{{ __('Contacts') }}</div>
-                                    <div class="fs-4 fw-semibold mt-1">{{ \App\Modules\Contact\Models\Contact::count() }}</div>
-                                </div>
-                                <div class="bg-white text-success p-2 rounded-circle d-inline-flex align-items-center justify-content-center tile-icon">
-                                    <i class="fas fa-address-book"></i>
-                                </div>
-                            </div>
-                            <div class="small text-muted mt-2">{{ __('Manage contacts') }}</div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        @endcan
-
-        @can('blog-category.view')
-            <div class="col-3 col-sm-3">
-                <a href="{{ route('modules.blog-category.index') }}" class="text-decoration-none">
-                    <!-- Smaller, colored card for Blog Categories -->
-                    <div class="card tile-card-sm shadow-sm bg-warning-subtle border-0">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-muted small">{{ __('Blog Categories') }}</div>
-                                    <div class="fs-4 fw-semibold mt-1">{{ \App\Modules\BlogCategory\Models\BlogCategory::count() }}</div>
-                                </div>
-                                <div class="bg-white text-warning p-2 rounded-circle d-inline-flex align-items-center justify-content-center tile-icon">
-                                    <i class="fas fa-folder-tree"></i>
-                                </div>
-                            </div>
-                            <div class="small text-muted mt-2">{{ __('Manage blog categories') }}</div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        @endcan
-
-        @role('admin')
-            <div class="col-3 col-sm-3">
-                <a href="{{ route('admin.modules.index') }}" class="text-decoration-none">
-                    <!-- Smaller, colored card for Modules (Module Dictionary) -->
-                    <div class="card tile-card-sm shadow-sm bg-info-subtle border-0">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <div class="text-muted small">{{ __('Modules') }}</div>
-                                    <div class="fs-4 fw-semibold mt-1">{{ \App\Models\Module::count() }}</div>
-                                </div>
-                                <div class="bg-white text-info p-2 rounded-circle d-inline-flex align-items-center justify-content-center tile-icon">
-                                    <i class="fas fa-cubes"></i>
-                                </div>
-                            </div>
-                            <div class="small text-muted mt-2">{{ __('Manage modules') }}</div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        @endrole
+            <div class="icon"><i class="fas fa-cubes"></i></div>
+            <a href="{{ route('admin.modules.index') }}" class="small-box-footer">{{ __('Manage modules') }} <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
     </div>
+    @endrole
+</div>
 
-    <div class="row g-3 mt-1">
-        @can('users.view')
-        <div class="col-12 col-lg-6">
-            <div class="card h-100">
-                <div class="card-header d-flex align-items-center justify-content-between py-2">
-                    <h2 class="h6 mb-0">{{ __('Recent Users') }}</h2>
-                    <a href="{{ route('modules.users.index') }}" class="small">{{ __('View all') }}</a>
+<div class="row">
+    @can('users.view')
+    <div class="col-lg-6">
+        <div class="card card-primary card-outline h-100">
+            <div class="card-header">
+                <h3 class="card-title">{{ __('Recent Users') }}</h3>
+                <div class="card-tools">
+                    <a href="{{ route('modules.users.index') }}" class="btn btn-tool">{{ __('View all') }}</a>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table id="dashboard-users-table" class="table table-hover align-middle datatable-minimal table-sm w-100">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Roles</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table id="dashboard-users-table" class="table table-striped table-hover table-sm mb-0 w-100">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>{{ __('Name') }}</th>
+                                <th>{{ __('Email') }}</th>
+                                <th>{{ __('Roles') }}</th>
+                                <th>{{ __('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
         </div>
-        @endcan
-
-        @can('contact.view')
-        <div class="col-12 col-lg-6">
-            <div class="card h-100">
-                <div class="card-header d-flex align-items-center justify-content-between py-2">
-                    <h2 class="h6 mb-0">{{ __('Recent Contacts') }}</h2>
-                    <a href="{{ route('modules.contact.index') }}" class="small">{{ __('View all') }}</a>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table id="dashboard-contacts-table" class="table table-hover align-middle datatable-minimal table-sm w-100">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Created</th>
-                                    <th>Updated</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endcan
     </div>
+    @endcan
 
-    @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Users table on dashboard
-            const usersEl = document.querySelector('#dashboard-users-table');
-            if (usersEl) {
-                new DataTable(usersEl, {
-                    serverSide: true,
-                    processing: true,
-                    ajax: { url: '{{ route('modules.users.data') }}', dataSrc: 'data' },
-                    columns: [
-                        { data: 'id' },
-                        { data: 'name' },
-                        { data: 'email' },
-                        { data: 'roles' },
-                        { data: 'actions', orderable: false, searchable: false },
-                    ],
-                    order: [[0, 'desc']],
-                    lengthChange: false,
-                    searching: false,
-                    pageLength: 5,
-                    pagingType: 'simple_numbers',
-                    layout: { topStart: null, topEnd: null, bottomStart: 'info', bottomEnd: 'paging' }
-                });
-            }
+</div>
 
-            // Contacts table on dashboard
-            const contactsEl = document.querySelector('#dashboard-contacts-table');
-            if (contactsEl) {
-                new DataTable(contactsEl, {
-                    serverSide: true,
-                    processing: true,
-                    ajax: { url: '{{ route('modules.contact.data') }}', dataSrc: 'data' },
-                    columns: [
-                        { data: 'id' },
-                        { data: 'name' },
-                        { data: 'created_at' },
-                        { data: 'updated_at' },
-                        { data: 'actions', orderable: false, searchable: false },
-                    ],
-                    order: [[0, 'desc']],
-                    lengthChange: false,
-                    searching: false,
-                    pageLength: 5,
-                    pagingType: 'simple_numbers',
-                    layout: { topStart: null, topEnd: null, bottomStart: 'info', bottomEnd: 'paging' }
-                });
-            }
-        });
-    </script>
-    @endpush
+@endsection
 
-</x-layouts.app>
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const usersEl = document.querySelector('#dashboard-users-table');
+        if (usersEl) {
+            new DataTable(usersEl, {
+                serverSide: true,
+                processing: true,
+                ajax: { url: '{{ route('modules.users.data') }}', dataSrc: 'data' },
+                columns: [
+                    { data: 'id' },
+                    { data: 'name' },
+                    { data: 'email' },
+                    { data: 'roles' },
+                    { data: 'actions', orderable: false, searchable: false },
+                ],
+                order: [[0, 'desc']],
+                lengthChange: false,
+                searching: false,
+                pageLength: 5,
+                pagingType: 'simple_numbers',
+                layout: { topStart: null, topEnd: null, bottomStart: 'info', bottomEnd: 'paging' }
+            });
+        }
+
+    });
+</script>
+@endpush

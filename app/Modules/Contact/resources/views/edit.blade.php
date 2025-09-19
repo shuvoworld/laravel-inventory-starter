@@ -30,17 +30,17 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
-            <div class="mb-3">
-                <x-form.select
-                    name="user_id"
-                    label="User"
-                    model="App\\Models\\User"
-                    optionValue="id"
-                    optionLabel="name"
-                    :selected="old('user_id', $item->user_id)"
-                    includeEmpty="true"
-                    select2="true"
-                />
+            <div class="form-group">
+                <label for="user_id">User</label>
+                <select id="user_id" name="user_id" class="form-control select2 @error('user_id') is-invalid @enderror" data-placeholder="— Select user —" data-allow-clear>
+                    <option value=""></option>
+                    @foreach($users ?? [] as $u)
+                        <option value="{{ $u->id }}" {{ (string)old('user_id', $item->user_id) === (string)$u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+                    @endforeach
+                </select>
+                @error('user_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
         </div>
         <div class="card-footer d-flex gap-2">
