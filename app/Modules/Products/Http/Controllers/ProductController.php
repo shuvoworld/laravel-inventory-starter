@@ -24,6 +24,7 @@ class ProductController extends Controller
             ->addColumn('actions', function (Product $product) {
                 return view('products::partials.actions', ['id' => $product->id])->render();
             })
+            ->rawColumns(['actions'])
             ->toJson();
     }
 
