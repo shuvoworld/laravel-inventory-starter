@@ -4,6 +4,11 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Sales Order #{{ $item->order_number }}</h1>
     <div class="d-flex gap-2">
+        @can('sales-return.create')
+            <a href="{{ route('modules.sales-return.create', ['sales_order_id' => $item->id]) }}" class="btn btn-outline-warning">
+                <i class="fas fa-undo me-1"></i> Create Return
+            </a>
+        @endcan
         @can('sales-order.view')
             <a href="{{ route('modules.sales-order.invoice', $item->id) }}" class="btn btn-outline-success" target="_blank">
                 <i class="fas fa-print me-1"></i> Print Invoice

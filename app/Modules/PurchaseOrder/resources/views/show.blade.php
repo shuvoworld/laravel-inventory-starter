@@ -4,6 +4,11 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Purchase Order #{{ $item->po_number }}</h1>
     <div class="d-flex gap-2">
+        @can('purchase-return.create')
+            <a href="{{ route('modules.purchase-return.create', ['purchase_order_id' => $item->id]) }}" class="btn btn-outline-warning">
+                <i class="fas fa-undo me-1"></i> Create Return
+            </a>
+        @endcan
         @can('purchase-order.edit')
             <a href="{{ route('modules.purchase-order.edit', $item->id) }}" class="btn btn-outline-primary">
                 <i class="fas fa-edit me-1"></i> Edit

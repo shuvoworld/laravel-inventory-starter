@@ -1,4 +1,7 @@
 <div class="btn-group btn-group-sm" role="group">
+    @can('sales-order.show')
+        <a href="{{ route('modules.sales-order.show', $id) }}" class="btn btn-outline-info"><i class="fas fa-eye"></i></a>
+    @endcan
     @can('sales-order.edit')
         <a href="{{ route('modules.sales-order.edit', $id) }}" class="btn btn-outline-primary"><i class="fas fa-edit"></i></a>
     @endcan
