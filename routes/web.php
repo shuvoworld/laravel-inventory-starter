@@ -3,6 +3,8 @@
 use App\Http\Controllers\Settings;
 use App\Http\Controllers\Admin\PermissionsController;
 use App\Http\Controllers\Admin\ModulesRegistryController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LanguageController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use App\Models\Module;
@@ -14,9 +16,17 @@ Route::get('/', function () {
     return view('public.home');
 })->name('home');
 
-Route::view('dashboard', 'dashboard')
+Route::get('dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+Route::get('dashboard/financial-summary', [DashboardController::class, 'financialSummary'])
+    ->middleware(['auth'])
+    ->name('dashboard.financial-summary');
+
+// Language switching routes
+Route::get('language/{locale}', [LanguageController::class, 'switch'])->name('language.switch');
+Route::get('api/language/current', [LanguageController::class, 'current'])->name('language.current');
 
 Route::get('/me', function () {
     return view('me');

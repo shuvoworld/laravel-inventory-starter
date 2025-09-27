@@ -1,78 +1,255 @@
 @extends('layouts.adminlte')
 
-@section('title', __('Dashboard'))
-@section('page-title', __('Dashboard'))
+@section('title', __('common.dashboard'))
+@section('page-title', __('common.dashboard'))
+
+@php
+use App\Modules\StoreSettings\Models\StoreSetting;
+
+function formatMoney($amount) {
+    return StoreSetting::formatCurrency($amount);
+}
+@endphp
 
 @section('content')
-<!-- Stats Cards Row -->
-<div class="row">
-    @can('users.view')
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-info">
-            <div class="inner">
-                <h3>{{ \App\Models\User::count() }}</h3>
-                <p>{{ __('Users') }}</p>
+<!-- Financial Overview Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-gradient-primary">
+            <div class="card-header border-0">
+                <h3 class="card-title text-white">
+                    <i class="fas fa-chart-line mr-1"></i>
+                    Profit & Loss Summary - {{ now()->format('F Y') }}
+                </h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#financialModal">
+                        <i class="fas fa-chart-bar"></i> View Details
+                    </button>
+                </div>
             </div>
-            <div class="icon"><i class="fas fa-users"></i></div>
-            <a href="{{ route('modules.users.index') }}" class="small-box-footer">{{ __('Manage users') }} <i class="fas fa-arrow-circle-right"></i></a>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="description-block border-right">
+                            <span class="description-percentage text-success">
+                                <i class="fas fa-caret-{{ $revenueGrowth >= 0 ? 'up' : 'down' }}"></i> {{ number_format(abs($revenueGrowth), 1) }}%
+                            </span>
+                            <h5 class="description-header text-white">{{ formatMoney($currentMonthData['revenue']) }}</h5>
+                            <span class="description-text text-white-50">TOTAL REVENUE</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="description-block border-right">
+                            <span class="description-percentage text-warning">
+                                <i class="fas fa-caret-{{ $expenseGrowth >= 0 ? 'up' : 'down' }}"></i> {{ number_format(abs($expenseGrowth), 1) }}%
+                            </span>
+                            <h5 class="description-header text-white">{{ formatMoney($currentMonthData['cogs'] + $currentMonthData['operating_expenses']) }}</h5>
+                            <span class="description-text text-white-50">TOTAL EXPENSES</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="description-block border-right">
+                            <span class="description-percentage {{ $currentMonthData['gross_profit'] >= 0 ? 'text-success' : 'text-danger' }}">
+                                {{ number_format($currentMonthData['gross_profit_margin'], 1) }}%
+                            </span>
+                            <h5 class="description-header text-white">{{ formatMoney($currentMonthData['gross_profit']) }}</h5>
+                            <span class="description-text text-white-50">GROSS PROFIT</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="description-block">
+                            <span class="description-percentage {{ $profitGrowth >= 0 ? 'text-success' : 'text-danger' }}">
+                                <i class="fas fa-caret-{{ $profitGrowth >= 0 ? 'up' : 'down' }}"></i> {{ number_format(abs($profitGrowth), 1) }}%
+                            </span>
+                            <h5 class="description-header {{ $currentMonthData['net_profit'] >= 0 ? 'text-white' : 'text-warning' }}">
+                                {{ formatMoney($currentMonthData['net_profit']) }}
+                            </h5>
+                            <span class="description-text text-white-50">NET PROFIT</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    @endcan
+</div>
 
-    @can('customers.view')
+<!-- Key Metrics Cards -->
+<div class="row">
     <div class="col-lg-3 col-6">
         <div class="small-box bg-success">
             <div class="inner">
-                <h3>{{ \App\Modules\Customers\Models\Customer::count() }}</h3>
-                <p>Customers</p>
+                <h3>{{ formatMoney($currentMonthData['revenue']) }}</h3>
+                <p>Monthly Revenue</p>
             </div>
-            <div class="icon"><i class="fas fa-user-tie"></i></div>
-            <a href="{{ route('modules.customers.index') }}" class="small-box-footer">Manage customers <i class="fas fa-arrow-circle-right"></i></a>
+            <div class="icon"><i class="fas fa-dollar-sign"></i></div>
+            @can('reports.view')
+                <a href="{{ route('modules.reports.profit-loss') }}" class="small-box-footer">View Reports <i class="fas fa-arrow-circle-right"></i></a>
+            @else
+                <div class="small-box-footer">&nbsp;</div>
+            @endcan
         </div>
     </div>
-    @endcan
-
-    @can('products.view')
     <div class="col-lg-3 col-6">
         <div class="small-box bg-warning">
             <div class="inner">
-                <h3>{{ \App\Modules\Products\Models\Product::count() }}</h3>
-                <p>Products</p>
+                <h3>{{ formatMoney($currentMonthData['operating_expenses']) }}</h3>
+                <p>Operating Expenses</p>
             </div>
-            <div class="icon"><i class="fas fa-box"></i></div>
-            <a href="{{ route('modules.products.index') }}" class="small-box-footer">Manage products <i class="fas fa-arrow-circle-right"></i></a>
+            <div class="icon"><i class="fas fa-file-invoice"></i></div>
+            @can('operating-expenses.view')
+                <a href="{{ route('modules.operating-expenses.index') }}" class="small-box-footer">Manage Expenses <i class="fas fa-arrow-circle-right"></i></a>
+            @else
+                <div class="small-box-footer">&nbsp;</div>
+            @endcan
         </div>
     </div>
-    @endcan
-
-    @can('sales-order.view')
     <div class="col-lg-3 col-6">
-        <div class="small-box bg-danger">
+        <div class="small-box {{ $currentMonthData['net_profit'] >= 0 ? 'bg-primary' : 'bg-danger' }}">
             <div class="inner">
-                <h3>{{ \App\Modules\SalesOrder\Models\SalesOrder::count() }}</h3>
+                <h3>{{ formatMoney($currentMonthData['net_profit']) }}</h3>
+                <p>Net Profit</p>
+            </div>
+            <div class="icon"><i class="fas fa-chart-line"></i></div>
+            <div class="small-box-footer">{{ number_format($currentMonthData['net_profit_margin'], 1) }}% margin</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>{{ $currentMonthData['orders_count'] }}</h3>
                 <p>Sales Orders</p>
             </div>
             <div class="icon"><i class="fas fa-shopping-cart"></i></div>
-            <a href="{{ route('modules.sales-order.index') }}" class="small-box-footer">Manage orders <i class="fas fa-arrow-circle-right"></i></a>
+            @can('sales-order.view')
+                <a href="{{ route('modules.sales-order.index') }}" class="small-box-footer">View Orders <i class="fas fa-arrow-circle-right"></i></a>
+            @else
+                <div class="small-box-footer">Avg: {{ formatMoney($currentMonthData['average_order_value']) }}</div>
+            @endcan
         </div>
     </div>
-    @endcan
 </div>
 
-<!-- Second Row for Purchase Orders -->
-<div class="row">
-    @can('purchase-order.view')
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-secondary">
-            <div class="inner">
-                <h3>{{ \App\Modules\PurchaseOrder\Models\PurchaseOrder::count() }}</h3>
-                <p>Purchase Orders</p>
+<!-- Financial Trend Chart -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-area mr-1"></i>
+                    30-Day Financial Trend
+                </h3>
+                <div class="card-tools">
+                    @can('reports.view')
+                        <a href="{{ route('modules.reports.profit-loss') }}" class="btn btn-tool">
+                            <i class="fas fa-external-link-alt"></i> Full Report
+                        </a>
+                    @endcan
+                </div>
             </div>
-            <div class="icon"><i class="fas fa-truck"></i></div>
-            <a href="{{ route('modules.purchase-order.index') }}" class="small-box-footer">Manage purchases <i class="fas fa-arrow-circle-right"></i></a>
+            <div class="card-body">
+                <canvas id="trendChart" style="height: 300px;"></canvas>
+            </div>
         </div>
     </div>
-    @endcan
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    Alerts & Insights
+                </h3>
+            </div>
+            <div class="card-body">
+                @if($lowStockProducts > 0)
+                    <div class="alert alert-warning">
+                        <i class="fas fa-box-open mr-2"></i>
+                        <strong>{{ $lowStockProducts }} products</strong> are running low on stock.
+                        @can('products.view')
+                            <a href="{{ route('modules.products.index') }}" class="alert-link">View Products</a>
+                        @endcan
+                    </div>
+                @endif
+
+                @if($pendingExpenses > 0)
+                    <div class="alert alert-info">
+                        <i class="fas fa-clock mr-2"></i>
+                        <strong>{{ formatMoney($pendingExpenses) }}</strong> in pending expenses.
+                        @can('operating-expenses.view')
+                            <a href="{{ route('modules.operating-expenses.index') }}" class="alert-link">Review Expenses</a>
+                        @endcan
+                    </div>
+                @endif
+
+                @if($currentMonthData['net_profit'] < 0)
+                    <div class="alert alert-danger">
+                        <i class="fas fa-chart-line-down mr-2"></i>
+                        <strong>Negative profit</strong> this month. Review expenses and pricing.
+                    </div>
+                @elseif($currentMonthData['net_profit_margin'] < 10)
+                    <div class="alert alert-warning">
+                        <i class="fas fa-percentage mr-2"></i>
+                        <strong>Low profit margin</strong> ({{ number_format($currentMonthData['net_profit_margin'], 1) }}%). Consider optimization.
+                    </div>
+                @else
+                    <div class="alert alert-success">
+                        <i class="fas fa-thumbs-up mr-2"></i>
+                        <strong>Healthy profit margin</strong> of {{ number_format($currentMonthData['net_profit_margin'], 1) }}%.
+                    </div>
+                @endif
+
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Based on current month performance
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Business Stats Overview -->
+<div class="row mb-4">
+    <div class="col-md-3 col-6">
+        <div class="info-box">
+            <span class="info-box-icon bg-info"><i class="fas fa-user-tie"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Customers</span>
+                <span class="info-box-number">{{ $totalCustomers }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="info-box">
+            <span class="info-box-icon bg-success"><i class="fas fa-box"></i></span>
+            <div class="info-box-content">
+                <span class="info-box-text">Products</span>
+                <span class="info-box-number">{{ $totalProducts }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="info-box">
+            <span class="info-box-icon {{ $lowStockProducts > 0 ? 'bg-warning' : 'bg-secondary' }}">
+                <i class="fas fa-exclamation-triangle"></i>
+            </span>
+            <div class="info-box-content">
+                <span class="info-box-text">Low Stock</span>
+                <span class="info-box-number">{{ $lowStockProducts }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="info-box">
+            <span class="info-box-icon {{ $pendingExpenses > 0 ? 'bg-warning' : 'bg-secondary' }}">
+                <i class="fas fa-clock"></i>
+            </span>
+            <div class="info-box-content">
+                <span class="info-box-text">Pending Exp.</span>
+                <span class="info-box-number">{{ formatMoney($pendingExpenses/1000) }}K</span>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Quick Access Cards -->
@@ -149,40 +326,81 @@
     </div>
 </div>
 
-<!-- Latest Entries Row -->
+<!-- Recent Financial Activities -->
 <div class="row">
     @can('sales-order.view')
     <div class="col-lg-6">
-        <div class="card card-primary card-outline h-100">
+        <div class="card card-primary card-outline">
             <div class="card-header">
-                <h3 class="card-title">Latest Sales Orders</h3>
+                <h3 class="card-title">
+                    <i class="fas fa-shopping-cart mr-1"></i>
+                    Recent Sales Orders
+                </h3>
                 <div class="card-tools">
                     <a href="{{ route('modules.sales-order.index') }}" class="btn btn-tool">View all</a>
                 </div>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table id="dashboard-orders-table" class="table table-striped table-hover table-sm mb-0 w-100">
-                        <thead>
-                            <tr>
-                                <th>Order #</th>
-                                <th>Customer</th>
-                                <th>Status</th>
-                                <th>Total</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+                @if($recentSalesOrders->count() > 0)
+                    @foreach($recentSalesOrders as $order)
+                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                            <div>
+                                <strong>{{ $order->order_number }}</strong><br>
+                                <small class="text-muted">{{ $order->customer->name ?? 'N/A' }}</small>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-success font-weight-bold">{{ formatMoney($order->total_amount) }}</div>
+                                <small class="text-muted">{{ $order->created_at->diffForHumans() }}</small>
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    <div class="p-3 text-center text-muted">
+                        No recent sales orders
+                    </div>
+                @endif
             </div>
         </div>
     </div>
     @endcan
 
-    @can('customers.view')
+    @can('operating-expenses.view')
     <div class="col-lg-6">
-        <div class="card card-success card-outline h-100">
+        <div class="card card-warning card-outline">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-file-invoice mr-1"></i>
+                    Recent Expenses
+                </h3>
+                <div class="card-tools">
+                    <a href="{{ route('modules.operating-expenses.index') }}" class="btn btn-tool">View all</a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                @if($recentExpenses->count() > 0)
+                    @foreach($recentExpenses as $expense)
+                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                            <div>
+                                <strong>{{ $expense->category_label }}</strong><br>
+                                <small class="text-muted">{{ $expense->description }}</small>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-warning font-weight-bold">{{ formatMoney($expense->amount) }}</div>
+                                <small class="text-muted">{{ $expense->created_at->diffForHumans() }}</small>
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    <div class="p-3 text-center text-muted">
+                        No recent expenses
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+    @else
+    <div class="col-lg-6">
+        <div class="card card-success card-outline">
             <div class="card-header">
                 <h3 class="card-title">Recent Customers</h3>
                 <div class="card-tools">
@@ -332,11 +550,166 @@
 </div>
 @endrole
 
+<!-- Financial Details Modal -->
+<div class="modal fade" id="financialModal" tabindex="-1" role="dialog" aria-labelledby="financialModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="financialModalLabel">
+                    <i class="fas fa-chart-pie mr-2"></i>
+                    Financial Summary - {{ now()->format('F Y') }}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Current Month</h6>
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td>Revenue:</td>
+                                <td class="text-right text-success">{{ formatMoney($currentMonthData['revenue']) }}</td>
+                            </tr>
+                            <tr>
+                                <td>COGS:</td>
+                                <td class="text-right text-danger">{{ formatMoney($currentMonthData['cogs']) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Operating Expenses:</td>
+                                <td class="text-right text-warning">{{ formatMoney($currentMonthData['operating_expenses']) }}</td>
+                            </tr>
+                            <tr class="font-weight-bold">
+                                <td>Gross Profit:</td>
+                                <td class="text-right text-primary">{{ formatMoney($currentMonthData['gross_profit']) }}</td>
+                            </tr>
+                            <tr class="font-weight-bold border-top">
+                                <td>Net Profit:</td>
+                                <td class="text-right {{ $currentMonthData['net_profit'] >= 0 ? 'text-success' : 'text-danger' }}">
+                                    {{ formatMoney($currentMonthData['net_profit']) }}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Previous Month (Comparison)</h6>
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td>Revenue:</td>
+                                <td class="text-right">{{ formatMoney($previousMonthData['revenue']) }}</td>
+                            </tr>
+                            <tr>
+                                <td>COGS:</td>
+                                <td class="text-right">{{ formatMoney($previousMonthData['cogs']) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Operating Expenses:</td>
+                                <td class="text-right">{{ formatMoney($previousMonthData['operating_expenses']) }}</td>
+                            </tr>
+                            <tr class="font-weight-bold">
+                                <td>Gross Profit:</td>
+                                <td class="text-right">{{ formatMoney($previousMonthData['gross_profit']) }}</td>
+                            </tr>
+                            <tr class="font-weight-bold border-top">
+                                <td>Net Profit:</td>
+                                <td class="text-right {{ $previousMonthData['net_profit'] >= 0 ? 'text-success' : 'text-danger' }}">
+                                    {{ formatMoney($previousMonthData['net_profit']) }}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                @can('reports.view')
+                    <a href="{{ route('modules.reports.profit-loss') }}" class="btn btn-primary">
+                        <i class="fas fa-chart-line mr-1"></i> View Full Report
+                    </a>
+                @endcan
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Financial Trend Chart
+        const trendCtx = document.getElementById('trendChart');
+        if (trendCtx) {
+            const trendData = @json($trendData);
+
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: trendData.map(item => item.date),
+                    datasets: [
+                        {
+                            label: 'Revenue',
+                            data: trendData.map(item => item.revenue),
+                            borderColor: 'rgb(40, 167, 69)',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.4,
+                            fill: false
+                        },
+                        {
+                            label: 'Total Expenses',
+                            data: trendData.map(item => item.expenses),
+                            borderColor: 'rgb(255, 193, 7)',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                            tension: 0.4,
+                            fill: false
+                        },
+                        {
+                            label: 'Net Profit',
+                            data: trendData.map(item => item.net_profit),
+                            borderColor: 'rgb(0, 123, 255)',
+                            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': $' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         // Sales Orders Table
         const ordersEl = document.querySelector('#dashboard-orders-table');
         if (ordersEl) {
@@ -396,7 +769,11 @@
                     {
                         data: 'price',
                         render: function(data, type, row) {
-                            return data ? '$' + parseFloat(data).toFixed(2) : 'N/A';
+                            if (data === null || data === undefined || data === '') {
+                                return 'N/A';
+                            }
+                            const price = parseFloat(data);
+                            return isNaN(price) ? 'N/A' : '$' + price.toFixed(2);
                         }
                     },
                     { data: 'quantity_on_hand' },

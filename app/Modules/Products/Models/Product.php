@@ -9,11 +9,13 @@ class Product extends Model
     protected $table = 'products';
 
     protected $fillable = [
-        'sku', 'name', 'unit', 'price', 'quantity_on_hand', 'reorder_level',
+        'sku', 'name', 'unit', 'price', 'cost_price', 'profit_margin', 'quantity_on_hand', 'reorder_level',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'cost_price' => 'decimal:2',
+        'profit_margin' => 'decimal:2',
     ];
 
     public function salesOrderItems()
@@ -34,5 +36,22 @@ class Product extends Model
     public function getCurrentStock()
     {
         return $this->quantity_on_hand;
+    }
+
+    public function getProfitMargin()
+    {
+        if ($this->price > 0) {
+            return (($this->price - $this->cost_price) / $this->price) * 100;
+        }
+        return 0;
+    }
+
+    public function calculateProfitMargin()
+    {
+        if ($this->price > 0) {
+            $this->profit_margin = $this->getProfitMargin();
+            return $this->save();
+        }
+        return false;
     }
 }

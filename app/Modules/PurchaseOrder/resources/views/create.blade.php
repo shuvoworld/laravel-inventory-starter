@@ -10,9 +10,20 @@
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label for="supplier_name" class="form-label">Supplier Name *</label>
-                    <input id="supplier_name" type="text" name="supplier_name" class="form-control @error('supplier_name') is-invalid @enderror" value="{{ old('supplier_name') }}" required>
-                    @error('supplier_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <label for="supplier_id" class="form-label">Supplier *</label>
+                    <select id="supplier_id" name="supplier_id" class="form-control @error('supplier_id') is-invalid @enderror" required>
+                        <option value="">Select Supplier</option>
+                        @foreach($suppliers as $supplier)
+                            <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
+                                {{ $supplier->name }} ({{ $supplier->code }})
+                                @if($supplier->contact_person) - {{ $supplier->contact_person }}@endif
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('supplier_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <small class="form-text text-muted">
+                        Don't see your supplier? <a href="{{ route('modules.suppliers.create') }}" target="_blank">Add a new supplier</a>
+                    </small>
                 </div>
                 <div class="col-md-6">
                     <label for="order_date" class="form-label">Order Date *</label>

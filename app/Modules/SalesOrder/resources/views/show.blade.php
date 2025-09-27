@@ -145,16 +145,24 @@
                             <td class="text-end text-success">-${{ number_format($item->discount_amount, 2) }}</td>
                         </tr>
                     @endif
-                    @if($item->tax_amount > 0)
-                        <tr>
-                            <td>Tax:</td>
-                            <td class="text-end">${{ number_format($item->tax_amount, 2) }}</td>
-                        </tr>
-                    @endif
-                    <tr class="border-top">
+                      <tr class="border-top">
                         <td><strong>Total:</strong></td>
                         <td class="text-end"><strong>${{ number_format($item->total_amount, 2) }}</strong></td>
                     </tr>
+                    <tr>
+                        <td>Paid:</td>
+                        <td class="text-end">${{ number_format($item->paid_amount, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Due:</td>
+                        <td class="text-end text-danger">{{ '$' . number_format(max(0, $item->total_amount - $item->paid_amount), 2) }}</td>
+                    </tr>
+                    @if($item->change_amount > 0)
+                    <tr>
+                        <td>Change:</td>
+                        <td class="text-end text-success">${{ number_format($item->change_amount, 2) }}</td>
+                    </tr>
+                    @endif
                 </table>
             </div>
         </div>
@@ -200,4 +208,70 @@
         </div>
     </div>
 </div>
+
+@can('sales-order.edit')
+    <!-- Hold Order Modal -->
+    <div class="modal fade" id="holdOrderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Place Order on Hold</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ route('modules.sales-order.hold', $item->id) }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="hold_reason" class="form-label">Hold Reason *</label>
+                            <textarea id="hold_reason" name="hold_reason" class="form-control" rows="3" required placeholder="Please provide a reason for placing this order on hold..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning">Place on Hold</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Payment Modal -->
+    <div class="modal fade" id="updatePaymentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Payment Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ route('modules.sales-order.update-payment', $item->id) }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="payment_method" class="form-label">Payment Method *</label>
+                            <select id="payment_method" name="payment_method" class="form-control" required>
+                                <option value="cash" {{ $item->payment_method === 'cash' ? 'selected' : '' }}>Cash</option>
+                                <option value="card" {{ $item->payment_method === 'card' ? 'selected' : '' }}>Card</option>
+                                <option value="mobile_banking" {{ $item->payment_method === 'mobile_banking' ? 'selected' : '' }}>Mobile Banking</option>
+                                <option value="bank_transfer" {{ $item->payment_method === 'bank_transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                                <option value="cheque" {{ $item->payment_method === 'cheque' ? 'selected' : '' }}>Cheque</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="paid_amount" class="form-label">Amount Paid *</label>
+                            <input type="number" id="paid_amount" name="paid_amount" class="form-control" step="0.01" min="0" value="{{ $item->paid_amount }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reference_number" class="form-label">Reference Number</label>
+                            <input type="text" id="reference_number" name="reference_number" class="form-control" value="{{ $item->reference_number }}" placeholder="Check #, Transaction ID, etc.">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-info">Update Payment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endcan
 @endsection

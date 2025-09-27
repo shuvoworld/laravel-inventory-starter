@@ -24,7 +24,18 @@ class ProductController extends Controller
             ->addColumn('actions', function (Product $product) {
                 return view('products::partials.actions', ['id' => $product->id])->render();
             })
-            ->rawColumns(['actions'])
+            ->editColumn('cost_price', function (Product $product) {
+                return '$' . number_format($product->cost_price, 2);
+            })
+            ->editColumn('price', function (Product $product) {
+                return '$' . number_format($product->price, 2);
+            })
+            ->editColumn('profit_margin', function (Product $product) {
+                $margin = $product->getProfitMargin();
+                $color = $margin > 0 ? 'text-success' : ($margin < 0 ? 'text-danger' : 'text-muted');
+                return '<span class="' . $color . '">' . number_format($margin, 2) . '%</span>';
+            })
+            ->rawColumns(['actions', 'profit_margin'])
             ->toJson();
     }
 
@@ -40,6 +51,7 @@ class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'unit' => ['nullable', 'string', 'max:50'],
             'price' => ['nullable', 'numeric', 'min:0'],
+            'cost_price' => ['nullable', 'numeric', 'min:0'],
             'reorder_level' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -48,9 +60,13 @@ class ProductController extends Controller
             'name' => $validated['name'],
             'unit' => $validated['unit'] ?? null,
             'price' => $validated['price'] ?? 0,
+            'cost_price' => $validated['cost_price'] ?? 0,
             'quantity_on_hand' => 0,
             'reorder_level' => $validated['reorder_level'] ?? 0,
         ]);
+
+        // Calculate profit margin
+        $product->calculateProfitMargin();
 
         return redirect()->route('modules.products.index')->with('success', 'Product created');
     }
@@ -78,6 +94,7 @@ class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'unit' => ['nullable', 'string', 'max:50'],
             'price' => ['nullable', 'numeric', 'min:0'],
+            'cost_price' => ['nullable', 'numeric', 'min:0'],
             'reorder_level' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -86,8 +103,12 @@ class ProductController extends Controller
             'name' => $validated['name'],
             'unit' => $validated['unit'] ?? null,
             'price' => $validated['price'] ?? 0,
+            'cost_price' => $validated['cost_price'] ?? 0,
             'reorder_level' => $validated['reorder_level'] ?? 0,
         ]);
+
+        // Calculate profit margin
+        $item->calculateProfitMargin();
 
         return redirect()->route('modules.products.index')->with('success', 'Product updated');
     }

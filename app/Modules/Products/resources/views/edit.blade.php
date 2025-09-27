@@ -26,9 +26,14 @@
                     @error('unit')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4">
-                    <label for="price" class="form-label">Price</label>
+                    <label for="price" class="form-label">Selling Price</label>
                     <input id="price" type="number" step="0.01" min="0" name="price" class="form-control @error('price') is-invalid @enderror" value="{{ old('price', $item->price) }}">
                     @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-4">
+                    <label for="cost_price" class="form-label">Cost Price</label>
+                    <input id="cost_price" type="number" step="0.01" min="0" name="cost_price" class="form-control @error('cost_price') is-invalid @enderror" value="{{ old('cost_price', $item->cost_price) }}">
+                    @error('cost_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4">
                     <label for="reorder_level" class="form-label">Reorder Level</label>
@@ -38,6 +43,10 @@
                 <div class="col-12 col-md-4">
                     <label class="form-label">On Hand</label>
                     <input type="number" class="form-control" value="{{ $item->quantity_on_hand }}" disabled>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Profit Margin</label>
+                    <input type="number" class="form-control" value="{{ number_format($item->getProfitMargin(), 2) }}%" disabled>
                 </div>
             </div>
         </div>

@@ -23,13 +23,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'locale' => \App\Http\Middleware\SetLocale::class,
         ]);
-        // Append global auto flash success middleware to the web group
+        // Append global middleware to the web group
         if (method_exists($middleware, 'appendToGroup')) {
             $middleware->appendToGroup('web', \App\Http\Middleware\AutoFlashSuccess::class);
+            $middleware->appendToGroup('web', \App\Http\Middleware\SetLocale::class);
         } else {
             // Fallback for older API: try generic append
             $middleware->append(\App\Http\Middleware\AutoFlashSuccess::class);
+            $middleware->append(\App\Http\Middleware\SetLocale::class);
         }
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -116,6 +116,17 @@
                             </li>
                             @endcan
 
+                            @can('sales-return.view')
+                            @if(\App\Models\Module::isActive('sales-return'))
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.sales-return.*') ? 'active' : '' }}" href="{{ route('modules.sales-return.index') }}">
+                                    <i class="fas fa-undo me-2"></i>
+                                    <span x-show="sidebarOpen">Sales Returns</span>
+                                </a>
+                            </li>
+                            @endif
+                            @endcan
+
                             @can('purchase-order.view')
                             <li class="nav-item">
                                 <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.purchase-order.*') ? 'active' : '' }}" href="{{ route('modules.purchase-order.index') }}">
@@ -123,6 +134,28 @@
                                     <span x-show="sidebarOpen">Purchase Orders</span>
                                 </a>
                             </li>
+                            @endcan
+
+                            @can('purchase-return.view')
+                            @if(\App\Models\Module::isActive('purchase-return'))
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.purchase-return.*') ? 'active' : '' }}" href="{{ route('modules.purchase-return.index') }}">
+                                    <i class="fas fa-undo-alt me-2"></i>
+                                    <span x-show="sidebarOpen">Purchase Returns</span>
+                                </a>
+                            </li>
+                            @endif
+                            @endcan
+
+                            @can('suppliers.view')
+                            @if(\App\Models\Module::isActive('suppliers'))
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.suppliers.*') ? 'active' : '' }}" href="{{ route('modules.suppliers.index') }}">
+                                    <i class="fas fa-handshake me-2"></i>
+                                    <span x-show="sidebarOpen">Suppliers</span>
+                                </a>
+                            </li>
+                            @endif
                             @endcan
 
                             @can('stock-movement.view')
@@ -134,17 +167,55 @@
                             </li>
                             @endcan
 
+                            @can('operating-expenses.view')
+                            @if(\App\Models\Module::isActive('operating-expenses'))
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.operating-expenses.*') ? 'active' : '' }}" href="{{ route('modules.operating-expenses.index') }}">
+                                    <i class="fas fa-receipt me-2"></i>
+                                    <span x-show="sidebarOpen">Operating Expenses</span>
+                                </a>
+                            </li>
+                            @endif
+                            @endcan
+
+                            <!-- Reports Section -->
+                            @can('reports.view')
+                            @if(\App\Models\Module::isActive('reports'))
+                            <li class="nav-item mt-3 mb-2">
+                                <span x-show="sidebarOpen" class="text-muted small fw-bold px-3">REPORTS</span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.*') ? 'active' : '' }}" href="{{ route('modules.reports.index') }}">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    <span x-show="sidebarOpen">Reports</span>
+                                </a>
+                            </li>
+                            @endif
+                            @endcan
+
                             <!-- Settings Section -->
-                            @can('settings.view')
                             <li class="nav-item mt-3 mb-2">
                                 <span x-show="sidebarOpen" class="text-muted small fw-bold px-3">SETTINGS</span>
                             </li>
+
+                            @can('settings.view')
                             <li class="nav-item">
                                 <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.settings.*') ? 'active' : '' }}" href="{{ route('modules.settings.index') }}">
                                     <i class="fas fa-cog me-2"></i>
+                                    <span x-show="sidebarOpen">Settings</span>
+                                </a>
+                            </li>
+                            @endcan
+
+                            @can('store-settings.view')
+                            @if(\App\Models\Module::isActive('store-settings'))
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.store-settings.*') ? 'active' : '' }}" href="{{ route('modules.store-settings.index') }}">
+                                    <i class="fas fa-store me-2"></i>
                                     <span x-show="sidebarOpen">Store Settings</span>
                                 </a>
                             </li>
+                            @endif
                             @endcan
 
                         @role('admin')

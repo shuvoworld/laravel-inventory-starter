@@ -33,9 +33,25 @@ Route::middleware(['auth'])->prefix('modules/sales-order')->name('modules.sales-
         ->middleware('permission:sales-order.view')
         ->name('invoice');
 
+    Route::get('/{id}/pos-print', [SalesOrderController::class, 'posPrint'])
+        ->middleware('permission:sales-order.view')
+        ->name('pos-print');
+
     Route::put('/{id}', [SalesOrderController::class, 'update'])
         ->middleware('permission:sales-order.edit')
         ->name('update');
+
+    Route::post('/{id}/hold', [SalesOrderController::class, 'holdOrder'])
+        ->middleware('permission:sales-order.edit')
+        ->name('hold');
+
+    Route::post('/{id}/release', [SalesOrderController::class, 'releaseOrder'])
+        ->middleware('permission:sales-order.edit')
+        ->name('release');
+
+    Route::post('/{id}/update-payment', [SalesOrderController::class, 'updatePayment'])
+        ->middleware('permission:sales-order.edit')
+        ->name('update-payment');
 
     Route::delete('/{id}', [SalesOrderController::class, 'destroy'])
         ->middleware('permission:sales-order.delete')

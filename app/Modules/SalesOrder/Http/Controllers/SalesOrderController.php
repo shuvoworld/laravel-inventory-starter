@@ -29,7 +29,7 @@ class SalesOrderController extends Controller
     /** DataTables server-side endpoint (Yajra) */
     public function data(Request $request)
     {
-        $query = SalesOrder::with(['customer', 'items']);
+        $query = SalesOrder::with(['customer', 'items', 'heldBy', 'releasedBy']);
 
         return DataTables::eloquent($query)
             ->addColumn('customer_name', function (SalesOrder $item) {
@@ -41,14 +41,31 @@ class SalesOrderController extends Controller
             ->addColumn('status_badge', function (SalesOrder $item) {
                 $badges = [
                     'pending' => 'badge-warning',
+                    'on_hold' => 'badge-secondary',
                     'confirmed' => 'badge-info',
                     'processing' => 'badge-primary',
-                    'shipped' => 'badge-secondary',
+                    'shipped' => 'badge-light',
                     'delivered' => 'badge-success',
                     'cancelled' => 'badge-danger'
                 ];
                 $class = $badges[$item->status] ?? 'badge-secondary';
-                return "<span class='badge {$class}'>" . ucfirst($item->status) . "</span>";
+                $statusText = str_replace('_', ' ', $item->status);
+                return "<span class='badge {$class}'>" . ucfirst($statusText) . "</span>";
+            })
+            ->addColumn('payment_method', function (SalesOrder $item) {
+                $methods = $item->getPaymentMethods();
+                return $methods[$item->payment_method] ?? ucfirst($item->payment_method);
+            })
+            ->addColumn('payment_status_badge', function (SalesOrder $item) {
+                $badges = [
+                    'pending' => 'badge-warning',
+                    'partial' => 'badge-info',
+                    'paid' => 'badge-success',
+                    'overpaid' => 'badge-primary',
+                    'refunded' => 'badge-danger'
+                ];
+                $class = $badges[$item->payment_status] ?? 'badge-secondary';
+                return "<span class='badge {$class}'>" . ucfirst($item->payment_status) . "</span>";
             })
             ->addColumn('actions', function (SalesOrder $item) {
                 return view('sales-order::partials.actions', ['id' => $item->id])->render();
@@ -67,7 +84,10 @@ class SalesOrderController extends Controller
     {
         $customers = Customer::orderBy('name')->get();
         $products = Product::where('quantity_on_hand', '>', 0)->orderBy('name')->get();
-        return view('sales-order::create', compact('customers', 'products'));
+        $salesOrder = new SalesOrder();
+        $paymentMethods = $salesOrder->getPaymentMethods();
+        $discountTypes = $salesOrder->getDiscountTypes();
+        return view('sales-order::create', compact('customers', 'products', 'paymentMethods', 'discountTypes'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -75,29 +95,34 @@ class SalesOrderController extends Controller
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'order_date' => 'required|date',
+            'payment_method' => 'required|in:cash,card,mobile_banking,bank_transfer,cheque',
+            'paid_amount' => 'required|numeric|min:0',
+            'discount_type' => 'nullable|in:fixed,percentage,none',
+            'discount_rate' => 'nullable|numeric|min:0',
+            'discount_reason' => 'nullable|string',
+            'reference_number' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.discount_type' => 'nullable|in:fixed,percentage,none',
+            'items.*.discount_rate' => 'nullable|numeric|min:0',
+            'items.*.discount_reason' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request) {
-            // Calculate totals
-            $subtotal = 0;
-            foreach ($request->items as $item) {
-                $subtotal += $item['quantity'] * $item['unit_price'];
-            }
-
-            // Create sales order
+            // Create sales order with basic info
             $salesOrder = SalesOrder::create([
                 'customer_id' => $request->customer_id,
                 'order_date' => $request->order_date,
                 'status' => 'pending',
-                'subtotal' => $subtotal,
-                'tax_amount' => 0, // Can be calculated based on business rules
-                'discount_amount' => 0,
-                'total_amount' => $subtotal,
+                'payment_method' => $request->payment_method,
+                'paid_amount' => $request->paid_amount,
+                'discount_type' => $request->discount_type,
+                'discount_rate' => $request->discount_rate,
+                'discount_reason' => $request->discount_reason,
+                'reference_number' => $request->reference_number,
                 'notes' => $request->notes,
             ]);
 
@@ -116,7 +141,9 @@ class SalesOrderController extends Controller
                     'product_id' => $itemData['product_id'],
                     'quantity' => $itemData['quantity'],
                     'unit_price' => $itemData['unit_price'],
-                    'total_price' => $itemData['quantity'] * $itemData['unit_price'],
+                    'discount_type' => $itemData['discount_type'] ?? 'none',
+                    'discount_rate' => $itemData['discount_rate'] ?? 0,
+                    'discount_reason' => $itemData['discount_reason'] ?? null,
                 ]);
 
                 // Create stock movement (outbound)
@@ -129,6 +156,27 @@ class SalesOrderController extends Controller
                     'notes' => "Sale - Order #{$salesOrder->order_number}",
                 ]);
             }
+
+            // Calculate totals and payment status
+            $salesOrder->calculateTotals();
+
+            // Calculate payment status
+            if ($request->paid_amount >= $salesOrder->total_amount) {
+                $salesOrder->payment_status = 'paid';
+                $salesOrder->change_amount = $request->paid_amount - $salesOrder->total_amount;
+            } elseif ($request->paid_amount > 0) {
+                $salesOrder->payment_status = 'partial';
+                $salesOrder->change_amount = 0;
+            } else {
+                $salesOrder->payment_status = 'pending';
+                $salesOrder->change_amount = 0;
+            }
+
+            if ($request->paid_amount > 0) {
+                $salesOrder->payment_date = now();
+            }
+
+            $salesOrder->save();
         });
 
         return redirect()->route('modules.sales-order.index')->with('success', 'Sales Order created successfully.');
@@ -145,7 +193,9 @@ class SalesOrderController extends Controller
         $item = SalesOrder::with(['customer', 'items.product'])->findOrFail($id);
         $customers = Customer::orderBy('name')->get();
         $products = Product::orderBy('name')->get();
-        return view('sales-order::edit', compact('item', 'customers', 'products'));
+        $paymentMethods = $item->getPaymentMethods();
+        $discountTypes = $item->getDiscountTypes();
+        return view('sales-order::edit', compact('item', 'customers', 'products', 'paymentMethods', 'discountTypes'));
     }
 
     public function update(Request $request, int $id): RedirectResponse
@@ -153,11 +203,20 @@ class SalesOrderController extends Controller
         $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'order_date' => 'required|date',
-            'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled',
+            'status' => 'required|in:pending,on_hold,confirmed,processing,shipped,delivered,cancelled',
+            'payment_method' => 'required|in:cash,card,mobile_banking,bank_transfer,cheque',
+            'paid_amount' => 'required|numeric|min:0',
+            'discount_type' => 'nullable|in:fixed,percentage,none',
+            'discount_rate' => 'nullable|numeric|min:0',
+            'discount_reason' => 'nullable|string',
+            'reference_number' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.discount_type' => 'nullable|in:fixed,percentage,none',
+            'items.*.discount_rate' => 'nullable|numeric|min:0',
+            'items.*.discount_reason' => 'nullable|string',
             'notes' => 'nullable|string',
         ]);
 
@@ -175,8 +234,12 @@ class SalesOrderController extends Controller
                 'customer_id' => $request->customer_id,
                 'order_date' => $request->order_date,
                 'status' => $request->status,
-                'subtotal' => $subtotal,
-                'total_amount' => $subtotal,
+                'payment_method' => $request->payment_method,
+                'paid_amount' => $request->paid_amount,
+                'discount_type' => $request->discount_type,
+                'discount_rate' => $request->discount_rate,
+                'discount_reason' => $request->discount_reason,
+                'reference_number' => $request->reference_number,
                 'notes' => $request->notes,
             ]);
 
@@ -213,7 +276,9 @@ class SalesOrderController extends Controller
                         'product_id' => $itemData['product_id'],
                         'quantity' => $newQuantity,
                         'unit_price' => $itemData['unit_price'],
-                        'total_price' => $newQuantity * $itemData['unit_price'],
+                        'discount_type' => $itemData['discount_type'] ?? 'none',
+                        'discount_rate' => $itemData['discount_rate'] ?? 0,
+                        'discount_reason' => $itemData['discount_reason'] ?? null,
                     ]);
 
                     // Adjust stock if quantity changed
@@ -241,7 +306,9 @@ class SalesOrderController extends Controller
                         'product_id' => $itemData['product_id'],
                         'quantity' => $itemData['quantity'],
                         'unit_price' => $itemData['unit_price'],
-                        'total_price' => $itemData['quantity'] * $itemData['unit_price'],
+                        'discount_type' => $itemData['discount_type'] ?? 'none',
+                        'discount_rate' => $itemData['discount_rate'] ?? 0,
+                        'discount_reason' => $itemData['discount_reason'] ?? null,
                     ]);
 
                     // Create stock movement for new item
@@ -255,6 +322,27 @@ class SalesOrderController extends Controller
                     ]);
                 }
             }
+
+            // Calculate totals and payment status
+            $salesOrder->calculateTotals();
+
+            // Calculate payment status
+            if ($request->paid_amount >= $salesOrder->total_amount) {
+                $salesOrder->payment_status = 'paid';
+                $salesOrder->change_amount = $request->paid_amount - $salesOrder->total_amount;
+            } elseif ($request->paid_amount > 0) {
+                $salesOrder->payment_status = 'partial';
+                $salesOrder->change_amount = 0;
+            } else {
+                $salesOrder->payment_status = 'pending';
+                $salesOrder->change_amount = 0;
+            }
+
+            if ($request->paid_amount > 0) {
+                $salesOrder->payment_date = now();
+            }
+
+            $salesOrder->save();
         });
 
         return redirect()->route('modules.sales-order.show', $id)->with('success', 'Sales Order updated successfully.');
@@ -271,5 +359,84 @@ class SalesOrderController extends Controller
     {
         $item = SalesOrder::with(['customer', 'items.product'])->findOrFail($id);
         return view('sales-order::invoice', compact('item'));
+    }
+
+    public function posPrint(int $id): View
+    {
+        $item = SalesOrder::with(['customer', 'items.product'])->findOrFail($id);
+        return view('sales-order::pos-print', compact('item'));
+    }
+
+    public function holdOrder(Request $request, int $id): RedirectResponse
+    {
+        $request->validate([
+            'hold_reason' => 'required|string|min:5'
+        ]);
+
+        $salesOrder = SalesOrder::findOrFail($id);
+
+        if ($salesOrder->status === 'on_hold') {
+            return back()->with('error', 'Order is already on hold.');
+        }
+
+        $salesOrder->update([
+            'status' => 'on_hold',
+            'hold_reason' => $request->hold_reason,
+            'hold_date' => now(),
+            'held_by' => auth()->id()
+        ]);
+
+        return back()->with('success', 'Order placed on hold successfully.');
+    }
+
+    public function releaseOrder(int $id): RedirectResponse
+    {
+        $salesOrder = SalesOrder::findOrFail($id);
+
+        if ($salesOrder->status !== 'on_hold') {
+            return back()->with('error', 'Order is not on hold.');
+        }
+
+        $salesOrder->update([
+            'status' => 'pending',
+            'release_date' => now(),
+            'released_by' => auth()->id()
+        ]);
+
+        return back()->with('success', 'Order released from hold successfully.');
+    }
+
+    public function updatePayment(Request $request, int $id): RedirectResponse
+    {
+        $request->validate([
+            'paid_amount' => 'required|numeric|min:0',
+            'payment_method' => 'required|in:cash,card,mobile_banking,bank_transfer,cheque',
+            'reference_number' => 'nullable|string'
+        ]);
+
+        $salesOrder = SalesOrder::findOrFail($id);
+
+        $salesOrder->update([
+            'paid_amount' => $request->paid_amount,
+            'payment_method' => $request->payment_method,
+            'reference_number' => $request->reference_number,
+            'payment_date' => now()
+        ]);
+
+        // Update payment status
+        if ($request->paid_amount >= $salesOrder->total_amount) {
+            $salesOrder->payment_status = 'paid';
+            $salesOrder->change_amount = $request->paid_amount - $salesOrder->total_amount;
+        } elseif ($request->paid_amount > 0) {
+            $salesOrder->payment_status = 'partial';
+            $salesOrder->change_amount = 0;
+        } else {
+            $salesOrder->payment_status = 'pending';
+            $salesOrder->change_amount = 0;
+        }
+
+        $salesOrder->save();
+
+        return back()->with('success', 'Payment information updated successfully.');
     }
 }

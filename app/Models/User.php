@@ -26,6 +26,7 @@ class User extends Authenticatable implements AuditableContract
         'email',
         'password',
         'profile_photo_path',
+        'is_superadmin',
     ];
 
     /**
@@ -48,6 +49,7 @@ class User extends Authenticatable implements AuditableContract
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_superadmin' => 'boolean',
         ];
     }
 
@@ -55,6 +57,7 @@ class User extends Authenticatable implements AuditableContract
         'name',
         'email',
         'profile_photo_path',
+        'is_superadmin',
     ];
 
     /**
@@ -67,4 +70,13 @@ class User extends Authenticatable implements AuditableContract
             ->map(fn (string $name) => Str::of($name)->substr(0, 1))
             ->implode('');
     }
+
+    /**
+     * Check if the user is a superadmin
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->is_superadmin;
+    }
+
 }

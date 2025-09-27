@@ -25,9 +25,14 @@
                     @error('unit')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4">
-                    <label for="price" class="form-label">Price</label>
+                    <label for="price" class="form-label">Selling Price</label>
                     <input id="price" type="number" step="0.01" min="0" name="price" class="form-control @error('price') is-invalid @enderror" value="{{ old('price') }}">
                     @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-4">
+                    <label for="cost_price" class="form-label">Cost Price</label>
+                    <input id="cost_price" type="number" step="0.01" min="0" name="cost_price" class="form-control @error('cost_price') is-invalid @enderror" value="{{ old('cost_price') }}">
+                    @error('cost_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 col-md-4">
                     <label for="reorder_level" class="form-label">Reorder Level</label>

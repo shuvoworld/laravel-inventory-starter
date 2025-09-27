@@ -50,6 +50,19 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
+            @if(auth()->user()->isSuperAdmin())
+            <div class="mb-3">
+                <label for="is_superadmin" class="form-label">Superadmin</label>
+                <select id="is_superadmin" name="is_superadmin" class="form-control @error('is_superadmin') is-invalid @enderror">
+                    <option value="0" {{ old('is_superadmin', $user->is_superadmin ? '1' : '0') === '0' ? 'selected' : '' }}>No</option>
+                    <option value="1" {{ old('is_superadmin', $user->is_superadmin ? '1' : '0') === '1' ? 'selected' : '' }}>Yes</option>
+                </select>
+                @error('is_superadmin')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+                <div class="form-text">Superadmins bypass all permission checks.</div>
+            </div>
+            @endif
             <div class="mt-3">
                 <label for="avatar" class="form-label">Profile Picture</label>
                 @php($photo = $user->profile_photo_path ?? null)

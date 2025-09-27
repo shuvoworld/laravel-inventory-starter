@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css" rel="stylesheet" />
     <!-- Toastr CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
     <!-- DataTables CSS -->
@@ -22,6 +23,23 @@
         /* Make sure page content fills height */
         html, body { height: 100%; }
         .content-header .breadcrumb { margin-bottom: 0; }
+
+        /* Select2 AdminLTE integration improvements */
+        .select2-container--bootstrap4 .select2-selection--single {
+            height: calc(2.25rem + 2px) !important;
+            border: 1px solid #ced4da !important;
+        }
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+            line-height: calc(2.25rem) !important;
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+        }
+        .select2-container--bootstrap4 .select2-selection__arrow {
+            height: calc(2.25rem) !important;
+        }
+        .form-control.is-invalid ~ .select2-container--bootstrap4 .select2-selection--single {
+            border-color: #dc3545 !important;
+        }
     </style>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -36,10 +54,45 @@
             <li class="nav-item d-none d-sm-inline-block">
                 <a href="{{ url('/') }}" class="nav-link">Home</a>
             </li>
+            <!-- Company Logo -->
+            <li class="nav-item d-none d-sm-inline-block">
+                @php
+                    $companyLogo = \App\Modules\StoreSettings\Models\StoreSetting::get('company_logo');
+                    $companyName = \App\Modules\StoreSettings\Models\StoreSetting::get('company_name', config('app.name'));
+                @endphp
+                @if($companyLogo)
+                    <a href="{{ url('/') }}" class="nav-link">
+                        <img src="{{ asset($companyLogo) }}" alt="{{ $companyName }}" style="height: 30px; max-width: 150px; object-fit: contain;">
+                    </a>
+                @endif
+            </li>
         </ul>
 
         <!-- Right navbar links -->
         <ul class="navbar-nav ml-auto">
+            <!-- Language Switcher -->
+            <li class="nav-item dropdown">
+                <a class="nav-link" data-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                    <i class="fas fa-globe"></i>
+                    @if(app()->getLocale() == 'bn')
+                        বাংলা
+                    @else
+                        English
+                    @endif
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <h6 class="dropdown-header">{{ __('common.language') }}</h6>
+                    <a href="{{ route('language.switch', 'en') }}" class="dropdown-item {{ app()->getLocale() == 'en' ? 'active' : '' }}">
+                        <i class="fas fa-check mr-2 {{ app()->getLocale() == 'en' ? '' : 'invisible' }}"></i>
+                        English
+                    </a>
+                    <a href="{{ route('language.switch', 'bn') }}" class="dropdown-item {{ app()->getLocale() == 'bn' ? 'active' : '' }}">
+                        <i class="fas fa-check mr-2 {{ app()->getLocale() == 'bn' ? '' : 'invisible' }}"></i>
+                        বাংলা
+                    </a>
+                </div>
+            </li>
+
             <!-- User Dropdown -->
             @auth
                 <li class="nav-item dropdown">
@@ -48,12 +101,12 @@
                     </a>
                     <div class="dropdown-menu dropdown-menu-right">
                         <a href="{{ route('settings.profile.edit') }}" class="dropdown-item">
-                            <i class="fas fa-id-badge mr-2"></i> Profile
+                            <i class="fas fa-id-badge mr-2"></i> {{ __('common.profile') }}
                         </a>
                         <div class="dropdown-divider"></div>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button class="dropdown-item text-danger"><i class="fas fa-sign-out-alt mr-2"></i> Logout</button>
+                            <button class="dropdown-item text-danger"><i class="fas fa-sign-out-alt mr-2"></i> {{ __('common.logout') }}</button>
                         </form>
                     </div>
                 </li>
@@ -66,8 +119,12 @@
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
         <!-- Brand Logo -->
         <a href="{{ url('/') }}" class="brand-link">
-            <img src="{{ asset('favicon.ico') }}" alt="Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
-            <span class="brand-text font-weight-light">{{ config('app.name') }}</span>
+            @php
+                $companyLogo = \App\Modules\StoreSettings\Models\StoreSetting::get('company_logo');
+                $companyName = \App\Modules\StoreSettings\Models\StoreSetting::get('company_name', config('app.name'));
+            @endphp
+            <img src="{{ $companyLogo ? asset($companyLogo) : asset('favicon.ico') }}" alt="Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+            <span class="brand-text font-weight-light">{{ $companyName }}</span>
         </a>
 
         <!-- Sidebar -->
@@ -124,7 +181,7 @@
                         <a href="#" class="nav-link {{ request()->routeIs('modules.products.*') || request()->routeIs('modules.suppliers.*') || request()->routeIs('modules.customers.*') || request()->routeIs('modules.purchase-orders.*') || request()->routeIs('modules.sales-orders.*') || request()->routeIs('modules.stock-movements.*') || request()->routeIs('modules.reports.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-pills"></i>
                             <p>
-                                Inventory & Sales
+                                {{ __('common.inventory_sales') }}
                                 <i class="right fas fa-angle-left"></i>
                             </p>
                         </a>
@@ -133,7 +190,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('modules.products.index') }}" class="nav-link {{ request()->routeIs('modules.products.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Products</p>
+                                    <p>{{ __('common.products') }}</p>
                                 </a>
                             </li>
                             @endif
@@ -142,7 +199,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('modules.suppliers.index') }}" class="nav-link {{ request()->routeIs('modules.suppliers.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Suppliers</p>
+                                    <p>{{ __('common.suppliers') }}</p>
                                 </a>
                             </li>
                             @endif
@@ -151,7 +208,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('modules.customers.index') }}" class="nav-link {{ request()->routeIs('modules.customers.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Customers</p>
+                                    <p>{{ __('common.customers') }}</p>
                                 </a>
                             </li>
                             @endif
@@ -160,7 +217,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('modules.purchase-orders.index') }}" class="nav-link {{ request()->routeIs('modules.purchase-orders.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Purchase Orders</p>
+                                    <p>{{ __('common.purchase_orders') }}</p>
                                 </a>
                             </li>
                             @endif
@@ -169,7 +226,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('modules.sales-orders.index') }}" class="nav-link {{ request()->routeIs('modules.sales-orders.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Sales Orders</p>
+                                    <p>{{ __('common.sales_orders') }}</p>
                                 </a>
                             </li>
                             @endif
@@ -178,7 +235,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('modules.stock-movements.index') }}" class="nav-link {{ request()->routeIs('modules.stock-movements.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Stock Movements</p>
+                                    <p>{{ __('common.stock_movements') }}</p>
                                 </a>
                             </li>
                             @endif
@@ -187,7 +244,7 @@
                             <li class="nav-item">
                                 <a href="{{ route('modules.reports.index') }}" class="nav-link {{ request()->routeIs('modules.reports.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Reports</p>
+                                    <p>{{ __('common.reports') }}</p>
                                 </a>
                             </li>
                             @endif
@@ -198,7 +255,13 @@
                         <li class="nav-item">
                             <a href="{{ route('admin.modules.index') }}" class="nav-link {{ request()->routeIs('admin.modules.*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-cubes"></i>
-                                <p>Modules</p>
+                                <p>{{ __('common.modules') }}</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('modules.store-settings.index') }}" class="nav-link {{ request()->routeIs('modules.store-settings.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-cogs"></i>
+                                <p>{{ __('common.store_settings') }}</p>
                             </a>
                         </li>
                     @endrole
@@ -272,7 +335,7 @@
                     const placeholder = $el.attr('data-placeholder') || '— Select —';
                     const allowClear = $el.is('[data-allow-clear]') || $el.find('option[value=""]').length > 0;
                     $el.select2({
-                        theme: 'default',
+                        theme: 'bootstrap4',
                         width: '100%',
                         placeholder: placeholder,
                         allowClear: allowClear,

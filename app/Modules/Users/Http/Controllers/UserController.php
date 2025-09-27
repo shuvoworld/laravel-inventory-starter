@@ -39,19 +39,33 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validationRules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', 'min:6'],
             'role' => ['nullable', 'string', 'exists:roles,name'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ]);
+        ];
 
-        $user = User::create([
+        // Only allow superadmin field if current user is superadmin
+        if (auth()->user()->isSuperAdmin()) {
+            $validationRules['is_superadmin'] = ['nullable', 'boolean'];
+        }
+
+        $validated = $request->validate($validationRules);
+
+        $userData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-        ]);
+        ];
+
+        // Only set is_superadmin if current user is superadmin
+        if (auth()->user()->isSuperAdmin() && isset($validated['is_superadmin'])) {
+            $userData['is_superadmin'] = (bool) $validated['is_superadmin'];
+        }
+
+        $user = User::create($userData);
 
         // Handle optional profile picture upload
         if ($request->hasFile('avatar')) {
@@ -84,18 +98,30 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
-        $validated = $request->validate([
+        $validationRules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'confirmed', 'min:6'],
             'role' => ['nullable', 'string', 'exists:roles,name'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ]);
+        ];
+
+        // Only allow superadmin field if current user is superadmin
+        if (auth()->user()->isSuperAdmin()) {
+            $validationRules['is_superadmin'] = ['nullable', 'boolean'];
+        }
+
+        $validated = $request->validate($validationRules);
 
         $user->name = $validated['name'];
         $user->email = $validated['email'];
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
+        }
+
+        // Only update is_superadmin if current user is superadmin
+        if (auth()->user()->isSuperAdmin() && array_key_exists('is_superadmin', $validated)) {
+            $user->is_superadmin = (bool) ($validated['is_superadmin'] ?? false);
         }
         // Handle optional profile picture upload (replace existing)
         if ($request->hasFile('avatar')) {

@@ -5,6 +5,7 @@ namespace App\Modules\PurchaseOrder\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Modules\PurchaseOrderItem\Models\PurchaseOrderItem;
+use App\Modules\Suppliers\Models\Supplier;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use OwenIt\Auditing\Auditable;
 
@@ -16,6 +17,7 @@ class PurchaseOrder extends Model implements AuditableContract
 
     protected $fillable = [
         'po_number',
+        'supplier_id',
         'supplier_name',
         'order_date',
         'status',
@@ -56,5 +58,10 @@ class PurchaseOrder extends Model implements AuditableContract
     public function items()
     {
         return $this->hasMany(PurchaseOrderItem::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
     }
 }

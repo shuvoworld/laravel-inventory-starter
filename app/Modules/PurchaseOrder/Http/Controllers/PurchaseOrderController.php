@@ -9,6 +9,7 @@ use App\Modules\PurchaseOrder\Models\PurchaseOrder;
 use App\Modules\PurchaseOrderItem\Models\PurchaseOrderItem;
 use App\Modules\StockMovement\Models\StockMovement;
 use App\Modules\Products\Models\Product;
+use App\Modules\Suppliers\Models\Supplier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -28,11 +29,17 @@ class PurchaseOrderController extends Controller
     /** DataTables server-side endpoint (Yajra) */
     public function data(Request $request)
     {
-        $query = PurchaseOrder::with(['items']);
+        $query = PurchaseOrder::with(['items', 'supplier']);
 
         return DataTables::eloquent($query)
             ->addColumn('items_count', function (PurchaseOrder $item) {
                 return $item->items->count();
+            })
+            ->addColumn('supplier_info', function (PurchaseOrder $item) {
+                if ($item->supplier) {
+                    return $item->supplier->name . '<br><small class="text-muted">' . $item->supplier->code . '</small>';
+                }
+                return $item->supplier_name ?: 'Unknown';
             })
             ->addColumn('status_badge', function (PurchaseOrder $item) {
                 $badges = [
@@ -54,20 +61,22 @@ class PurchaseOrderController extends Controller
             ->editColumn('total_amount', function (PurchaseOrder $item) {
                 return '$' . number_format($item->total_amount, 2);
             })
-            ->rawColumns(['actions', 'status_badge'])
+            ->rawColumns(['actions', 'status_badge', 'supplier_info'])
             ->toJson();
     }
 
     public function create(): View
     {
         $products = Product::orderBy('name')->get();
-        return view('purchase-order::create', compact('products'));
+        $suppliers = Supplier::active()->orderBy('name')->get();
+        return view('purchase-order::create', compact('products', 'suppliers'));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'supplier_name' => 'required|string|max:255',
+            'supplier_id' => 'required|exists:suppliers,id',
+            'supplier_name' => 'nullable|string|max:255',
             'order_date' => 'required|date',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
@@ -77,6 +86,9 @@ class PurchaseOrderController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
+            // Get supplier details
+            $supplier = Supplier::findOrFail($request->supplier_id);
+
             // Calculate totals
             $subtotal = 0;
             foreach ($request->items as $item) {
@@ -85,7 +97,8 @@ class PurchaseOrderController extends Controller
 
             // Create purchase order
             $purchaseOrder = PurchaseOrder::create([
-                'supplier_name' => $request->supplier_name,
+                'supplier_id' => $supplier->id,
+                'supplier_name' => $supplier->name,
                 'order_date' => $request->order_date,
                 'status' => 'pending',
                 'subtotal' => $subtotal,
@@ -129,15 +142,16 @@ class PurchaseOrderController extends Controller
 
     public function edit(int $id): View
     {
-        $item = PurchaseOrder::with(['items.product'])->findOrFail($id);
+        $item = PurchaseOrder::with(['items.product', 'supplier'])->findOrFail($id);
         $products = Product::orderBy('name')->get();
-        return view('purchase-order::edit', compact('item', 'products'));
+        $suppliers = Supplier::active()->orderBy('name')->get();
+        return view('purchase-order::edit', compact('item', 'products', 'suppliers'));
     }
 
     public function update(Request $request, int $id): RedirectResponse
     {
         $request->validate([
-            'supplier_name' => 'required|string|max:255',
+            'supplier_id' => 'required|exists:suppliers,id',
             'order_date' => 'required|date',
             'status' => 'required|in:pending,confirmed,processing,received,cancelled',
             'items' => 'required|array|min:1',
@@ -150,6 +164,9 @@ class PurchaseOrderController extends Controller
         DB::transaction(function () use ($request, $id) {
             $purchaseOrder = PurchaseOrder::findOrFail($id);
 
+            // Get supplier details
+            $supplier = Supplier::findOrFail($request->supplier_id);
+
             // Calculate totals
             $subtotal = 0;
             foreach ($request->items as $item) {
@@ -158,7 +175,8 @@ class PurchaseOrderController extends Controller
 
             // Update purchase order
             $purchaseOrder->update([
-                'supplier_name' => $request->supplier_name,
+                'supplier_id' => $supplier->id,
+                'supplier_name' => $supplier->name,
                 'order_date' => $request->order_date,
                 'status' => $request->status,
                 'subtotal' => $subtotal,
