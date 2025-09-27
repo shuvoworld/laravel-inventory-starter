@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('sales_order_items', function (Blueprint $table) {
             $table->decimal('cost_price', 10, 2)->default(0)->after('unit_price');
-            $table->decimal('cogs_amount', 10, 2)->default(0)->after('discount_amount');
+            $table->decimal('cogs_amount', 10, 2)->default(0);
             $table->decimal('profit_amount', 10, 2)->default(0)->after('cogs_amount');
         });
     }
