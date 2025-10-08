@@ -6,15 +6,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use OwenIt\Auditing\Auditable;
+use App\Traits\BelongsToStore;
 
 class SalesOrder extends Model implements AuditableContract
 {
-    use HasFactory, Auditable;
+    use HasFactory, Auditable, BelongsToStore;
 
     protected $table = 'sales_orders';
 
     protected $fillable = [
-        'order_number', 'customer_id', 'order_date', 'status',
+        'store_id', 'order_number', 'customer_id', 'order_date', 'status',
         'subtotal', 'tax_amount', 'discount_amount', 'total_amount', 'notes',
         'payment_method', 'payment_status', 'paid_amount', 'change_amount',
         'discount_type', 'discount_rate', 'discount_reason', 'payment_date',
@@ -157,7 +158,14 @@ class SalesOrder extends Model implements AuditableContract
 
         static::creating(function ($salesOrder) {
             if (!$salesOrder->order_number) {
-                $salesOrder->order_number = 'SO-' . date('Y') . '-' . str_pad(static::whereYear('created_at', date('Y'))->count() + 1, 6, '0', STR_PAD_LEFT);
+                // Get count for current year and store
+                $year = date('Y');
+                $count = static::withoutGlobalScopes()
+                    ->where('store_id', $salesOrder->store_id)
+                    ->whereYear('created_at', $year)
+                    ->count();
+
+                $salesOrder->order_number = 'SO-' . $year . '-' . str_pad($count + 1, 6, '0', STR_PAD_LEFT);
             }
         });
 

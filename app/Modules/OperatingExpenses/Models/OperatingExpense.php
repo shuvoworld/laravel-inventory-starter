@@ -5,12 +5,14 @@ namespace App\Modules\OperatingExpenses\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use App\Traits\BelongsToStore;
 
 class OperatingExpense extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToStore;
 
     protected $fillable = [
+        'store_id',
         'expense_number',
         'category',
         'description',

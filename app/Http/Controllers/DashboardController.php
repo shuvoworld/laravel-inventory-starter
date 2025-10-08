@@ -16,6 +16,26 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
+        $user = auth()->user();
+
+        // Route to role-specific dashboard
+        if ($user->hasRole('store-user')) {
+            return $this->storeUserDashboard();
+        }
+
+        if ($user->hasRole('store-admin')) {
+            return $this->storeAdminDashboard();
+        }
+
+        // Default/Superadmin dashboard
+        return $this->superadminDashboard();
+    }
+
+    /**
+     * Store-Admin Dashboard - Full financial overview
+     */
+    private function storeAdminDashboard(): View
+    {
         // Date ranges for calculations
         $currentMonth = Carbon::now();
         $previousMonth = Carbon::now()->subMonth();
@@ -73,7 +93,7 @@ class DashboardController extends Controller
         $companyInfo = StoreSetting::getCompanyInfo();
         $currencySettings = StoreSetting::getCurrencySettings();
 
-        return view('dashboard', compact(
+        return view('dashboards.store-admin', compact(
             'currentMonthData',
             'previousMonthData',
             'trendData',
@@ -89,6 +109,67 @@ class DashboardController extends Controller
             'companyInfo',
             'currencySettings'
         ));
+    }
+
+    /**
+     * Store-User Dashboard - Sales-focused view
+     */
+    private function storeUserDashboard(): View
+    {
+        $today = Carbon::now();
+        $startOfDay = $today->copy()->startOfDay();
+        $endOfDay = $today->copy()->endOfDay();
+
+        // Today's sales
+        $todaysSales = SalesOrder::whereBetween('order_date', [$startOfDay, $endOfDay])
+            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+            ->get();
+
+        $todaysRevenue = $todaysSales->sum('total_amount');
+        $todaysOrdersCount = $todaysSales->count();
+        $avgOrderValue = $todaysOrdersCount > 0 ? $todaysRevenue / $todaysOrdersCount : 0;
+
+        // Recent sales orders (today)
+        $recentOrders = SalesOrder::with('customer')
+            ->whereBetween('created_at', [$startOfDay, $endOfDay])
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+
+        // This week's sales
+        $startOfWeek = $today->copy()->startOfWeek();
+        $weekSales = SalesOrder::whereBetween('order_date', [$startOfWeek, $endOfDay])
+            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+            ->sum('total_amount');
+
+        // Quick access data
+        $totalCustomers = Customer::count();
+        $totalProducts = Product::count();
+
+        // Get store settings
+        $companyInfo = StoreSetting::getCompanyInfo();
+        $currencySettings = StoreSetting::getCurrencySettings();
+
+        return view('dashboards.store-user', compact(
+            'todaysRevenue',
+            'todaysOrdersCount',
+            'avgOrderValue',
+            'weekSales',
+            'recentOrders',
+            'totalCustomers',
+            'totalProducts',
+            'companyInfo',
+            'currencySettings'
+        ));
+    }
+
+    /**
+     * Superadmin Dashboard - System-wide overview
+     */
+    private function superadminDashboard(): View
+    {
+        // Use the full admin dashboard for superadmins
+        return $this->storeAdminDashboard();
     }
 
     private function getFinancialData(Carbon $startDate, Carbon $endDate): array

@@ -8,16 +8,37 @@
             </div>
 
             <!-- Demo account helper -->
-            <div class="mb-4 text-sm">
-                <div class="p-3 rounded border border-amber-200 bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-200">
+            <div class="mb-4 text-sm space-y-2">
+                <!-- Store Admin Demo -->
+                <div class="p-3 rounded border border-purple-200 bg-purple-50 text-purple-900 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-200">
                     <div class="flex items-start justify-between gap-2">
                         <div>
-                            <div class="font-medium">Demo account</div>
-                            <div>Email: <code class="select-all">superhero@marvel.com</code></div>
-                            <div>Password: <code class="select-all">ironman2025</code></div>
+                            <div class="font-medium flex items-center gap-2">
+                                <i class="fas fa-user-shield"></i>
+                                Store Admin Demo
+                            </div>
+                            <div>Email: <code class="select-all">admin@demo.com</code></div>
+                            <div>Password: <code class="select-all">password</code></div>
                         </div>
-                        <button type="button" id="fill-demo" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 text-xs">
-                            Use Demo
+                        <button type="button" data-email="admin@demo.com" data-password="password" class="fill-demo-btn inline-flex items-center gap-1 px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700 text-xs">
+                            Use Admin
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Store User Demo -->
+                <div class="p-3 rounded border border-blue-200 bg-blue-50 text-blue-900 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-200">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-medium flex items-center gap-2">
+                                <i class="fas fa-user"></i>
+                                Store User Demo
+                            </div>
+                            <div>Email: <code class="select-all">user@demo.com</code></div>
+                            <div>Password: <code class="select-all">password</code></div>
+                        </div>
+                        <button type="button" data-email="user@demo.com" data-password="password" class="fill-demo-btn inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 text-xs">
+                            Use User
                         </button>
                     </div>
                 </div>
@@ -63,14 +84,15 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function(){
-            const btn = document.getElementById('fill-demo');
-            if (!btn) return;
-            btn.addEventListener('click', function(){
-                const email = document.querySelector('input[name="email"]');
-                const password = document.querySelector('input[name="password"]');
-                if (email) email.value = 'superhero@marvel.com';
-                if (password) password.value = 'ironman2025';
-                email?.focus();
+            const btns = document.querySelectorAll('.fill-demo-btn');
+            btns.forEach(btn => {
+                btn.addEventListener('click', function(){
+                    const email = document.querySelector('input[name="email"]');
+                    const password = document.querySelector('input[name="password"]');
+                    if (email) email.value = this.dataset.email;
+                    if (password) password.value = this.dataset.password;
+                    email?.focus();
+                });
             });
         });
     </script>

@@ -1,136 +1,131 @@
-# Laravel + Blade Starter Kit
+# Tech Inventory System
+
+A complete multi-tenant inventory and sales management system built with Laravel 12 and Blade.
 
 ---
 
-## Introduction
+## Features
 
-Laravel 12 + Blade starter kit originated from laraveldaily. Tailored to integrate Spatie user permission and a custom modular architecture.
-
----
-
-
-## What is Inside?
-
-Inside you will find all the functions that you would expect:
-
-- Authentication
-    - Login
-    - Registration
-    - Password Reset Flow
-    - Email Confirmation Flow
-- Dashboard Page
-- Profile Settings
-    - Profile Information Page
-    - Password Update Page
-    - Appearance Preferences
+- **Multi-Tenant Architecture** - Complete store-based data isolation
+- **Role-Based Access Control** - Store Admin and Store User roles
+- **Inventory Management** - Products, stock movements, suppliers
+- **Sales Management** - Orders, customers, returns
+- **Purchase Management** - Purchase orders, returns
+- **Financial Tracking** - Operating expenses, profit/loss reports
+- **User Management** - Manage store users and permissions
+- **Responsive Dashboard** - Role-specific dashboards with analytics
 
 ---
 
-## How to use it?
+## Quick Start
 
-To use this kit, you can install it in standard laravel project installation approach.
+### Installation
 
-From there, you can modify the kit to your needs.
+1. Clone the repository
+```bash
+git clone <repository-url>
+cd laravel-daily-starter
+```
+
+2. Install dependencies
+```bash
+composer install
+npm install
+```
+
+3. Configure environment
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+4. Setup database
+```bash
+# Configure your database in .env file
+php artisan migrate
+```
+
+5. Seed roles and demo users
+```bash
+php artisan db:seed --class=StoreAdminRoleSeeder
+php artisan db:seed --class=DemoUsersSeeder
+```
+
+6. Build assets
+```bash
+npm run build
+```
+
+7. Start the server
+```bash
+php artisan serve
+```
+
+---
+
+## Demo Login Credentials
+
+### Store Admin (Full Access)
+- Email: `admin@demo.com`
+- Password: `password`
+- Access: All modules and features
+
+### Store User (Sales Only)
+- Email: `user@demo.com`
+- Password: `password`
+- Access: Sales orders, view customers and products
+
+---
+
+## User Roles
+
+### Store Admin
+Full access to all features:
+- Products, Customers, Suppliers
+- Sales Orders, Purchase Orders
+- Stock Movements, Reports
+- Operating Expenses, Returns
+- User Management, Settings
+
+### Store User
+Limited access for sales staff:
+- Create and manage sales orders
+- View customers and products
+- Sales-focused dashboard
+
+---
+
+## Registration
+
+When registering a new account:
+1. Provide your name, email, store name, and password
+2. A new store is automatically created
+3. You are assigned as Store Admin
+4. Full access to all features for your store
+5. You can create Store Users for your team
+
+---
+
+## Multi-Tenant System
+
+Each store's data is completely isolated:
+- Users can only access their own store's data
+- All records are automatically filtered by store
+- No cross-store data access
+- Each store operates independently
+
+---
 
 ## Documentation
-- Getting Started: doc/getting-started.md
-- Roles & Permissions: doc/roles-permissions.md
-- Modular Architecture: doc/modules.md
-- Module Generator: doc/module-generator.md
-- DataTables: doc/datatables.md
-- UI and Layout: doc/ui-and-layout.md
-- Chained Selects: doc/chained-selects.md
-- Debugging: See below for Laravel Debugbar usage
 
-### Debugging with Laravel Debugbar
-This project includes barryvdh/laravel-debugbar for local development.
-
-- Installed as a dev dependency and auto-discovered.
-- Configuration: config/debugbar.php (published)
-- Enable/Disable via .env:
-  - APP_ENV=local and APP_DEBUG=true will enable it by default
-  - Override explicitly with DEBUGBAR_ENABLED=true|false
-- Do not enable on production. Set DEBUGBAR_ENABLED=false on staging/prod if needed.
+For detailed documentation, see:
+- `IMPLEMENTATION_SUMMARY.md` - System overview
+- `MULTI_TENANT_IMPLEMENTATION.md` - Multi-tenancy details
+- `STORE_ADMIN_ROLE.md` - Role and permissions
+- `USER_MANAGEMENT.md` - User management guide
 
 ---
 
-### API Quick Start
-This starter does not ship with a global API layer by default. If you need APIs, you can:
+## License
 
-- Create per-module API routes in app/Modules/<Module>/routes/api.php (see stubs/module/api.php.stub for a minimal example that returns resources using Laravel API Resources).
-- Or add your preferred API package and wire its routes under routes/api.php.
-
-By default, routes/api.php simply auto-loads each module's api.php so your module APIs are available under the /api prefix when needed.
-
----
-
-
-## Licence
-
-Starter kit is open-sourced software licensed under the MIT license.
-
-
----
-
-## Roles & Permissions (Spatie)
-
-This project includes Spatie Laravel Permission (v6) with a basic role-based auth setup.
-
-What was added:
-- Spatie HasRoles trait on App\Models\User
-- Middleware aliases: role, permission, role_or_permission
-- Seeder that creates roles (admin, editor, viewer) and a set of example permissions (users.*, types.*)
-- Demo routes protected by the role/permission middleware
-
-Setup steps:
-1. Ensure your DB is configured in .env and run migrations:
-   php artisan migrate
-2. Seed roles/permissions and demo users:
-   php artisan db:seed
-   This will create:
-   - Admin user: admin@example.com / password (role: admin)
-   - Viewer user: viewer@example.com / password (role: viewer)
-3. Log in and try these demo routes:
-   - GET /admin/area (requires role: admin)
-   - POST /modules/types (requires permission: types.create)
-
-Assigning roles/permissions in code:
-- $user->assignRole('editor');
-- $user->givePermissionTo('types.create');
-- $user->syncRoles(['viewer']);
-- $user->syncPermissions(['types.view']);
-
-Protecting routes (examples already in routes/web.php):
-- ->middleware('role:admin')
-- ->middleware('permission:types.create')
-- ->middleware('role_or_permission:editor|types.edit')
-
-You can customize the initial roles/permissions in database/seeders/RolePermissionSeeder.php.
-
-
-## Modular Architecture (Modules)
-
-This project now supports a lightweight modular structure without extra packages.
-
-Structure:
-- app/Modules/{ModuleName}/
-  - routes/web.php (and optional api.php)
-  - Http/Controllers/* (namespace: App\Modules\{Module}\Http\Controllers)
-  - resources/views (loadable with view namespace `{module-name-kebab}`)
-  - database/migrations (auto-loaded)
-  - resources/lang (optional, auto-loaded with same namespace)
-
-Standard permissions per module:
-- <module>.view
-- <module>.create
-- <module>.edit
-- <module>.delete
-
-How to add a new module (e.g., Types):
-1. Create folder: app/Modules/Types
-2. Add routes: app/Modules/Types/routes/web.php
-3. Create controllers under App\Modules\Types\Http\Controllers
-4. (Optional) Add views to app/Modules/Types/resources/views
-5. Create permissions (use Admin → Roles & Permissions page → "Create Module CRUD Permissions" with module = types), then assign to roles.
-6. Visit your routes (e.g., /modules/types) with a user that has the appropriate permissions.
-
+This project is open-sourced software licensed under the MIT license.

@@ -27,6 +27,8 @@ class User extends Authenticatable implements AuditableContract
         'password',
         'profile_photo_path',
         'is_superadmin',
+        'is_active',
+        'store_id',
     ];
 
     /**
@@ -50,6 +52,7 @@ class User extends Authenticatable implements AuditableContract
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_superadmin' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -77,6 +80,30 @@ class User extends Authenticatable implements AuditableContract
     public function isSuperAdmin(): bool
     {
         return $this->is_superadmin;
+    }
+
+    /**
+     * Get the store that this user belongs to
+     */
+    public function store()
+    {
+        return $this->belongsTo(\App\Modules\Stores\Models\Store::class);
+    }
+
+    /**
+     * Get the current store ID
+     */
+    public function currentStoreId()
+    {
+        return $this->store_id;
+    }
+
+    /**
+     * Get the current active store for the user
+     */
+    public function currentStore()
+    {
+        return $this->store;
     }
 
 }

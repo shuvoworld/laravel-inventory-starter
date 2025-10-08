@@ -6,15 +6,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use OwenIt\Auditing\Auditable;
+use App\Traits\BelongsToStore;
 
 class StockMovement extends Model implements AuditableContract
 {
-    use HasFactory, Auditable;
+    use HasFactory, Auditable, BelongsToStore;
 
     protected $table = 'stock_movements';
 
     protected $fillable = [
-        'product_id', 'type', 'quantity', 'reference_type', 'reference_id', 'notes'
+        'store_id', 'product_id', 'type', 'quantity', 'reference_type', 'reference_id', 'notes'
     ];
 
     protected $auditInclude = [

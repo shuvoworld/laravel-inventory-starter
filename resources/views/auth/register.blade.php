@@ -18,6 +18,11 @@
                     <x-forms.input label="Email" name="email" type="email" placeholder="your@email.com" />
                 </div>
 
+                <!-- Store Name Input -->
+                <div>
+                    <x-forms.input label="Store Name" name="store_name" type="text" placeholder="{{ __('Your Store Name') }}" />
+                </div>
+
                 <!-- Password Input -->
                 <div>
                     <x-forms.input label="Password" name="password" type="password" placeholder="••••••••" />

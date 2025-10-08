@@ -20,6 +20,12 @@ class UserController extends Controller
     {
         $query = User::query()->with('roles');
 
+        // Filter users to only show users from the same store (unless superadmin)
+        if (!auth()->user()->isSuperAdmin()) {
+            $storeId = auth()->user()->currentStoreId();
+            $query->where('store_id', $storeId);
+        }
+
         return DataTables::eloquent($query)
             ->addColumn('roles', function (User $user) {
                 return $user->roles->pluck('name')->join(', ');
@@ -33,7 +39,14 @@ class UserController extends Controller
 
     public function create()
     {
-        $roles = Role::orderBy('name')->get();
+        // Store-admins can only assign store-user role
+        // Superadmins can assign any role
+        if (auth()->user()->isSuperAdmin()) {
+            $roles = Role::orderBy('name')->get();
+        } else {
+            $roles = Role::whereIn('name', ['store-user'])->get();
+        }
+
         return view('users::create', compact('roles'));
     }
 
@@ -65,6 +78,11 @@ class UserController extends Controller
             $userData['is_superadmin'] = (bool) $validated['is_superadmin'];
         }
 
+        // Set store_id for non-superadmin creators
+        if (!auth()->user()->isSuperAdmin()) {
+            $userData['store_id'] = auth()->user()->currentStoreId();
+        }
+
         $user = User::create($userData);
 
         // Handle optional profile picture upload
@@ -74,8 +92,12 @@ class UserController extends Controller
             $user->save();
         }
 
+        // Assign role (default to store-user if created by store-admin)
         if (!empty($validated['role'])) {
             $user->syncRoles([$validated['role']]);
+        } elseif (!auth()->user()->isSuperAdmin()) {
+            // Default to store-user for non-superadmin creators
+            $user->syncRoles(['store-user']);
         }
 
         return redirect()->route('modules.users.index')->with('success', 'User created successfully');
@@ -90,7 +112,22 @@ class UserController extends Controller
     public function edit(int $id)
     {
         $user = User::findOrFail($id);
-        $roles = Role::orderBy('name')->get();
+
+        // Ensure user belongs to same store (unless superadmin)
+        if (!auth()->user()->isSuperAdmin()) {
+            $storeId = auth()->user()->currentStoreId();
+            if ($user->store_id !== $storeId) {
+                abort(403, 'Unauthorized action.');
+            }
+        }
+
+        // Store-admins can only assign store-user role
+        if (auth()->user()->isSuperAdmin()) {
+            $roles = Role::orderBy('name')->get();
+        } else {
+            $roles = Role::whereIn('name', ['store-user'])->get();
+        }
+
         return view('users::edit', compact('user', 'roles'));
     }
 
@@ -144,10 +181,20 @@ class UserController extends Controller
     public function destroy(int $id)
     {
         $user = User::findOrFail($id);
+
         // prevent self-delete for safety
         if (auth()->id() === $user->id) {
             return back()->with('error', 'You cannot delete your own account.');
         }
+
+        // Ensure user belongs to same store (unless superadmin)
+        if (!auth()->user()->isSuperAdmin()) {
+            $storeId = auth()->user()->currentStoreId();
+            if ($user->store_id !== $storeId) {
+                abort(403, 'Unauthorized action.');
+            }
+        }
+
         $user->delete();
         return redirect()->route('modules.users.index')->with('success', 'User deleted successfully');
     }

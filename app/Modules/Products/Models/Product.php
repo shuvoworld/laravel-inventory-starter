@@ -3,13 +3,16 @@
 namespace App\Modules\Products\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToStore;
 
 class Product extends Model
 {
+    use BelongsToStore;
+
     protected $table = 'products';
 
     protected $fillable = [
-        'sku', 'name', 'unit', 'price', 'cost_price', 'profit_margin', 'quantity_on_hand', 'reorder_level',
+        'store_id', 'sku', 'name', 'unit', 'price', 'cost_price', 'profit_margin', 'quantity_on_hand', 'reorder_level',
     ];
 
     protected $casts = [

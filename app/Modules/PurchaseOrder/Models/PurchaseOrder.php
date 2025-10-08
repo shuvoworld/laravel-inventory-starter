@@ -8,14 +8,16 @@ use App\Modules\PurchaseOrderItem\Models\PurchaseOrderItem;
 use App\Modules\Suppliers\Models\Supplier;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use OwenIt\Auditing\Auditable;
+use App\Traits\BelongsToStore;
 
 class PurchaseOrder extends Model implements AuditableContract
 {
-    use HasFactory, Auditable;
+    use HasFactory, Auditable, BelongsToStore;
 
     protected $table = 'purchase_orders';
 
     protected $fillable = [
+        'store_id',
         'po_number',
         'supplier_id',
         'supplier_name',
@@ -50,7 +52,14 @@ class PurchaseOrder extends Model implements AuditableContract
 
         static::creating(function ($purchaseOrder) {
             if (!$purchaseOrder->po_number) {
-                $purchaseOrder->po_number = 'PO-' . date('Y') . '-' . str_pad(static::whereYear('created_at', date('Y'))->count() + 1, 6, '0', STR_PAD_LEFT);
+                // Get count for current year and store
+                $year = date('Y');
+                $count = static::withoutGlobalScopes()
+                    ->where('store_id', $purchaseOrder->store_id)
+                    ->whereYear('created_at', $year)
+                    ->count();
+
+                $purchaseOrder->po_number = 'PO-' . $year . '-' . str_pad($count + 1, 6, '0', STR_PAD_LEFT);
             }
         });
     }

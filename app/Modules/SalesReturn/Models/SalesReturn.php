@@ -6,15 +6,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use OwenIt\Auditing\Auditable;
+use App\Traits\BelongsToStore;
 
 class SalesReturn extends Model implements AuditableContract
 {
-    use HasFactory, Auditable;
+    use HasFactory, Auditable, BelongsToStore;
 
     protected $table = 'sales_returns';
 
     protected $fillable = [
-        'return_number', 'sales_order_id', 'customer_id', 'return_date', 'status',
+        'store_id', 'return_number', 'sales_order_id', 'customer_id', 'return_date', 'status',
         'reason', 'subtotal', 'tax_amount', 'discount_amount', 'total_amount', 'notes'
     ];
 

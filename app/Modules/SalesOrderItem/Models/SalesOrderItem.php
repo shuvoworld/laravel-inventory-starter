@@ -6,15 +6,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use OwenIt\Auditing\Auditable;
+use App\Traits\BelongsToStore;
 
 class SalesOrderItem extends Model implements AuditableContract
 {
-    use HasFactory, Auditable;
+    use HasFactory, Auditable, BelongsToStore;
 
     protected $table = 'sales_order_items';
 
     protected $fillable = [
-        'sales_order_id', 'product_id', 'quantity', 'unit_price', 'cost_price', 'total_price',
+        'store_id', 'sales_order_id', 'product_id', 'quantity', 'unit_price', 'cost_price', 'total_price',
         'discount_amount', 'discount_type', 'discount_rate', 'final_price', 'discount_reason',
         'cogs_amount', 'profit_amount'
     ];
