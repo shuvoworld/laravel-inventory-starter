@@ -198,7 +198,7 @@
     <section class="features-section">
         <div class="container">
             <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">আপনার ব্যবসার জন্য শক্তিশালী ফিচার</h2>
+                <h2 class="display-5 fw-bold mb-3">আপনার ব্যবসার জন্য ১০০% উপযোগী</h2>
                 <p class="text-muted">ইনভেন্টরি এবং বিক্রয় পরিচালনার জন্য প্রয়োজনীয় সবকিছু এক জায়গায়</p>
             </div>
 
