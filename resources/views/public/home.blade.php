@@ -290,8 +290,8 @@
                 </div>
                 <div class="col-md-4 col-6 mb-4 mb-md-0">
                     <div class="stat-card">
-                        <div class="stat-number">৫০,০০০+</div>
-                        <div class="stat-label">দৈনিক লেনদেন</div>
+                        <div class="stat-number">১০০%</div>
+                        <div class="stat-label">ডাটা সুরক্ষা</div>
                     </div>
                 </div>
                 <div class="col-md-4 col-12">
