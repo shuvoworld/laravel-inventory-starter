@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
         // Seed roles and permissions (also creates an admin user)
         $this->call([
             RolePermissionSeeder::class,
+            DemoUsersSeeder::class,
+            StoreAdminRoleSeeder::class,
         ]);
 
         // Optionally create a demo viewer user
