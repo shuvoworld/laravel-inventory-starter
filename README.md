@@ -4,6 +4,10 @@ A complete multi-tenant inventory and sales management system built with Laravel
 
 ---
 
+<img height="700" alt="image" src="https://github.com/user-attachments/assets/0b0df547-6fbf-4837-85b5-ea4e99dedc92" />
+
+<img height="700" alt="image" src="https://github.com/user-attachments/assets/de3ae2fe-5516-4984-885a-2a1a108093af" />
+
 ## Features
 
 - **Multi-Tenant Architecture** - Complete store-based data isolation
