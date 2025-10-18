@@ -36,4 +36,46 @@ Route::middleware(['auth'])->prefix('modules/stock-movement')->name('modules.sto
     Route::delete('/{id}', [StockMovementController::class, 'destroy'])
         ->middleware('permission:stock-movement.delete')
         ->name('destroy');
+
+    // Report routes
+    Route::get('/report', [StockMovementController::class, 'report'])
+        ->middleware('permission:stock-movement.view')
+        ->name('report');
+
+    Route::get('/product/{productId}/history', [StockMovementController::class, 'productHistory'])
+        ->middleware('permission:stock-movement.view')
+        ->name('product.history');
+
+    Route::get('/audit/{id}', [StockMovementController::class, 'auditTrail'])
+        ->middleware('permission:stock-movement.view')
+        ->name('audit');
+
+    Route::get('/export', [StockMovementController::class, 'export'])
+        ->middleware('permission:stock-movement.view')
+        ->name('export');
+
+    Route::get('/valuation', [StockMovementController::class, 'valuation'])
+        ->middleware('permission:stock-movement.view')
+        ->name('valuation');
+
+    Route::get('/trends', [StockMovementController::class, 'trends'])
+        ->middleware('permission:stock-movement.view')
+        ->name('trends');
+
+    // Stock reconciliation routes
+    Route::get('/reconcile', [StockMovementController::class, 'reconcile'])
+        ->middleware('permission:stock-movement.reconcile')
+        ->name('reconcile');
+
+    Route::post('/reconcile', [StockMovementController::class, 'processReconciliation'])
+        ->middleware('permission:stock-movement.reconcile')
+        ->name('reconcile.process');
+
+    Route::get('/count-sheet', [StockMovementController::class, 'countSheet'])
+        ->middleware('permission:stock-movement.view')
+        ->name('count-sheet');
+
+    Route::get('/api/stock-from-movements', [StockMovementController::class, 'getStockFromMovements'])
+        ->middleware('permission:stock-movement.view')
+        ->name('api.stock-from-movements');
 });

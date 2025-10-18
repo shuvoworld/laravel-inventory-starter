@@ -1,202 +1,95 @@
-@extends('layouts.adminlte')
-
-@section('title', 'Add Supplier')
-
-@section('content_header')
-    <div class="d-flex justify-content-between align-items-center">
-        <h1>Add Supplier</h1>
-        <a href="{{ route('modules.suppliers.index') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back to Suppliers
-        </a>
-    </div>
-@stop
+@extends('layouts.module')
 
 @section('content')
-    <form action="{{ route('modules.suppliers.store') }}" method="POST">
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title mb-0">Create {{ ucfirst(__('Supplier')) }}</h3>
+    </div>
+    <form method="POST" action="{{ route('modules.suppliers.store') }}" onsubmit="this.querySelector('button[type=submit]').disabled=true;">
         @csrf
-        <div class="row">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Supplier Information</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="name">Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control @error('name') is-invalid @enderror"
-                                           id="name" name="name" value="{{ old('name') }}" required>
-                                    @error('name')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="contact_person">Contact Person</label>
-                                    <input type="text" class="form-control @error('contact_person') is-invalid @enderror"
-                                           id="contact_person" name="contact_person" value="{{ old('contact_person') }}">
-                                    @error('contact_person')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="email">Email</label>
-                                    <input type="email" class="form-control @error('email') is-invalid @enderror"
-                                           id="email" name="email" value="{{ old('email') }}">
-                                    @error('email')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="phone">Phone</label>
-                                    <input type="text" class="form-control @error('phone') is-invalid @enderror"
-                                           id="phone" name="phone" value="{{ old('phone') }}">
-                                    @error('phone')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="address">Address</label>
-                            <textarea class="form-control @error('address') is-invalid @enderror"
-                                      id="address" name="address" rows="3">{{ old('address') }}</textarea>
-                            @error('address')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="city">City</label>
-                                    <input type="text" class="form-control @error('city') is-invalid @enderror"
-                                           id="city" name="city" value="{{ old('city') }}">
-                                    @error('city')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="state">State/Province</label>
-                                    <input type="text" class="form-control @error('state') is-invalid @enderror"
-                                           id="state" name="state" value="{{ old('state') }}">
-                                    @error('state')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="postal_code">Postal Code</label>
-                                    <input type="text" class="form-control @error('postal_code') is-invalid @enderror"
-                                           id="postal_code" name="postal_code" value="{{ old('postal_code') }}">
-                                    @error('postal_code')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="country">Country</label>
-                                    <input type="text" class="form-control @error('country') is-invalid @enderror"
-                                           id="country" name="country" value="{{ old('country') }}">
-                                    @error('country')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <div class="card-body form-minimal">
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label for="name" class="form-label">Name</label>
+                    <input id="name" type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
+                    @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Business Details</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label for="tax_id">Tax ID</label>
-                            <input type="text" class="form-control @error('tax_id') is-invalid @enderror"
-                                   id="tax_id" name="tax_id" value="{{ old('tax_id') }}">
-                            @error('tax_id')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label for="payment_terms">Payment Terms</label>
-                            <input type="text" class="form-control @error('payment_terms') is-invalid @enderror"
-                                   id="payment_terms" name="payment_terms" value="{{ old('payment_terms') }}"
-                                   placeholder="e.g., Net 30 days">
-                            @error('payment_terms')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label for="credit_limit">Credit Limit</label>
-                            <input type="number" class="form-control @error('credit_limit') is-invalid @enderror"
-                                   id="credit_limit" name="credit_limit" value="{{ old('credit_limit') }}"
-                                   step="0.01" min="0">
-                            @error('credit_limit')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label for="status">Status <span class="text-danger">*</span></label>
-                            <select class="form-control @error('status') is-invalid @enderror" id="status" name="status" required>
-                                <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Active</option>
-                                <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
-                            </select>
-                            @error('status')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label for="notes">Notes</label>
-                            <textarea class="form-control @error('notes') is-invalid @enderror"
-                                      id="notes" name="notes" rows="4">{{ old('notes') }}</textarea>
-                            @error('notes')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
+                <div class="col-12 col-md-6">
+                    <label for="contact_person" class="form-label">Contact Person</label>
+                    <input id="contact_person" type="text" name="contact_person" class="form-control @error('contact_person') is-invalid @enderror" value="{{ old('contact_person') }}">
+                    @error('contact_person')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="email" class="form-label">Email</label>
+                    <input id="email" type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}">
+                    @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="phone" class="form-label">Phone</label>
+                    <input id="phone" type="text" name="phone" class="form-control @error('phone') is-invalid @enderror" value="{{ old('phone') }}">
+                    @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12">
+                    <label for="address" class="form-label">Address</label>
+                    <textarea id="address" name="address" rows="2" class="form-control @error('address') is-invalid @enderror">{{ old('address') }}</textarea>
+                    @error('address')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="city" class="form-label">City</label>
+                    <input id="city" type="text" name="city" class="form-control @error('city') is-invalid @enderror" value="{{ old('city') }}">
+                    @error('city')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="state" class="form-label">State/Province</label>
+                    <input id="state" type="text" name="state" class="form-control @error('state') is-invalid @enderror" value="{{ old('state') }}">
+                    @error('state')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="postal_code" class="form-label">Postal Code</label>
+                    <input id="postal_code" type="text" name="postal_code" class="form-control @error('postal_code') is-invalid @enderror" value="{{ old('postal_code') }}">
+                    @error('postal_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="country" class="form-label">Country</label>
+                    <input id="country" type="text" name="country" class="form-control @error('country') is-invalid @enderror" value="{{ old('country') }}">
+                    @error('country')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="tax_id" class="form-label">Tax ID</label>
+                    <input id="tax_id" type="text" name="tax_id" class="form-control @error('tax_id') is-invalid @enderror" value="{{ old('tax_id') }}">
+                    @error('tax_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="payment_terms" class="form-label">Payment Terms</label>
+                    <input id="payment_terms" type="text" name="payment_terms" class="form-control @error('payment_terms') is-invalid @enderror" value="{{ old('payment_terms') }}" placeholder="e.g., Net 30 days">
+                    @error('payment_terms')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="credit_limit" class="form-label">Credit Limit</label>
+                    <input id="credit_limit" type="number" step="0.01" min="0" name="credit_limit" class="form-control @error('credit_limit') is-invalid @enderror" value="{{ old('credit_limit') }}">
+                    @error('credit_limit')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="status" class="form-label">Status</label>
+                    <select id="status" name="status" class="form-control @error('status') is-invalid @enderror" required>
+                        <option value="active" {{ old('status', 'active') === 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                    </select>
+                    @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12">
+                    <label for="notes" class="form-label">Notes</label>
+                    <textarea id="notes" name="notes" rows="3" class="form-control @error('notes') is-invalid @enderror">{{ old('notes') }}</textarea>
+                    @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
             </div>
         </div>
-
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-footer">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Save Supplier
-                        </button>
-                        <a href="{{ route('modules.suppliers.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Cancel
-                        </a>
-                    </div>
-                </div>
-            </div>
+        <div class="card-footer d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i> Save
+            </button>
+            <a href="{{ route('modules.suppliers.index') }}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
-@stop
+</div>
+@endsection

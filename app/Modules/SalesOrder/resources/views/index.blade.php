@@ -20,6 +20,7 @@
                         <th>Customer</th>
                         <th>Order Date</th>
                         <th>Status</th>
+                        <th>Payment</th>
                         <th>Items</th>
                         <th>Total</th>
                         <th>Actions</th>
@@ -46,6 +47,7 @@
                 { data: 'customer_name' },
                 { data: 'order_date' },
                 { data: 'status_badge', orderable: false },
+                { data: 'payment_status_badge', orderable: false },
                 { data: 'items_count' },
                 { data: 'total_amount' },
                 { data: 'actions', orderable: false, searchable: false },

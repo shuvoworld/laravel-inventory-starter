@@ -258,12 +258,12 @@
                         <div class="d-flex justify-content-between align-items-center mb-2 pb-2 {{ !$loop->last ? 'border-bottom' : '' }}">
                             <div>
                                 <span class="badge badge-primary me-2">{{ $index + 1 }}</span>
-                                <strong>{{ $product['name'] }}</strong>
+                                <strong>{{ $product['product_name'] }}</strong>
                                 <br>
-                                <small class="text-muted">Qty: {{ number_format($product['quantity']) }}</small>
+                                <small class="text-muted">Qty: {{ number_format($product['quantity_sold']) }}</small>
                             </div>
                             <div class="text-end">
-                                <strong class="text-success">${{ number_format($product['revenue'], 2) }}</strong>
+                                <strong class="text-success">${{ number_format($product['total_revenue'], 2) }}</strong>
                             </div>
                         </div>
                     @endforeach

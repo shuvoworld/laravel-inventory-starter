@@ -36,4 +36,8 @@ Route::middleware(['auth'])->prefix('modules/purchase-order')->name('modules.pur
     Route::delete('/{id}', [PurchaseOrderController::class, 'destroy'])
         ->middleware('permission:purchase-order.delete')
         ->name('destroy');
+
+    Route::post('/{id}/add-payment', [PurchaseOrderController::class, 'addPayment'])
+        ->middleware('permission:purchase-order.edit')
+        ->name('add-payment');
 });

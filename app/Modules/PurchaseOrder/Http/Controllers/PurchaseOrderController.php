@@ -10,6 +10,8 @@ use App\Modules\PurchaseOrderItem\Models\PurchaseOrderItem;
 use App\Modules\StockMovement\Models\StockMovement;
 use App\Modules\Products\Models\Product;
 use App\Modules\Suppliers\Models\Supplier;
+use App\Models\SupplierPayment;
+use App\Services\StockMovementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -35,11 +37,8 @@ class PurchaseOrderController extends Controller
             ->addColumn('items_count', function (PurchaseOrder $item) {
                 return $item->items->count();
             })
-            ->addColumn('supplier_info', function (PurchaseOrder $item) {
-                if ($item->supplier) {
-                    return $item->supplier->name . '<br><small class="text-muted">' . $item->supplier->code . '</small>';
-                }
-                return $item->supplier_name ?: 'Unknown';
+            ->addColumn('supplier_name', function (PurchaseOrder $item) {
+                return $item->supplier ? $item->supplier->name : ($item->supplier_name ?: 'Unknown');
             })
             ->addColumn('status_badge', function (PurchaseOrder $item) {
                 $badges = [
@@ -52,6 +51,15 @@ class PurchaseOrderController extends Controller
                 $class = $badges[$item->status] ?? 'badge-secondary';
                 return "<span class='badge {$class}'>" . ucfirst($item->status) . "</span>";
             })
+            ->addColumn('payment_status_badge', function (PurchaseOrder $item) {
+                $badges = [
+                    'unpaid' => 'badge-danger',
+                    'partial' => 'badge-warning',
+                    'paid' => 'badge-success'
+                ];
+                $class = $badges[$item->payment_status] ?? 'badge-secondary';
+                return "<span class='badge {$class}'>" . ucfirst($item->payment_status) . "</span>";
+            })
             ->addColumn('actions', function (PurchaseOrder $item) {
                 return view('purchase-order::partials.actions', ['id' => $item->id])->render();
             })
@@ -61,7 +69,10 @@ class PurchaseOrderController extends Controller
             ->editColumn('total_amount', function (PurchaseOrder $item) {
                 return '$' . number_format($item->total_amount, 2);
             })
-            ->rawColumns(['actions', 'status_badge', 'supplier_info'])
+            ->editColumn('paid_amount', function (PurchaseOrder $item) {
+                return '$' . number_format($item->paid_amount, 2);
+            })
+            ->rawColumns(['actions', 'status_badge', 'payment_status_badge'])
             ->toJson();
     }
 
@@ -119,15 +130,13 @@ class PurchaseOrderController extends Controller
                     'total_price' => $itemData['quantity'] * $itemData['unit_price'],
                 ]);
 
-                // Create stock movement (inbound)
-                StockMovement::create([
-                    'product_id' => $itemData['product_id'],
-                    'type' => 'in',
-                    'quantity' => $itemData['quantity'],
-                    'reference_type' => 'purchase_order',
-                    'reference_id' => $purchaseOrder->id,
-                    'notes' => "Purchase - Order #{$purchaseOrder->po_number}",
-                ]);
+                // Create stock movement (inbound) using service
+                StockMovementService::recordPurchase(
+                    $itemData['product_id'],
+                    $itemData['quantity'],
+                    $purchaseOrder->id,
+                    "Purchase - Order #{$purchaseOrder->po_number}"
+                );
             }
         });
 
@@ -136,7 +145,7 @@ class PurchaseOrderController extends Controller
 
     public function show(int $id): View
     {
-        $item = PurchaseOrder::with(['items.product'])->findOrFail($id);
+        $item = PurchaseOrder::with(['items.product', 'payments'])->findOrFail($id);
         return view('purchase-order::show', compact('item'));
     }
 
@@ -191,15 +200,13 @@ class PurchaseOrderController extends Controller
             // Delete removed items and reverse stock
             foreach ($existingItems as $existingItem) {
                 if (!$submittedItemIds->contains($existingItem->id)) {
-                    // Reverse stock movement for deleted item
-                    StockMovement::create([
-                        'product_id' => $existingItem->product_id,
-                        'type' => 'out',
-                        'quantity' => $existingItem->quantity,
-                        'reference_type' => 'purchase_order_adjustment',
-                        'reference_id' => $purchaseOrder->id,
-                        'notes' => "Returned stock - Item removed from Order #{$purchaseOrder->po_number}",
-                    ]);
+                    // Reverse stock movement for deleted item (purchase return)
+                    StockMovementService::recordPurchaseReturn(
+                        $existingItem->product_id,
+                        $existingItem->quantity,
+                        $purchaseOrder->id,
+                        "Returned stock - Item removed from Order #{$purchaseOrder->po_number}"
+                    );
                     $existingItem->delete();
                 }
             }
@@ -222,14 +229,23 @@ class PurchaseOrderController extends Controller
 
                     // Adjust stock if quantity changed
                     if ($quantityDiff != 0) {
-                        StockMovement::create([
-                            'product_id' => $itemData['product_id'],
-                            'type' => $quantityDiff > 0 ? 'in' : 'out',
-                            'quantity' => abs($quantityDiff),
-                            'reference_type' => 'purchase_order_adjustment',
-                            'reference_id' => $purchaseOrder->id,
-                            'notes' => "Quantity adjustment - Order #{$purchaseOrder->po_number}",
-                        ]);
+                        if ($quantityDiff > 0) {
+                            // Additional stock coming in
+                            StockMovementService::recordPurchase(
+                                $itemData['product_id'],
+                                $quantityDiff,
+                                $purchaseOrder->id,
+                                "Quantity adjustment (+) - Order #{$purchaseOrder->po_number}"
+                            );
+                        } else {
+                            // Stock being returned
+                            StockMovementService::recordPurchaseReturn(
+                                $itemData['product_id'],
+                                abs($quantityDiff),
+                                $purchaseOrder->id,
+                                "Quantity adjustment (-) - Order #{$purchaseOrder->po_number}"
+                            );
+                        }
                     }
                 } else {
                     // Create new item
@@ -242,14 +258,12 @@ class PurchaseOrderController extends Controller
                     ]);
 
                     // Create stock movement for new item
-                    StockMovement::create([
-                        'product_id' => $itemData['product_id'],
-                        'type' => 'in',
-                        'quantity' => $itemData['quantity'],
-                        'reference_type' => 'purchase_order',
-                        'reference_id' => $purchaseOrder->id,
-                        'notes' => "Purchase - Order #{$purchaseOrder->po_number}",
-                    ]);
+                    StockMovementService::recordPurchase(
+                        $itemData['product_id'],
+                        $itemData['quantity'],
+                        $purchaseOrder->id,
+                        "Purchase - Order #{$purchaseOrder->po_number}"
+                    );
                 }
             }
         });
@@ -262,5 +276,32 @@ class PurchaseOrderController extends Controller
         $item = PurchaseOrder::findOrFail($id);
         $item->delete();
         return redirect()->route('modules.purchase-order.index')->with('success', 'PurchaseOrder deleted.');
+    }
+
+    public function addPayment(Request $request, int $id): RedirectResponse
+    {
+        $purchaseOrder = PurchaseOrder::findOrFail($id);
+
+        $request->validate([
+            'payment_date' => 'required|date',
+            'amount' => 'required|numeric|min:0.01|max:' . $purchaseOrder->due_amount,
+            'payment_method' => 'nullable|string|in:cash,bank_transfer,check,credit_card,other',
+            'reference_number' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
+        ]);
+
+        DB::transaction(function () use ($request, $purchaseOrder) {
+            SupplierPayment::create([
+                'supplier_id' => $purchaseOrder->supplier_id,
+                'purchase_order_id' => $purchaseOrder->id,
+                'payment_date' => $request->payment_date,
+                'amount' => $request->amount,
+                'payment_method' => $request->payment_method,
+                'reference_number' => $request->reference_number,
+                'notes' => $request->notes,
+            ]);
+        });
+
+        return redirect()->route('modules.purchase-order.show', $id)->with('success', 'Payment added successfully.');
     }
 }

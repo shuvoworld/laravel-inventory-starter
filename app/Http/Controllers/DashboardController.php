@@ -8,6 +8,7 @@ use App\Modules\OperatingExpenses\Models\OperatingExpense;
 use App\Modules\Products\Models\Product;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\StoreSettings\Models\StoreSetting;
+use App\Services\StockCalculationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -70,7 +71,18 @@ class DashboardController extends Controller
         // Quick stats
         $totalCustomers = Customer::count();
         $totalProducts = Product::count();
-        $lowStockProducts = Product::where('quantity_on_hand', '<=', \DB::raw('reorder_level'))->count();
+
+        // Calculate low stock products using movements-based stock calculation
+        $lowStockProducts = 0;
+        $products = Product::where('store_id', auth()->user()->store_id)->get();
+        foreach ($products as $product) {
+            $currentStock = StockCalculationService::getStockForProduct($product->id);
+            $reorderLevel = $product->reorder_level ?? 10;
+            if ($currentStock <= $reorderLevel) {
+                $lowStockProducts++;
+            }
+        }
+
         $pendingExpenses = OperatingExpense::where('payment_status', 'pending')->sum('amount');
 
         // Growth calculations

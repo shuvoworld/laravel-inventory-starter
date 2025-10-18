@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#f3f4f6"/>
+  <g transform="translate(125, 125)">
+    <path d="M75 0C33.579 0 0 33.579 0 75s33.579 75 75 75 75-33.579 75-75S116.421 0 75 0zm0 20c30.376 0 55 24.624 55 55s-24.624 55-55 55-55-24.624-55-55 24.624-55 55-55zm-7.5 30v40l-20-20m27.5 20l20 20-20-20m-20-20h40"
+          stroke="#9ca3af"
+          stroke-width="4"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+    <circle cx="75" cy="75" r="50" stroke="#d1d5db" stroke-width="2" fill="none"/>
+  </g>
+  <text x="200" y="260" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="18" font-weight="500">No Image</text>
+</svg>

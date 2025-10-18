@@ -8,6 +8,10 @@ use App\Modules\PurchaseOrder\Models\PurchaseOrder;
 use App\Modules\Products\Models\Product;
 use App\Modules\OperatingExpenses\Models\OperatingExpense;
 use App\Services\COGSService;
+use App\Services\DailySalesReportService;
+use App\Services\WeeklyProductPerformanceService;
+use App\Services\LowStockAlertService;
+use App\Services\StockReportService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Carbon\Carbon;
@@ -204,5 +208,153 @@ class ReportsController extends Controller
         }
 
         return $breakdown;
+    }
+
+    /**
+     * Generate daily sales report
+     */
+    public function dailySales(Request $request): View
+    {
+        $request->validate([
+            'date' => 'nullable|date',
+        ]);
+
+        $date = $request->date ? Carbon::parse($request->date) : Carbon::today();
+        $dailySalesService = new DailySalesReportService();
+
+        $report = $dailySalesService->generateDailyReport($date);
+        $weeklyTrends = $dailySalesService->getWeeklyTrends();
+
+        return view('reports::daily-sales', compact('report', 'weeklyTrends', 'date'));
+    }
+
+    /**
+     * Generate weekly product performance report
+     */
+    public function weeklyPerformance(Request $request): View
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        // Default to current week
+        $startDate = $request->start_date ? Carbon::parse($request->start_date)->startOfDay() : Carbon::now()->startOfWeek();
+        $endDate = $request->end_date ? Carbon::parse($request->end_date)->endOfDay() : Carbon::now()->endOfWeek();
+
+        $weeklyPerformanceService = new WeeklyProductPerformanceService();
+        $report = $weeklyPerformanceService->generateWeeklyReport($startDate, $endDate);
+        $comparison = $weeklyPerformanceService->getWeeklyComparison($startDate);
+
+        return view('reports::weekly-performance', compact('report', 'comparison', 'startDate', 'endDate'));
+    }
+
+    /**
+     * Generate low stock alert report
+     */
+    public function lowStockAlert(Request $request): View
+    {
+        $request->validate([
+            'threshold' => 'nullable|integer|min:1|max:1000',
+        ]);
+
+        $threshold = $request->threshold ?? 10;
+        $lowStockService = new LowStockAlertService();
+        $report = $lowStockService->generateLowStockAlert($threshold);
+        $dashboardData = $lowStockService->getLowStockByCategory();
+
+        return view('reports::low-stock-alert', compact('report', 'threshold', 'dashboardData'));
+    }
+
+    /**
+     * Generate comprehensive stock report
+     */
+    public function stockReport(Request $request): View
+    {
+        $stockService = new StockReportService();
+        $overview = $stockService->getStockOverview();
+        $reorderRecommendations = $stockService->getReorderRecommendations()->take(10);
+        $valuation = $stockService->getStockValuation();
+
+        return view('reports::stock', compact('overview', 'reorderRecommendations', 'valuation'));
+    }
+
+    /**
+     * Generate detailed stock report with filters
+     */
+    public function stockReportDetailed(Request $request): View
+    {
+        $request->validate([
+            'category_id' => 'nullable|integer|exists:categories,id',
+            'brand_id' => 'nullable|integer|exists:brands,id',
+            'supplier_id' => 'nullable|integer|exists:suppliers,id',
+            'stock_status' => 'nullable|in:in_stock,low_stock,out_of_stock',
+            'search' => 'nullable|string|max:255',
+        ]);
+
+        $filters = $request->only(['category_id', 'brand_id', 'supplier_id', 'stock_status', 'search']);
+
+        $stockService = new StockReportService();
+        $detailedStock = $stockService->getDetailedStock($filters);
+
+        return view('reports::stock-detailed', compact('detailedStock', 'filters'));
+    }
+
+    /**
+     * Generate stock movement trends report
+     */
+    public function stockMovementTrends(Request $request): View
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'period_type' => 'nullable|in:day,week,month',
+        ]);
+
+        $periodType = $request->period_type ?? 'day';
+
+        // Set default date ranges based on period type
+        switch ($periodType) {
+            case 'day':
+                $startDate = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->subDays(30);
+                $endDate = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now();
+                break;
+            case 'week':
+                $startDate = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->subWeeks(12);
+                $endDate = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now();
+                break;
+            case 'month':
+                $startDate = $request->start_date ? Carbon::parse($request->start_date) : Carbon::now()->subMonths(12);
+                $endDate = $request->end_date ? Carbon::parse($request->end_date) : Carbon::now();
+                break;
+        }
+
+        $stockService = new StockReportService();
+        $trends = $stockService->getStockMovementTrends($startDate, $endDate);
+
+        return view('reports::stock-movement-trends', compact('trends', 'startDate', 'endDate', 'periodType'));
+    }
+
+    /**
+     * Generate stock reorder recommendations report
+     */
+    public function stockReorderRecommendations(Request $request): View
+    {
+        $stockService = new StockReportService();
+        $recommendations = $stockService->getReorderRecommendations();
+
+        return view('reports::stock-reorder-recommendations', compact('recommendations'));
+    }
+
+    /**
+     * Generate stock valuation report
+     */
+    public function stockValuation(Request $request): View
+    {
+        $stockService = new StockReportService();
+        $valuation = $stockService->getStockValuation();
+        $overview = $stockService->getStockOverview();
+
+        return view('reports::stock-valuation', compact('valuation', 'overview'));
     }
 }

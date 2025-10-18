@@ -1,11 +1,15 @@
 <?php
 
+use App\Http\Middleware\AutoFlashSuccess;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Console\Scheduling\Schedule;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use App\Jobs\SyncProductStockFromMovements;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,17 +27,34 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
-            'locale' => \App\Http\Middleware\SetLocale::class,
+            'locale' => SetLocale::class,
         ]);
         // Append global middleware to the web group
         if (method_exists($middleware, 'appendToGroup')) {
-            $middleware->appendToGroup('web', \App\Http\Middleware\AutoFlashSuccess::class);
-            $middleware->appendToGroup('web', \App\Http\Middleware\SetLocale::class);
+            $middleware->appendToGroup('web', AutoFlashSuccess::class);
+            $middleware->appendToGroup('web', SetLocale::class);
         } else {
             // Fallback for older API: try generic append
-            $middleware->append(\App\Http\Middleware\AutoFlashSuccess::class);
-            $middleware->append(\App\Http\Middleware\SetLocale::class);
+            $middleware->append(AutoFlashSuccess::class);
+            $middleware->append(SetLocale::class);
         }
+    })
+    ->withSchedule(function (Schedule $schedule) {
+        // Schedule hourly stock synchronization from movements
+        $schedule->job(new SyncProductStockFromMovements())
+            ->hourly()
+            ->description('Synchronize product stock quantities from stock movements')
+            ->onSuccess(function () {
+                \Log::info('Hourly stock synchronization completed successfully', [
+                    'scheduled_at' => now()->format('Y-m-d H:i:s')
+                ]);
+            })
+            ->onFailure(function (\Exception $e) {
+                \Log::error('Hourly stock synchronization failed', [
+                    'error' => $e->getMessage(),
+                    'scheduled_at' => now()->format('Y-m-d H:i:s')
+                ]);
+            });
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

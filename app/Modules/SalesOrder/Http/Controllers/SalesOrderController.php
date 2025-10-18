@@ -10,6 +10,7 @@ use App\Modules\SalesOrderItem\Models\SalesOrderItem;
 use App\Modules\StockMovement\Models\StockMovement;
 use App\Modules\Products\Models\Product;
 use App\Modules\Customers\Models\Customer;
+use App\Services\StockMovementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -40,17 +41,30 @@ class SalesOrderController extends Controller
             })
             ->addColumn('status_badge', function (SalesOrder $item) {
                 $badges = [
-                    'pending' => 'badge-warning',
-                    'on_hold' => 'badge-secondary',
-                    'confirmed' => 'badge-info',
-                    'processing' => 'badge-primary',
-                    'shipped' => 'badge-light',
-                    'delivered' => 'badge-success',
-                    'cancelled' => 'badge-danger'
+                    'pending' => 'bg-warning bg-opacity-25 text-warning border border-warning-subtle',
+                    'on_hold' => 'bg-secondary bg-opacity-25 text-secondary border border-secondary-subtle',
+                    'confirmed' => 'bg-info bg-opacity-25 text-info border border-info-subtle',
+                    'processing' => 'bg-primary bg-opacity-25 text-primary border border-primary-subtle',
+                    'shipped' => 'bg-light bg-opacity-75 text-dark border border-secondary',
+                    'delivered' => 'bg-success bg-opacity-25 text-success border border-success-subtle',
+                    'cancelled' => 'bg-danger bg-opacity-25 text-danger border border-danger-subtle'
                 ];
-                $class = $badges[$item->status] ?? 'badge-secondary';
+                $class = $badges[$item->status] ?? 'bg-secondary bg-opacity-25 text-secondary';
                 $statusText = str_replace('_', ' ', $item->status);
-                return "<span class='badge {$class}'>" . ucfirst($statusText) . "</span>";
+
+                // Add icons for better visual recognition
+                $icons = [
+                    'pending' => '<i class="fas fa-clock me-1"></i>',
+                    'on_hold' => '<i class="fas fa-pause me-1"></i>',
+                    'confirmed' => '<i class="fas fa-check-circle me-1"></i>',
+                    'processing' => '<i class="fas fa-cog fa-spin me-1"></i>',
+                    'shipped' => '<i class="fas fa-truck me-1"></i>',
+                    'delivered' => '<i class="fas fa-check-double me-1"></i>',
+                    'cancelled' => '<i class="fas fa-times-circle me-1"></i>'
+                ];
+                $icon = $icons[$item->status] ?? '';
+
+                return "<span class='badge {$class} fw-semibold px-3 py-2'>{$icon}" . ucfirst($statusText) . "</span>";
             })
             ->addColumn('payment_method', function (SalesOrder $item) {
                 $methods = $item->getPaymentMethods();
@@ -58,14 +72,25 @@ class SalesOrderController extends Controller
             })
             ->addColumn('payment_status_badge', function (SalesOrder $item) {
                 $badges = [
-                    'pending' => 'badge-warning',
-                    'partial' => 'badge-info',
-                    'paid' => 'badge-success',
-                    'overpaid' => 'badge-primary',
-                    'refunded' => 'badge-danger'
+                    'pending' => 'bg-warning bg-opacity-25 text-warning border border-warning-subtle',
+                    'partial' => 'bg-info bg-opacity-25 text-info border border-info-subtle',
+                    'paid' => 'bg-success bg-opacity-25 text-success border border-success-subtle',
+                    'overpaid' => 'bg-primary bg-opacity-25 text-primary border border-primary-subtle',
+                    'refunded' => 'bg-danger bg-opacity-25 text-danger border border-danger-subtle'
                 ];
-                $class = $badges[$item->payment_status] ?? 'badge-secondary';
-                return "<span class='badge {$class}'>" . ucfirst($item->payment_status) . "</span>";
+                $class = $badges[$item->payment_status] ?? 'bg-secondary bg-opacity-25 text-secondary';
+
+                // Add icons for payment status
+                $icons = [
+                    'pending' => '<i class="fas fa-hourglass-half me-1"></i>',
+                    'partial' => '<i class="fas fa-coins me-1"></i>',
+                    'paid' => '<i class="fas fa-check-circle me-1"></i>',
+                    'overpaid' => '<i class="fas fa-money-bill-wave me-1"></i>',
+                    'refunded' => '<i class="fas fa-undo me-1"></i>'
+                ];
+                $icon = $icons[$item->payment_status] ?? '';
+
+                return "<span class='badge {$class} fw-semibold px-3 py-2'>{$icon}" . ucfirst($item->payment_status) . "</span>";
             })
             ->addColumn('actions', function (SalesOrder $item) {
                 return view('sales-order::partials.actions', ['id' => $item->id])->render();
@@ -76,7 +101,7 @@ class SalesOrderController extends Controller
             ->editColumn('total_amount', function (SalesOrder $item) {
                 return '$' . number_format($item->total_amount, 2);
             })
-            ->rawColumns(['actions', 'status_badge'])
+            ->rawColumns(['actions', 'status_badge', 'payment_status_badge'])
             ->toJson();
     }
 
@@ -112,7 +137,23 @@ class SalesOrderController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
-            // Create sales order with basic info
+            // Calculate totals before creating the sales order
+            $subtotal = 0;
+            foreach ($request->items as $itemData) {
+                $subtotal += $itemData['quantity'] * $itemData['unit_price'];
+            }
+
+            // Calculate discount amount
+            $discountAmount = 0;
+            if ($request->discount_type === 'percentage' && $request->discount_rate) {
+                $discountAmount = $subtotal * ($request->discount_rate / 100);
+            } elseif ($request->discount_type === 'fixed') {
+                $discountAmount = $request->discount_rate;
+            }
+
+            $totalAmount = $subtotal - $discountAmount;
+
+            // Create sales order with calculated totals
             $salesOrder = SalesOrder::create([
                 'customer_id' => $request->customer_id,
                 'order_date' => $request->order_date,
@@ -124,6 +165,12 @@ class SalesOrderController extends Controller
                 'discount_reason' => $request->discount_reason,
                 'reference_number' => $request->reference_number,
                 'notes' => $request->notes,
+                'subtotal' => $subtotal,
+                'discount_amount' => $discountAmount,
+                'total_amount' => $totalAmount,
+                'tax_amount' => 0, // Can be calculated later if needed
+                'cogs_amount' => 0, // Will be calculated after items are created
+                'profit_amount' => 0, // Will be calculated after items are created
             ]);
 
             // Create sales order items and update stock
@@ -146,30 +193,31 @@ class SalesOrderController extends Controller
                     'discount_reason' => $itemData['discount_reason'] ?? null,
                 ]);
 
-                // Create stock movement (outbound)
-                StockMovement::create([
-                    'product_id' => $itemData['product_id'],
-                    'type' => 'out',
-                    'quantity' => $itemData['quantity'],
-                    'reference_type' => 'sales_order',
-                    'reference_id' => $salesOrder->id,
-                    'notes' => "Sale - Order #{$salesOrder->order_number}",
-                ]);
+                // Create stock movement (outbound) using service
+                StockMovementService::recordSale(
+                    $itemData['product_id'],
+                    $itemData['quantity'],
+                    $salesOrder->id,
+                    "Sale - Order #{$salesOrder->order_number}"
+                );
             }
 
-            // Calculate totals and payment status
+            // Recalculate totals with actual item data (including COGS and profit)
             $salesOrder->calculateTotals();
 
-            // Calculate payment status
+            // Calculate payment status and update order status
             if ($request->paid_amount >= $salesOrder->total_amount) {
                 $salesOrder->payment_status = 'paid';
                 $salesOrder->change_amount = $request->paid_amount - $salesOrder->total_amount;
+                $salesOrder->status = 'delivered'; // Auto-complete if fully paid
             } elseif ($request->paid_amount > 0) {
                 $salesOrder->payment_status = 'partial';
                 $salesOrder->change_amount = 0;
+                $salesOrder->status = 'confirmed'; // Confirmed if partially paid
             } else {
                 $salesOrder->payment_status = 'pending';
                 $salesOrder->change_amount = 0;
+                $salesOrder->status = 'pending'; // Keep pending if no payment
             }
 
             if ($request->paid_amount > 0) {
@@ -326,16 +374,25 @@ class SalesOrderController extends Controller
             // Calculate totals and payment status
             $salesOrder->calculateTotals();
 
-            // Calculate payment status
+            // Calculate payment status and auto-adjust order status
             if ($request->paid_amount >= $salesOrder->total_amount) {
                 $salesOrder->payment_status = 'paid';
                 $salesOrder->change_amount = $request->paid_amount - $salesOrder->total_amount;
+
+                // Auto-complete if fully paid and status allows
+                if ($request->status !== 'cancelled' && $request->status !== 'delivered') {
+                    $salesOrder->status = 'delivered';
+                } else {
+                    $salesOrder->status = $request->status;
+                }
             } elseif ($request->paid_amount > 0) {
                 $salesOrder->payment_status = 'partial';
                 $salesOrder->change_amount = 0;
+                $salesOrder->status = $request->status; // Use submitted status
             } else {
                 $salesOrder->payment_status = 'pending';
                 $salesOrder->change_amount = 0;
+                $salesOrder->status = $request->status; // Use submitted status
             }
 
             if ($request->paid_amount > 0) {
@@ -423,13 +480,23 @@ class SalesOrderController extends Controller
             'payment_date' => now()
         ]);
 
-        // Update payment status
+        // Update payment status and order status
         if ($request->paid_amount >= $salesOrder->total_amount) {
             $salesOrder->payment_status = 'paid';
             $salesOrder->change_amount = $request->paid_amount - $salesOrder->total_amount;
+
+            // Auto-complete order if fully paid and not already delivered
+            if ($salesOrder->status !== 'delivered' && $salesOrder->status !== 'cancelled') {
+                $salesOrder->status = 'delivered';
+            }
         } elseif ($request->paid_amount > 0) {
             $salesOrder->payment_status = 'partial';
             $salesOrder->change_amount = 0;
+
+            // Move to confirmed if currently pending
+            if ($salesOrder->status === 'pending') {
+                $salesOrder->status = 'confirmed';
+            }
         } else {
             $salesOrder->payment_status = 'pending';
             $salesOrder->change_amount = 0;
@@ -437,6 +504,73 @@ class SalesOrderController extends Controller
 
         $salesOrder->save();
 
-        return back()->with('success', 'Payment information updated successfully.');
+        return back()->with('success', 'Payment information updated successfully. Order status: ' . ucfirst($salesOrder->status));
+    }
+
+    /**
+     * Handle sales return - create return and restore stock
+     */
+    public function return(Request $request, int $id): RedirectResponse
+    {
+        $request->validate([
+            'return_items' => 'required|array|min:1',
+            'return_items.*.product_id' => 'required|exists:products,id',
+            'return_items.*.quantity' => 'required|integer|min:1',
+            'return_items.*.reason' => 'nullable|string',
+            'refund_amount' => 'required|numeric|min:0',
+            'notes' => 'nullable|string'
+        ]);
+
+        $salesOrder = SalesOrder::findOrFail($id);
+
+        if ($salesOrder->status === 'cancelled') {
+            return back()->with('error', 'Cannot return items from a cancelled order.');
+        }
+
+        DB::transaction(function () use ($request, $salesOrder) {
+            foreach ($request->return_items as $item) {
+                // Verify the item exists in the original order
+                $orderItem = $salesOrder->items()
+                    ->where('product_id', $item['product_id'])
+                    ->first();
+
+                if (!$orderItem) {
+                    throw new \Exception("Product not found in original order.");
+                }
+
+                // Check if return quantity doesn't exceed original quantity
+                if ($item['quantity'] > $orderItem->quantity) {
+                    throw new \Exception("Return quantity exceeds original order quantity.");
+                }
+
+                // Record stock movement (inbound) for return
+                StockMovementService::recordSaleReturn(
+                    $item['product_id'],
+                    $item['quantity'],
+                    $salesOrder->id,
+                    "Return - Order #{$salesOrder->order_number}. Reason: " . ($item['reason'] ?? 'No reason provided')
+                );
+            }
+
+            // Update payment status to refunded if full refund
+            if ($request->refund_amount >= $salesOrder->paid_amount) {
+                $salesOrder->payment_status = 'refunded';
+            } else {
+                $salesOrder->payment_status = 'partial_refund';
+            }
+
+            $salesOrder->paid_amount -= $request->refund_amount;
+            $salesOrder->save();
+
+            // Add notes to the order about the return
+            $returnNotes = "Return processed: Refunded amount \${$request->refund_amount}. Items returned: " . count($request->return_items);
+            if ($request->notes) {
+                $returnNotes .= ". Notes: {$request->notes}";
+            }
+
+            // You could store this in a separate returns table or add it to the order notes
+        });
+
+        return back()->with('success', 'Sales return processed successfully. Stock has been restored.');
     }
 }

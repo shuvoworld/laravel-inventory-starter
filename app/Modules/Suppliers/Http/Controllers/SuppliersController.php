@@ -10,27 +10,25 @@ use Yajra\DataTables\Facades\DataTables;
 
 class SuppliersController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        if ($request->ajax()) {
-            $suppliers = Supplier::select(['id', 'name', 'code', 'email', 'phone', 'contact_person', 'status', 'created_at']);
-
-            return DataTables::of($suppliers)
-                ->addColumn('actions', function ($supplier) {
-                    return view('Suppliers::partials.actions', compact('supplier'))->render();
-                })
-                ->editColumn('status', function ($supplier) {
-                    $badgeClass = $supplier->status === 'active' ? 'success' : 'secondary';
-                    return "<span class='badge badge-{$badgeClass}'>" . ucfirst($supplier->status) . "</span>";
-                })
-                ->editColumn('created_at', function ($supplier) {
-                    return $supplier->created_at->format('M j, Y');
-                })
-                ->rawColumns(['actions', 'status'])
-                ->make(true);
-        }
-
         return view('Suppliers::index');
+    }
+
+    public function data(Request $request)
+    {
+        $query = Supplier::query();
+
+        return DataTables::eloquent($query)
+            ->addColumn('actions', function (Supplier $supplier) {
+                return view('Suppliers::partials.actions', ['id' => $supplier->id])->render();
+            })
+            ->editColumn('status', function (Supplier $supplier) {
+                $badgeClass = $supplier->status === 'active' ? 'success' : 'secondary';
+                return "<span class='badge bg-{$badgeClass}'>" . ucfirst($supplier->status) . "</span>";
+            })
+            ->rawColumns(['actions', 'status'])
+            ->toJson();
     }
 
     public function create()
@@ -103,18 +101,14 @@ class SuppliersController extends Controller
     {
         // Check if supplier has purchase orders
         if ($supplier->purchaseOrders()->count() > 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cannot delete supplier with existing purchase orders.'
-            ], 422);
+            return redirect()->route('modules.suppliers.index')
+                ->with('error', 'Cannot delete supplier with existing purchase orders.');
         }
 
         $supplier->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Supplier deleted successfully.'
-        ]);
+        return redirect()->route('modules.suppliers.index')
+            ->with('success', 'Supplier deleted');
     }
 
     public function getActive(): JsonResponse

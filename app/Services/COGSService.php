@@ -5,19 +5,23 @@ namespace App\Services;
 use App\Modules\SalesOrder\Models\SalesOrder;
 use App\Modules\SalesOrderItem\Models\SalesOrderItem;
 use App\Modules\Products\Models\Product;
+use App\Modules\OperatingExpenses\Models\OperatingExpense;
+use App\Services\WeightedAverageCostService;
 use Carbon\Carbon;
 
 class COGSService
 {
     /**
-     * Calculate COGS for a specific sales order
+     * Calculate COGS for a specific sales order using Weighted Average Cost
      */
     public function calculateOrderCOGS(SalesOrder $order): float
     {
         $cogs = 0;
 
         foreach ($order->items as $item) {
-            $cogs += $item->cogs_amount;
+            // Use Weighted Average Cost for accurate COGS calculation
+            $wac = WeightedAverageCostService::calculateWeightedAverageCost($item->product_id);
+            $cogs += $item->quantity * $wac;
         }
 
         return $cogs;
@@ -73,8 +77,14 @@ class COGSService
 
                 $productBreakdown[$productId]['quantity_sold'] += $item->quantity;
                 $productBreakdown[$productId]['total_revenue'] += $item->final_price;
-                $productBreakdown[$productId]['total_cogs'] += $item->cogs_amount;
-                $productBreakdown[$productId]['total_profit'] += $item->profit_amount;
+
+                // Use Weighted Average Cost for COGS calculation
+                $wac = WeightedAverageCostService::calculateWeightedAverageCost($productId);
+                $itemCOGS = $item->quantity * $wac;
+                $itemProfit = $item->final_price - $itemCOGS;
+
+                $productBreakdown[$productId]['total_cogs'] += $itemCOGS;
+                $productBreakdown[$productId]['total_profit'] += $itemProfit;
             }
         }
 
@@ -111,6 +121,11 @@ class COGSService
 
             $cogs = $this->calculatePeriodCOGS($periodStart, $periodEnd);
             $revenue = $this->getRevenueForPeriod($periodStart, $periodEnd);
+            $operatingExpenses = OperatingExpense::getExpensesForPeriod($periodStart, $periodEnd);
+            $ordersCount = $this->getOrdersCount($periodStart, $periodEnd);
+
+            $grossProfit = $revenue - $cogs;
+            $netProfit = $grossProfit - $operatingExpenses;
 
             $trends[] = [
                 'period' => match($period) {
@@ -123,8 +138,11 @@ class COGSService
                 'period_end' => $periodEnd->format('Y-m-d'),
                 'cogs' => $cogs,
                 'revenue' => $revenue,
-                'gross_profit' => $revenue - $cogs,
-                'gross_profit_margin' => $revenue > 0 ? (($revenue - $cogs) / $revenue) * 100 : 0,
+                'operating_expenses' => $operatingExpenses,
+                'gross_profit' => $grossProfit,
+                'net_profit' => $netProfit,
+                'gross_profit_margin' => $revenue > 0 ? ($grossProfit / $revenue) * 100 : 0,
+                'orders_count' => $ordersCount,
             ];
 
             $current = match($period) {
@@ -146,6 +164,16 @@ class COGSService
         return SalesOrder::whereBetween('order_date', [$startDate, $endDate])
             ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
             ->sum('total_amount');
+    }
+
+    /**
+     * Get orders count for a period
+     */
+    private function getOrdersCount(Carbon $startDate, Carbon $endDate): int
+    {
+        return SalesOrder::whereBetween('order_date', [$startDate, $endDate])
+            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+            ->count();
     }
 
     /**

@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
             StoreAdminRoleSeeder::class,
             RolePermissionSeeder::class,
             DemoUsersSeeder::class,
+            CustomerSeeder::class,
+            ProductSeeder::class,
+            ExpensePermissionsSeeder::class,
         ]);
 
         // Optionally create a demo viewer user

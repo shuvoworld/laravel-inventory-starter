@@ -39,7 +39,7 @@
                             </tr>
                             <tr>
                                 <td><strong>Customer:</strong></td>
-                                <td>{{ $item->customer->name }}</td>
+                                <td>{{ $item->customer ? $item->customer?->name : 'N/A' }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Order Date:</strong></td>
@@ -175,30 +175,30 @@
                 <table class="table table-borderless">
                     <tr>
                         <td><strong>Name:</strong></td>
-                        <td>{{ $item->customer->name }}</td>
+                        <td>{{ $item->customer?->name }}</td>
                     </tr>
-                    @if($item->customer->email)
+                    @if($item->customer?->email)
                         <tr>
                             <td><strong>Email:</strong></td>
-                            <td>{{ $item->customer->email }}</td>
+                            <td>{{ $item->customer?->email }}</td>
                         </tr>
                     @endif
-                    @if($item->customer->phone)
+                    @if($item->customer?->phone)
                         <tr>
                             <td><strong>Phone:</strong></td>
-                            <td>{{ $item->customer->phone }}</td>
+                            <td>{{ $item->customer?->phone }}</td>
                         </tr>
                     @endif
-                    @if($item->customer->address)
+                    @if($item->customer?->address)
                         <tr>
                             <td><strong>Address:</strong></td>
                             <td>
-                                {{ $item->customer->address }}
-                                @if($item->customer->city || $item->customer->state)
-                                    <br>{{ $item->customer->city }}{{ $item->customer->city && $item->customer->state ? ', ' : '' }}{{ $item->customer->state }}
+                                {{ $item->customer?->address }}
+                                @if($item->customer?->city || $item->customer->state)
+                                    <br>{{ $item->customer?->city }}{{ $item->customer?->city && $item->customer?->state ? ', ' : '' }}{{ $item->customer?->state }}
                                 @endif
-                                @if($item->customer->postal_code)
-                                    <br>{{ $item->customer->postal_code }}
+                                @if($item->customer?->postal_code)
+                                    <br>{{ $item->customer?->postal_code }}
                                 @endif
                             </td>
                         </tr>

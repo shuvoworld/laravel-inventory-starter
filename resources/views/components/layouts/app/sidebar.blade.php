@@ -73,6 +73,28 @@
                     @endif
                 @endcan
 
+                <!-- Point of Sale -->
+                @can('sales-order.create')
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('pos.*') ? 'active' : '' }}" href="{{ route('pos.index') }}" target="_blank">
+                            <i class="fas fa-cash-register me-2"></i>
+                            <span x-show="sidebarOpen">POS</span>
+                            <span class="badge bg-success ms-auto" x-show="sidebarOpen">
+                                <i class="fas fa-external-link-alt"></i>
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('pos.pos2') ? 'active' : '' }}" href="{{ route('pos.pos2') }}" target="_blank">
+                            <i class="fas fa-cash-register me-2"></i>
+                            <span x-show="sidebarOpen">POS-2</span>
+                            <span class="badge bg-success ms-auto" x-show="sidebarOpen">
+                                <i class="fas fa-external-link-alt"></i>
+                            </span>
+                        </a>
+                    </li>
+                @endcan
+
                 <!-- Sales & Inventory Section -->
                 <li class="nav-item mt-3 mb-2">
                     <span x-show="sidebarOpen" class="text-muted small fw-bold px-3">SALES & INVENTORY</span>
@@ -88,12 +110,51 @@
                 @endcan
 
                 @can('products.view')
+                    @php
+                        $lowStockCount = \App\Modules\Products\Models\Product::lowStock()->count();
+                    @endphp
                     <li class="nav-item">
                         <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.products.*') ? 'active' : '' }}" href="{{ route('modules.products.index') }}">
                             <i class="fas fa-box me-2"></i>
                             <span x-show="sidebarOpen">Products</span>
+                            @if($lowStockCount > 0)
+                                <span class="badge bg-danger ms-auto" x-show="sidebarOpen">{{ $lowStockCount }}</span>
+                            @endif
                         </a>
                     </li>
+                @endcan
+
+                @can('brand.view')
+                    @if(Module::isActive('brand'))
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.brand.*') ? 'active' : '' }}" href="{{ route('modules.brand.index') }}">
+                                <i class="fas fa-copyright me-2"></i>
+                                <span x-show="sidebarOpen">Brands</span>
+                            </a>
+                        </li>
+                    @endif
+                @endcan
+
+                @can('attribute-set.view')
+                    @if(Module::isActive('attribute-set'))
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.attribute-set.*') ? 'active' : '' }}" href="{{ route('modules.attribute-set.index') }}">
+                                <i class="fas fa-layer-group me-2"></i>
+                                <span x-show="sidebarOpen">Attribute Sets</span>
+                            </a>
+                        </li>
+                    @endif
+                @endcan
+
+                @can('product-attribute.view')
+                    @if(Module::isActive('product-attribute'))
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.product-attribute.*') ? 'active' : '' }}" href="{{ route('modules.product-attribute.index') }}">
+                                <i class="fas fa-sliders-h me-2"></i>
+                                <span x-show="sidebarOpen">Attributes</span>
+                            </a>
+                        </li>
+                    @endif
                 @endcan
 
                 @can('sales-order.view')
@@ -186,7 +247,33 @@
                                 <span x-show="sidebarOpen">Reports</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.stock*') ? 'active' : '' }}" href="{{ route('modules.reports.stock') }}">
+                                <i class="fas fa-cubes me-2"></i>
+                                <span x-show="sidebarOpen">Stock Report</span>
+                            </a>
+                        </li>
                     @endif
+                @endcan
+
+                <!-- Expenses Section -->
+                @can('expense.view')
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.expenses.*') ? 'active' : '' }}" href="{{ route('modules.expenses.index') }}">
+                            <i class="fas fa-money-bill-wave me-2"></i>
+                            <span x-show="sidebarOpen">Expenses</span>
+                        </a>
+                    </li>
+                @endcan
+
+                <!-- Expense Categories Section -->
+                @can('expense-category.view')
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.expense-category.*') ? 'active' : '' }}" href="{{ route('modules.expense-category.index') }}">
+                            <i class="fas fa-tags me-2"></i>
+                            <span x-show="sidebarOpen">Categories</span>
+                        </a>
+                    </li>
                 @endcan
 
                 <!-- Settings Section -->

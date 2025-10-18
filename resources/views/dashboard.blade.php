@@ -1,4 +1,4 @@
-@extends('layouts.adminlte')
+@extends('layouts.app')
 
 @section('title', __('common.dashboard'))
 @section('page-title', __('common.dashboard'))
@@ -262,7 +262,21 @@ function formatMoney($amount) {
             <div class="card-body">
                 <div class="row">
                     @can('sales-order.create')
-                    <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="col-md-2 col-sm-6 mb-3">
+                        <div class="card bg-gradient-success text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-cash-register fa-2x mb-2"></i>
+                                <h6 class="card-title text-white">Point of Sale</h6>
+                                <a href="{{ route('pos.index') }}" target="_blank" class="btn btn-light btn-sm">
+                                    <i class="fas fa-external-link-alt me-1"></i> Open POS
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @endcan
+
+                    @can('sales-order.create')
+                    <div class="col-md-2 col-sm-6 mb-3">
                         <div class="card border-primary">
                             <div class="card-body text-center">
                                 <i class="fas fa-plus-circle fa-2x text-primary mb-2"></i>
@@ -274,7 +288,7 @@ function formatMoney($amount) {
                     @endcan
 
                     @can('purchase-order.create')
-                    <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="col-md-2 col-sm-6 mb-3">
                         <div class="card border-secondary">
                             <div class="card-body text-center">
                                 <i class="fas fa-truck fa-2x text-secondary mb-2"></i>
@@ -286,7 +300,7 @@ function formatMoney($amount) {
                     @endcan
 
                     @can('customers.create')
-                    <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="col-md-2 col-sm-6 mb-3">
                         <div class="card border-success">
                             <div class="card-body text-center">
                                 <i class="fas fa-user-plus fa-2x text-success mb-2"></i>
@@ -298,7 +312,7 @@ function formatMoney($amount) {
                     @endcan
 
                     @can('products.create')
-                    <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="col-md-2 col-sm-6 mb-3">
                         <div class="card border-warning">
                             <div class="card-body text-center">
                                 <i class="fas fa-box-open fa-2x text-warning mb-2"></i>
@@ -310,7 +324,7 @@ function formatMoney($amount) {
                     @endcan
 
                     @can('stock-movement.view')
-                    <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="col-md-2 col-sm-6 mb-3">
                         <div class="card border-info">
                             <div class="card-body text-center">
                                 <i class="fas fa-exchange-alt fa-2x text-info mb-2"></i>

@@ -223,7 +223,7 @@
             <div class="billing-to">
                 <div class="section-title">Bill To:</div>
                 <div class="customer-info">
-                    <div class="customer-name">{{ $item->customer->name }}</div>
+                    <div class="customer-name">{{ $item->customer ? $item->customer->name : 'Guest Customer' }}</div>
                     @if($item->customer->email)
                         <div>{{ $item->customer->email }}</div>
                     @endif

@@ -34,6 +34,10 @@ class RolePermissionSeeder extends Seeder
             'types.view', 'types.create', 'types.edit', 'types.delete',
             // Blog Category module
             'blog-category.view', 'blog-category.create', 'blog-category.edit', 'blog-category.delete',
+            // Expense Management
+            'expense.view', 'expense.create', 'expense.edit', 'expense.delete',
+            // Expense Category Management
+            'expense-category.view', 'expense-category.create', 'expense-category.edit', 'expense-category.delete',
         ];
 
         foreach ($permissions as $perm) {
