@@ -4,6 +4,7 @@ namespace App\Modules\SalesOrder\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use OwenIt\Auditing\Auditable;
 use App\Traits\BelongsToStore;
@@ -152,22 +153,47 @@ class SalesOrder extends Model implements AuditableContract
         return 0;
     }
 
-    protected static function boot()
+      public static function create(array $attributes = [])
+    {
+        // Ensure store_id is set before generating order number
+        if (!isset($attributes['store_id']) && auth()->check()) {
+            $attributes['store_id'] = auth()->user()->currentStoreId();
+        }
+
+        // Generate order number if not provided
+        if (!isset($attributes['order_number'])) {
+            $attributes['order_number'] = static::generateOrderNumber($attributes['store_id']);
+        }
+
+        return static::query()->create($attributes);
+    }
+
+    protected static function generateOrderNumber($storeId)
+    {
+        return DB::transaction(function () use ($storeId) {
+            $year = date('Y');
+            $latestOrder = static::withoutGlobalScopes()
+                ->where('store_id', $storeId)
+                ->whereYear('created_at', $year)
+                ->where('order_number', 'like', 'SO-' . $year . '-%')
+                ->lockForUpdate()
+                ->orderBy('order_number', 'desc')
+                ->first();
+
+            if ($latestOrder) {
+                $lastNumber = intval(substr($latestOrder->order_number, -6));
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
+
+            return 'SO-' . $year . '-' . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+        });
+    }
+
+  protected static function boot()
     {
         parent::boot();
-
-        static::creating(function ($salesOrder) {
-            if (!$salesOrder->order_number) {
-                // Get count for current year and store
-                $year = date('Y');
-                $count = static::withoutGlobalScopes()
-                    ->where('store_id', $salesOrder->store_id)
-                    ->whereYear('created_at', $year)
-                    ->count();
-
-                $salesOrder->order_number = 'SO-' . $year . '-' . str_pad($count + 1, 6, '0', STR_PAD_LEFT);
-            }
-        });
 
         static::saved(function ($salesOrder) {
             $salesOrder->calculateTotals();
