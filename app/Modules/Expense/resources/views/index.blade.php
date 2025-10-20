@@ -30,6 +30,7 @@
         </div>
     </div>
 </div>
+@endsection
 
 @push('scripts')
 <script>
@@ -38,7 +39,7 @@
             serverSide: true,
             processing: true,
             ajax: {
-                url: '{{ route('expenses.data') }}',
+                url: '{{ route('modules.expenses.data') }}',
                 dataSrc: 'data'
             },
             columns: [
@@ -63,4 +64,4 @@
         });
     });
 </script>
-@endsection
+@endpush

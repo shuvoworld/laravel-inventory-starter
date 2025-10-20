@@ -41,25 +41,41 @@
                     </select>
                     @error('brand_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-6">
                     <label for="unit" class="form-label">Unit</label>
                     <input id="unit" type="text" name="unit" class="form-control @error('unit') is-invalid @enderror" value="{{ old('unit') }}" placeholder="pcs, box, bottle">
                     @error('unit')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-                <div class="col-12 col-md-4">
-                    <label for="price" class="form-label">Selling Price</label>
-                    <input id="price" type="number" step="0.01" min="0" name="price" class="form-control @error('price') is-invalid @enderror" value="{{ old('price') }}">
-                    @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-12 col-md-4">
-                    <label for="cost_price" class="form-label">Cost Price</label>
-                    <input id="cost_price" type="number" step="0.01" min="0" name="cost_price" class="form-control @error('cost_price') is-invalid @enderror" value="{{ old('cost_price') }}">
-                    @error('cost_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-6">
                     <label for="reorder_level" class="form-label">Reorder Level</label>
                     <input id="reorder_level" type="number" min="0" name="reorder_level" class="form-control @error('reorder_level') is-invalid @enderror" value="{{ old('reorder_level') }}">
                     @error('reorder_level')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="minimum_profit_margin" class="form-label">Minimum Profit Margin (%)</label>
+                    <div class="input-group">
+                        <input id="minimum_profit_margin" type="number" step="0.01" min="0" max="100" name="minimum_profit_margin" class="form-control @error('minimum_profit_margin') is-invalid @enderror" value="{{ old('minimum_profit_margin', 7.5) }}" required>
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <small class="text-muted">Minimum profit margin percentage - used to calculate floor price</small>
+                    @error('minimum_profit_margin')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="standard_profit_margin" class="form-label">Standard Profit Margin (%)</label>
+                    <div class="input-group">
+                        <input id="standard_profit_margin" type="number" step="0.01" min="0" max="100" name="standard_profit_margin" class="form-control @error('standard_profit_margin') is-invalid @enderror" value="{{ old('standard_profit_margin', 7.5) }}" required>
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <small class="text-muted">Standard profit margin percentage - used to calculate target price</small>
+                    @error('standard_profit_margin')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Cost Price:</strong> Product cost is automatically calculated from purchase orders using the Weighted Average Cost (WAC) method. It will be updated automatically when you receive purchase orders.
+                        <br><strong>Floor Price:</strong> Cost Price + Minimum Profit Margin (minimum selling price)
+                        <br><strong>Target Price:</strong> Cost Price + Standard Profit Margin (recommended selling price)
+                    </div>
                 </div>
             </div>
         </div>

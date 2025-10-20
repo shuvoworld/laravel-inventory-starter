@@ -53,7 +53,7 @@ class ExpenseCategoryController extends Controller
         ExpenseCategory::create([
             'name' => $request->name,
             'description' => $request->description,
-            'color' => $request->color ?? '#6B728',
+            'color' => $request->color ?? '#6B7280',
             'is_active' => $request->boolean('is_active', true)
         ]);
 
@@ -79,7 +79,7 @@ class ExpenseCategoryController extends Controller
         $category->update([
             'name' => $request->name,
             'description' => $request->description,
-            'color' => $request->color ?? '#6B728',
+            'color' => $request->color ?? '#6B7280',
             'is_active' => $request->boolean('is_active', true)
         ]);
 

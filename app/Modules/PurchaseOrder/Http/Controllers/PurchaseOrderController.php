@@ -42,22 +42,22 @@ class PurchaseOrderController extends Controller
             })
             ->addColumn('status_badge', function (PurchaseOrder $item) {
                 $badges = [
-                    'pending' => 'badge-warning',
-                    'confirmed' => 'badge-info',
-                    'processing' => 'badge-primary',
-                    'received' => 'badge-success',
-                    'cancelled' => 'badge-danger'
+                    'pending' => 'bg-warning text-dark',
+                    'confirmed' => 'bg-info text-dark',
+                    'processing' => 'bg-primary',
+                    'received' => 'bg-success',
+                    'cancelled' => 'bg-danger'
                 ];
-                $class = $badges[$item->status] ?? 'badge-secondary';
+                $class = $badges[$item->status] ?? 'bg-secondary';
                 return "<span class='badge {$class}'>" . ucfirst($item->status) . "</span>";
             })
             ->addColumn('payment_status_badge', function (PurchaseOrder $item) {
                 $badges = [
-                    'unpaid' => 'badge-danger',
-                    'partial' => 'badge-warning',
-                    'paid' => 'badge-success'
+                    'unpaid' => 'bg-danger',
+                    'partial' => 'bg-warning text-dark',
+                    'paid' => 'bg-success'
                 ];
-                $class = $badges[$item->payment_status] ?? 'badge-secondary';
+                $class = $badges[$item->payment_status] ?? 'bg-secondary';
                 return "<span class='badge {$class}'>" . ucfirst($item->payment_status) . "</span>";
             })
             ->addColumn('actions', function (PurchaseOrder $item) {
@@ -89,6 +89,7 @@ class PurchaseOrderController extends Controller
             'supplier_id' => 'required|exists:suppliers,id',
             'supplier_name' => 'nullable|string|max:255',
             'order_date' => 'required|date',
+            'status' => 'required|in:pending,confirmed,processing,received,cancelled',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -111,7 +112,7 @@ class PurchaseOrderController extends Controller
                 'supplier_id' => $supplier->id,
                 'supplier_name' => $supplier->name,
                 'order_date' => $request->order_date,
-                'status' => 'pending',
+                'status' => $request->status ?? 'pending',
                 'subtotal' => $subtotal,
                 'tax_amount' => 0,
                 'discount_amount' => 0,

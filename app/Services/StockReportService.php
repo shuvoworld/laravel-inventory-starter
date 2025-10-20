@@ -119,10 +119,8 @@ class StockReportService
             $reorderLevel = $product->reorder_level ?? 10;
             $stockStatus = $this->getStockStatus($currentStock, $reorderLevel);
 
-            // Calculate inventory metrics
+            // Calculate inventory metrics (based on cost_price only, as selling price was removed)
             $totalValue = $currentStock * ($product->cost_price ?? 0);
-            $potentialRevenue = $currentStock * ($product->price ?? 0);
-            $potentialProfit = $potentialRevenue - $totalValue;
 
             // Get recent activity (last 30 days)
             $thirtyDaysAgo = Carbon::now()->subDays(30);
@@ -154,12 +152,7 @@ class StockReportService
                 'reorder_level' => $reorderLevel,
                 'stock_status' => $stockStatus,
                 'cost_price' => $product->cost_price ?? 0,
-                'selling_price' => $product->price ?? 0,
                 'total_value' => $totalValue,
-                'potential_revenue' => $potentialRevenue,
-                'potential_profit' => $potentialProfit,
-                'profit_margin' => $product->price > 0 ?
-                    (($product->price - ($product->cost_price ?? 0)) / $product->price) * 100 : 0,
                 'recent_sales' => $recentSales,
                 'recent_purchases' => $recentPurchases,
                 'monthly_consumption' => $monthlyConsumption,
@@ -282,38 +275,28 @@ class StockReportService
             // Use StockCalculationService for accurate stock from movements
             $quantity = StockCalculationService::getStockForProduct($product->id);
             $costPrice = $product->cost_price ?? 0;
-            $sellingPrice = $product->price ?? 0;
 
             $costValue = $quantity * $costPrice;
-            $marketValue = $quantity * $sellingPrice;
-            $potentialProfit = $marketValue - $costValue;
 
             $totalCostValue += $costValue;
-            $totalMarketValue += $marketValue;
-            $totalPotentialProfit += $potentialProfit;
 
             // By brand
             $brand = $product->brand?->name ?? 'No Brand';
             if (!isset($valuationByBrand[$brand])) {
                 $valuationByBrand[$brand] = [
                     'cost_value' => 0,
-                    'market_value' => 0,
-                    'potential_profit' => 0,
                     'product_count' => 0,
                 ];
             }
             $valuationByBrand[$brand]['cost_value'] += $costValue;
-            $valuationByBrand[$brand]['market_value'] += $marketValue;
-            $valuationByBrand[$brand]['potential_profit'] += $potentialProfit;
             $valuationByBrand[$brand]['product_count']++;
         }
 
         return [
             'total_cost_value' => $totalCostValue,
-            'total_market_value' => $totalMarketValue,
-            'total_potential_profit' => $totalPotentialProfit,
-            'overall_profit_margin' => $totalMarketValue > 0 ?
-                ($totalPotentialProfit / $totalMarketValue) * 100 : 0,
+            'total_market_value' => 0, // Market value removed as selling price was removed
+            'total_potential_profit' => 0, // Potential profit removed as selling price was removed
+            'overall_profit_margin' => 0, // Profit margin removed as selling price was removed
             'valuation_by_brand' => $valuationByBrand,
         ];
     }

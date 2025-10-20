@@ -1,18 +1,34 @@
 {
-    "env": {
-        "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-4.5-air",
-        "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.6",
-        "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.6",
-        "ANTHROPIC_AUTH_TOKEN": "6111a3aac09b45eb8ab93097ee224da4.mVUTHnuCTSij8bUX",
-        "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
-        "API_TIMEOUT_MS": "3000000"
-    },
+  "env": {
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-4.5-air",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-4.6",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-4.6",
+    "ANTHROPIC_AUTH_TOKEN": "6111a3aac09b45eb8ab93097ee224da4.mVUTHnuCTSij8bUX",
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+    "API_TIMEOUT_MS": "3000000"
+  },
   "permissions": {
     "allow": [
-      "Bash(php:*)",
-      "Bash(composer show:*)",
-      "Bash(find:*)",
-      "Bash(curl:*)"
-    ]
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" assign-role.php)",
+      "Bash(del assign-role.php)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" check-permissions.php)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" assign-all-roles.php)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan cache:clear)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan config:clear)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan permission:cache-reset)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan make:command SyncProductStock)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan product:sync-stock)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan product:sync-stock --product=1)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan schedule:list)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan make:migration remove_price_and_profit_margin_from_products_table --table=products)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan migrate)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan make:command SyncProductAverageCost)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan product:sync-average-cost)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan route:list --name=pos)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan make:migration add_pricing_fields_to_products_table --table=products)",
+      "Bash(\"C:\\Users\\mowca\\.config\\herd\\bin\\php.bat\" artisan migrate:status)"
+    ],
+    "deny": [],
+    "ask": []
   }
 }

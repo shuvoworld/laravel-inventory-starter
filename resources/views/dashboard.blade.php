@@ -74,57 +74,75 @@ function formatMoney($amount) {
 </div>
 
 <!-- Key Metrics Cards -->
-<div class="row">
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-success">
-            <div class="inner">
-                <h3>{{ formatMoney($currentMonthData['revenue']) }}</h3>
-                <p>Monthly Revenue</p>
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <p class="mb-1 small opacity-75">Monthly Revenue</p>
+                        <h3 class="mb-0">{{ formatMoney($currentMonthData['revenue']) }}</h3>
+                    </div>
+                    <i class="fas fa-dollar-sign fa-2x opacity-50"></i>
+                </div>
+                @can('reports.view')
+                    <a href="{{ route('modules.reports.profit-loss') }}" class="text-white text-decoration-none small">
+                        View Reports <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                @endcan
             </div>
-            <div class="icon"><i class="fas fa-dollar-sign"></i></div>
-            @can('reports.view')
-                <a href="{{ route('modules.reports.profit-loss') }}" class="small-box-footer">View Reports <i class="fas fa-arrow-circle-right"></i></a>
-            @else
-                <div class="small-box-footer">&nbsp;</div>
-            @endcan
         </div>
     </div>
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-warning">
-            <div class="inner">
-                <h3>{{ formatMoney($currentMonthData['operating_expenses']) }}</h3>
-                <p>Operating Expenses</p>
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <p class="mb-1 small opacity-75">Operating Expenses</p>
+                        <h3 class="mb-0">{{ formatMoney($currentMonthData['operating_expenses']) }}</h3>
+                    </div>
+                    <i class="fas fa-file-invoice fa-2x opacity-50"></i>
+                </div>
+                @can('operating-expenses.view')
+                    <a href="{{ route('modules.operating-expenses.index') }}" class="text-white text-decoration-none small">
+                        Manage Expenses <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                @endcan
             </div>
-            <div class="icon"><i class="fas fa-file-invoice"></i></div>
-            @can('operating-expenses.view')
-                <a href="{{ route('modules.operating-expenses.index') }}" class="small-box-footer">Manage Expenses <i class="fas fa-arrow-circle-right"></i></a>
-            @else
-                <div class="small-box-footer">&nbsp;</div>
-            @endcan
         </div>
     </div>
-    <div class="col-lg-3 col-6">
-        <div class="small-box {{ $currentMonthData['net_profit'] >= 0 ? 'bg-primary' : 'bg-danger' }}">
-            <div class="inner">
-                <h3>{{ formatMoney($currentMonthData['net_profit']) }}</h3>
-                <p>Net Profit</p>
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 {{ $currentMonthData['net_profit'] >= 0 ? 'bg-primary' : 'bg-danger' }} text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <p class="mb-1 small opacity-75">Net Profit</p>
+                        <h3 class="mb-0">{{ formatMoney($currentMonthData['net_profit']) }}</h3>
+                    </div>
+                    <i class="fas fa-chart-line fa-2x opacity-50"></i>
+                </div>
+                <small class="opacity-75">{{ number_format($currentMonthData['net_profit_margin'], 1) }}% margin</small>
             </div>
-            <div class="icon"><i class="fas fa-chart-line"></i></div>
-            <div class="small-box-footer">{{ number_format($currentMonthData['net_profit_margin'], 1) }}% margin</div>
         </div>
     </div>
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-info">
-            <div class="inner">
-                <h3>{{ $currentMonthData['orders_count'] }}</h3>
-                <p>Sales Orders</p>
+    <div class="col-lg-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <p class="mb-1 small opacity-75">Sales Orders</p>
+                        <h3 class="mb-0">{{ $currentMonthData['orders_count'] }}</h3>
+                    </div>
+                    <i class="fas fa-shopping-cart fa-2x opacity-50"></i>
+                </div>
+                @can('sales-order.view')
+                    <a href="{{ route('modules.sales-order.index') }}" class="text-white text-decoration-none small">
+                        View Orders <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                @else
+                    <small class="opacity-75">Avg: {{ formatMoney($currentMonthData['average_order_value']) }}</small>
+                @endcan
             </div>
-            <div class="icon"><i class="fas fa-shopping-cart"></i></div>
-            @can('sales-order.view')
-                <a href="{{ route('modules.sales-order.index') }}" class="small-box-footer">View Orders <i class="fas fa-arrow-circle-right"></i></a>
-            @else
-                <div class="small-box-footer">Avg: {{ formatMoney($currentMonthData['average_order_value']) }}</div>
-            @endcan
         </div>
     </div>
 </div>
@@ -209,44 +227,64 @@ function formatMoney($amount) {
 </div>
 
 <!-- Business Stats Overview -->
-<div class="row mb-4">
+<div class="row g-3 mb-4">
     <div class="col-md-3 col-6">
-        <div class="info-box">
-            <span class="info-box-icon bg-info"><i class="fas fa-user-tie"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">Customers</span>
-                <span class="info-box-number">{{ $totalCustomers }}</span>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-info bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-user-tie fa-2x text-info"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="text-muted mb-0 small">Customers</p>
+                        <h4 class="mb-0">{{ $totalCustomers }}</h4>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-md-3 col-6">
-        <div class="info-box">
-            <span class="info-box-icon bg-success"><i class="fas fa-box"></i></span>
-            <div class="info-box-content">
-                <span class="info-box-text">Products</span>
-                <span class="info-box-number">{{ $totalProducts }}</span>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-success bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-box fa-2x text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="text-muted mb-0 small">Products</p>
+                        <h4 class="mb-0">{{ $totalProducts }}</h4>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-md-3 col-6">
-        <div class="info-box">
-            <span class="info-box-icon {{ $lowStockProducts > 0 ? 'bg-warning' : 'bg-secondary' }}">
-                <i class="fas fa-exclamation-triangle"></i>
-            </span>
-            <div class="info-box-content">
-                <span class="info-box-text">Low Stock</span>
-                <span class="info-box-number">{{ $lowStockProducts }}</span>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 {{ $lowStockProducts > 0 ? 'bg-warning' : 'bg-secondary' }} bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-exclamation-triangle fa-2x {{ $lowStockProducts > 0 ? 'text-warning' : 'text-secondary' }}"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="text-muted mb-0 small">Low Stock</p>
+                        <h4 class="mb-0">{{ $lowStockProducts }}</h4>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-md-3 col-6">
-        <div class="info-box">
-            <span class="info-box-icon {{ $pendingExpenses > 0 ? 'bg-warning' : 'bg-secondary' }}">
-                <i class="fas fa-clock"></i>
-            </span>
-            <div class="info-box-content">
-                <span class="info-box-text">Pending Exp.</span>
-                <span class="info-box-number">{{ formatMoney($pendingExpenses/1000) }}K</span>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 {{ $pendingExpenses > 0 ? 'bg-warning' : 'bg-secondary' }} bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-clock fa-2x {{ $pendingExpenses > 0 ? 'text-warning' : 'text-secondary' }}"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <p class="text-muted mb-0 small">Pending Exp.</p>
+                        <h4 class="mb-0">{{ formatMoney($pendingExpenses/1000) }}K</h4>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -263,10 +301,10 @@ function formatMoney($amount) {
                 <div class="row">
                     @can('sales-order.create')
                     <div class="col-md-2 col-sm-6 mb-3">
-                        <div class="card bg-gradient-success text-white">
+                        <div class="card shadow-sm bg-success text-white h-100">
                             <div class="card-body text-center">
                                 <i class="fas fa-cash-register fa-2x mb-2"></i>
-                                <h6 class="card-title text-white">Point of Sale</h6>
+                                <h6 class="mb-2">Point of Sale</h6>
                                 <a href="{{ route('pos.index') }}" target="_blank" class="btn btn-light btn-sm">
                                     <i class="fas fa-external-link-alt me-1"></i> Open POS
                                 </a>
@@ -277,10 +315,10 @@ function formatMoney($amount) {
 
                     @can('sales-order.create')
                     <div class="col-md-2 col-sm-6 mb-3">
-                        <div class="card border-primary">
+                        <div class="card shadow-sm h-100">
                             <div class="card-body text-center">
                                 <i class="fas fa-plus-circle fa-2x text-primary mb-2"></i>
-                                <h6 class="card-title">New Sales Order</h6>
+                                <h6 class="mb-2">New Sales Order</h6>
                                 <a href="{{ route('modules.sales-order.create') }}" class="btn btn-primary btn-sm">Create Order</a>
                             </div>
                         </div>
@@ -289,10 +327,10 @@ function formatMoney($amount) {
 
                     @can('purchase-order.create')
                     <div class="col-md-2 col-sm-6 mb-3">
-                        <div class="card border-secondary">
+                        <div class="card shadow-sm h-100">
                             <div class="card-body text-center">
                                 <i class="fas fa-truck fa-2x text-secondary mb-2"></i>
-                                <h6 class="card-title">New Purchase Order</h6>
+                                <h6 class="mb-2">New Purchase Order</h6>
                                 <a href="{{ route('modules.purchase-order.create') }}" class="btn btn-secondary btn-sm">Create PO</a>
                             </div>
                         </div>
@@ -301,10 +339,10 @@ function formatMoney($amount) {
 
                     @can('customers.create')
                     <div class="col-md-2 col-sm-6 mb-3">
-                        <div class="card border-success">
+                        <div class="card shadow-sm h-100">
                             <div class="card-body text-center">
                                 <i class="fas fa-user-plus fa-2x text-success mb-2"></i>
-                                <h6 class="card-title">New Customer</h6>
+                                <h6 class="mb-2">New Customer</h6>
                                 <a href="{{ route('modules.customers.create') }}" class="btn btn-success btn-sm">Add Customer</a>
                             </div>
                         </div>
@@ -313,10 +351,10 @@ function formatMoney($amount) {
 
                     @can('products.create')
                     <div class="col-md-2 col-sm-6 mb-3">
-                        <div class="card border-warning">
+                        <div class="card shadow-sm h-100">
                             <div class="card-body text-center">
                                 <i class="fas fa-box-open fa-2x text-warning mb-2"></i>
-                                <h6 class="card-title">New Product</h6>
+                                <h6 class="mb-2">New Product</h6>
                                 <a href="{{ route('modules.products.create') }}" class="btn btn-warning btn-sm">Add Product</a>
                             </div>
                         </div>
@@ -325,10 +363,10 @@ function formatMoney($amount) {
 
                     @can('stock-movement.view')
                     <div class="col-md-2 col-sm-6 mb-3">
-                        <div class="card border-info">
+                        <div class="card shadow-sm h-100">
                             <div class="card-body text-center">
                                 <i class="fas fa-exchange-alt fa-2x text-info mb-2"></i>
-                                <h6 class="card-title">Stock Movements</h6>
+                                <h6 class="mb-2">Stock Movements</h6>
                                 <a href="{{ route('modules.stock-movement.index') }}" class="btn btn-info btn-sm">View Stock</a>
                             </div>
                         </div>
@@ -344,15 +382,13 @@ function formatMoney($amount) {
 <div class="row">
     @can('sales-order.view')
     <div class="col-lg-6">
-        <div class="card card-primary card-outline">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-shopping-cart mr-1"></i>
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-shopping-cart me-2"></i>
                     Recent Sales Orders
-                </h3>
-                <div class="card-tools">
-                    <a href="{{ route('modules.sales-order.index') }}" class="btn btn-tool">View all</a>
-                </div>
+                </h5>
+                <a href="{{ route('modules.sales-order.index') }}" class="btn btn-sm btn-outline-primary">View all</a>
             </div>
             <div class="card-body p-0">
                 @if($recentSalesOrders->count() > 0)
@@ -380,15 +416,13 @@ function formatMoney($amount) {
 
     @can('operating-expenses.view')
     <div class="col-lg-6">
-        <div class="card card-warning card-outline">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-file-invoice mr-1"></i>
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-invoice me-2"></i>
                     Recent Expenses
-                </h3>
-                <div class="card-tools">
-                    <a href="{{ route('modules.operating-expenses.index') }}" class="btn btn-tool">View all</a>
-                </div>
+                </h5>
+                <a href="{{ route('modules.operating-expenses.index') }}" class="btn btn-sm btn-outline-primary">View all</a>
             </div>
             <div class="card-body p-0">
                 @if($recentExpenses->count() > 0)
@@ -414,12 +448,10 @@ function formatMoney($amount) {
     </div>
     @else
     <div class="col-lg-6">
-        <div class="card card-success card-outline">
-            <div class="card-header">
-                <h3 class="card-title">Recent Customers</h3>
-                <div class="card-tools">
-                    <a href="{{ route('modules.customers.index') }}" class="btn btn-tool">View all</a>
-                </div>
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Customers</h5>
+                <a href="{{ route('modules.customers.index') }}" class="btn btn-sm btn-outline-primary">View all</a>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -445,12 +477,10 @@ function formatMoney($amount) {
 <div class="row mt-4">
     @can('products.view')
     <div class="col-lg-6">
-        <div class="card card-warning card-outline h-100">
-            <div class="card-header">
-                <h3 class="card-title">Recent Products</h3>
-                <div class="card-tools">
-                    <a href="{{ route('modules.products.index') }}" class="btn btn-tool">View all</a>
-                </div>
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Products</h5>
+                <a href="{{ route('modules.products.index') }}" class="btn btn-sm btn-outline-primary">View all</a>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -474,12 +504,10 @@ function formatMoney($amount) {
 
     @can('stock-movement.view')
     <div class="col-lg-6">
-        <div class="card card-info card-outline h-100">
-            <div class="card-header">
-                <h3 class="card-title">Recent Stock Movements</h3>
-                <div class="card-tools">
-                    <a href="{{ route('modules.stock-movement.index') }}" class="btn btn-tool">View all</a>
-                </div>
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Stock Movements</h5>
+                <a href="{{ route('modules.stock-movement.index') }}" class="btn btn-sm btn-outline-primary">View all</a>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -505,55 +533,79 @@ function formatMoney($amount) {
 @role('admin')
 <div class="row mt-4">
     <div class="col-lg-12">
-        <div class="card card-secondary card-outline">
-            <div class="card-header">
-                <h3 class="card-title">System Administration</h3>
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">System Administration</h5>
             </div>
             <div class="card-body">
-                <div class="row">
+                <div class="row g-3">
                     <div class="col-md-3">
-                        <div class="small-box bg-primary">
-                            <div class="inner">
-                                <h3>{{ \App\Models\Module::count() }}</h3>
-                                <p>Modules</p>
+                        <div class="card border-0 bg-primary text-white h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <p class="mb-1 small opacity-75">Modules</p>
+                                        <h3 class="mb-0">{{ \App\Models\Module::count() }}</h3>
+                                    </div>
+                                    <i class="fas fa-cubes fa-2x opacity-50"></i>
+                                </div>
+                                <a href="{{ route('admin.modules.index') }}" class="text-white text-decoration-none small">
+                                    Manage modules <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
                             </div>
-                            <div class="icon"><i class="fas fa-cubes"></i></div>
-                            <a href="{{ route('admin.modules.index') }}" class="small-box-footer">Manage modules <i class="fas fa-arrow-circle-right"></i></a>
                         </div>
                     </div>
                     @can('users.view')
                     <div class="col-md-3">
-                        <div class="small-box bg-info">
-                            <div class="inner">
-                                <h3>{{ \App\Models\User::count() }}</h3>
-                                <p>Users</p>
+                        <div class="card border-0 bg-info text-white h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <p class="mb-1 small opacity-75">Users</p>
+                                        <h3 class="mb-0">{{ \App\Models\User::count() }}</h3>
+                                    </div>
+                                    <i class="fas fa-users fa-2x opacity-50"></i>
+                                </div>
+                                <a href="{{ route('modules.users.index') }}" class="text-white text-decoration-none small">
+                                    Manage users <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
                             </div>
-                            <div class="icon"><i class="fas fa-users"></i></div>
-                            <a href="{{ route('modules.users.index') }}" class="small-box-footer">Manage users <i class="fas fa-arrow-circle-right"></i></a>
                         </div>
                     </div>
                     @endcan
                     @can('roles.view')
                     <div class="col-md-3">
-                        <div class="small-box bg-secondary">
-                            <div class="inner">
-                                <h3>{{ \Spatie\Permission\Models\Role::count() }}</h3>
-                                <p>Roles</p>
+                        <div class="card border-0 bg-secondary text-white h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <p class="mb-1 small opacity-75">Roles</p>
+                                        <h3 class="mb-0">{{ \Spatie\Permission\Models\Role::count() }}</h3>
+                                    </div>
+                                    <i class="fas fa-user-shield fa-2x opacity-50"></i>
+                                </div>
+                                <a href="{{ route('modules.roles.index') }}" class="text-white text-decoration-none small">
+                                    Manage roles <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
                             </div>
-                            <div class="icon"><i class="fas fa-user-shield"></i></div>
-                            <a href="{{ route('modules.roles.index') }}" class="small-box-footer">Manage roles <i class="fas fa-arrow-circle-right"></i></a>
                         </div>
                     </div>
                     @endcan
                     @can('permissions.view')
                     <div class="col-md-3">
-                        <div class="small-box bg-dark">
-                            <div class="inner">
-                                <h3>{{ \Spatie\Permission\Models\Permission::count() }}</h3>
-                                <p>Permissions</p>
+                        <div class="card border-0 bg-dark text-white h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <p class="mb-1 small opacity-75">Permissions</p>
+                                        <h3 class="mb-0">{{ \Spatie\Permission\Models\Permission::count() }}</h3>
+                                    </div>
+                                    <i class="fas fa-key fa-2x opacity-50"></i>
+                                </div>
+                                <a href="{{ route('modules.permissions.index') }}" class="text-white text-decoration-none small">
+                                    Manage permissions <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
                             </div>
-                            <div class="icon"><i class="fas fa-key"></i></div>
-                            <a href="{{ route('modules.permissions.index') }}" class="small-box-footer">Manage permissions <i class="fas fa-arrow-circle-right"></i></a>
                         </div>
                     </div>
                     @endcan

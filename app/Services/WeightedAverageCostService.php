@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Modules\Products\Models\Product;
 use App\Modules\PurchaseOrder\Models\PurchaseOrder;
 use App\Modules\PurchaseOrderItem\Models\PurchaseOrderItem;
+use App\Services\StockCalculationService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -160,8 +161,71 @@ class WeightedAverageCostService
         Cache::forget("product_wac_{$productId}");
         Cache::forget('all_products_wac');
 
-        // Pre-calculate and cache the new WAC
-        self::calculateWeightedAverageCost($productId);
+        // Calculate new WAC
+        $newWAC = self::calculateWeightedAverageCost($productId);
+
+        // Update product cost_price with the new WAC
+        self::syncProductCostPrice($productId, $newWAC);
+    }
+
+    /**
+     * Sync product cost_price with calculated Average Cost (Total Cost / Total Quantity)
+     */
+    public static function syncProductCostPrice(int $productId, ?float $averageCost = null): void
+    {
+        $product = Product::find($productId);
+
+        if (!$product) {
+            return;
+        }
+
+        // Calculate Average Cost if not provided
+        if ($averageCost === null) {
+            $averageCost = self::calculateAverageCost($productId);
+        }
+
+        // Update product cost_price
+        $product->update(['cost_price' => $averageCost]);
+    }
+
+    /**
+     * Calculate simple Average Cost = Total Cost / Total Quantity
+     */
+    public static function calculateAverageCost(int $productId): float
+    {
+        $result = \App\Modules\PurchaseOrderItem\Models\PurchaseOrderItem::join('purchase_orders', 'purchase_order_items.purchase_order_id', '=', 'purchase_orders.id')
+            ->where('purchase_order_items.product_id', $productId)
+            ->whereIn('purchase_orders.status', ['confirmed', 'processing', 'received'])
+            ->selectRaw("
+                SUM(purchase_order_items.quantity) as total_quantity,
+                SUM(purchase_order_items.quantity * purchase_order_items.unit_price) as total_cost
+            ")
+            ->first();
+
+        if (!$result || $result->total_quantity == 0) {
+            // Fallback to product cost price if no purchase history
+            $product = Product::find($productId);
+            return $product ? ($product->cost_price ?? 0) : 0;
+        }
+
+        return $result->total_cost / $result->total_quantity;
+    }
+
+    /**
+     * Sync cost_price for all products using Average Cost
+     */
+    public static function syncAllProductsCostPrice(): int
+    {
+        $products = Product::all();
+        $updated = 0;
+
+        foreach ($products as $product) {
+            $averageCost = self::calculateAverageCost($product->id);
+            self::syncProductCostPrice($product->id, $averageCost);
+            $updated++;
+        }
+
+        return $updated;
     }
 
     /**

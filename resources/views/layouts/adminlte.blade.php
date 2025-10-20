@@ -177,8 +177,8 @@
                     </li>
 
                     <!-- Inventory & Sales -->
-                    <li class="nav-item has-treeview {{ request()->routeIs('modules.products.*') || request()->routeIs('modules.suppliers.*') || request()->routeIs('modules.customers.*') || request()->routeIs('modules.purchase-orders.*') || request()->routeIs('modules.sales-orders.*') || request()->routeIs('modules.stock-movements.*') || request()->routeIs('modules.reports.*') ? 'menu-open' : '' }}">
-                        <a href="#" class="nav-link {{ request()->routeIs('modules.products.*') || request()->routeIs('modules.suppliers.*') || request()->routeIs('modules.customers.*') || request()->routeIs('modules.purchase-orders.*') || request()->routeIs('modules.sales-orders.*') || request()->routeIs('modules.stock-movements.*') || request()->routeIs('modules.reports.*') ? 'active' : '' }}">
+                    <li class="nav-item has-treeview {{ request()->routeIs('modules.products.*') || request()->routeIs('modules.suppliers.*') || request()->routeIs('modules.customers.*') || request()->routeIs('modules.purchase-order.*') || request()->routeIs('modules.sales-order.*') || request()->routeIs('modules.stock-movement.*') || request()->routeIs('modules.reports.*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ request()->routeIs('modules.products.*') || request()->routeIs('modules.suppliers.*') || request()->routeIs('modules.customers.*') || request()->routeIs('modules.purchase-order.*') || request()->routeIs('modules.sales-order.*') || request()->routeIs('modules.stock-movement.*') || request()->routeIs('modules.reports.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-pills"></i>
                             <p>
                                 {{ __('common.inventory_sales') }}
@@ -186,85 +186,82 @@
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
-                            @if (Route::has('modules.products.index'))
                             <li class="nav-item">
                                 <a href="{{ route('modules.products.index') }}" class="nav-link {{ request()->routeIs('modules.products.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>{{ __('common.products') }}</p>
                                 </a>
                             </li>
-                            @endif
 
-                            @if (Route::has('modules.suppliers.index'))
                             <li class="nav-item">
                                 <a href="{{ route('modules.suppliers.index') }}" class="nav-link {{ request()->routeIs('modules.suppliers.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>{{ __('common.suppliers') }}</p>
                                 </a>
                             </li>
-                            @endif
 
-                            @if (Route::has('modules.customers.index'))
                             <li class="nav-item">
                                 <a href="{{ route('modules.customers.index') }}" class="nav-link {{ request()->routeIs('modules.customers.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>{{ __('common.customers') }}</p>
                                 </a>
                             </li>
-                            @endif
 
-                            @if (Route::has('modules.purchase-orders.index'))
                             <li class="nav-item">
-                                <a href="{{ route('modules.purchase-orders.index') }}" class="nav-link {{ request()->routeIs('modules.purchase-orders.*') ? 'active' : '' }}">
+                                <a href="{{ route('modules.purchase-order.index') }}" class="nav-link {{ request()->routeIs('modules.purchase-order.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>{{ __('common.purchase_orders') }}</p>
                                 </a>
                             </li>
-                            @endif
 
-                            @if (Route::has('modules.sales-orders.index'))
                             <li class="nav-item">
-                                <a href="{{ route('modules.sales-orders.index') }}" class="nav-link {{ request()->routeIs('modules.sales-orders.*') ? 'active' : '' }}">
+                                <a href="{{ route('modules.sales-order.index') }}" class="nav-link {{ request()->routeIs('modules.sales-order.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>{{ __('common.sales_orders') }}</p>
                                 </a>
                             </li>
-                            @endif
 
-                            @if (Route::has('modules.stock-movements.index'))
                             <li class="nav-item">
-                                <a href="{{ route('modules.stock-movements.index') }}" class="nav-link {{ request()->routeIs('modules.stock-movements.*') ? 'active' : '' }}">
+                                <a href="{{ route('modules.stock-movement.index') }}" class="nav-link {{ request()->routeIs('modules.stock-movement.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>{{ __('common.stock_movements') }}</p>
                                 </a>
                             </li>
-                            @endif
 
-                            @if (Route::has('modules.reports.index'))
                             <li class="nav-item">
                                 <a href="{{ route('modules.reports.index') }}" class="nav-link {{ request()->routeIs('modules.reports.*') ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
                                     <p>{{ __('common.reports') }}</p>
                                 </a>
                             </li>
-                            @endif
                         </ul>
                     </li>
 
-                    @role('admin')
-                        <li class="nav-item">
-                            <a href="{{ route('admin.modules.index') }}" class="nav-link {{ request()->routeIs('admin.modules.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-cubes"></i>
-                                <p>{{ __('common.modules') }}</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('modules.store-settings.index') }}" class="nav-link {{ request()->routeIs('modules.store-settings.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-cogs"></i>
-                                <p>{{ __('common.store_settings') }}</p>
-                            </a>
-                        </li>
-                    @endrole
+                    <!-- Store Management -->
+                    <li class="nav-item has-treeview {{ request()->routeIs('admin.modules.*') || request()->routeIs('modules.store-settings.*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link {{ request()->routeIs('admin.modules.*') || request()->routeIs('modules.store-settings.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-cogs"></i>
+                            <p>
+                                Store Management
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{{ route('modules.store-settings.index') }}" class="nav-link {{ request()->routeIs('modules.store-settings.*') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>{{ __('common.store_settings') }}</p>
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a href="{{ route('admin.modules.index') }}" class="nav-link {{ request()->routeIs('admin.modules.*') ? 'active' : '' }}">
+                                    <i class="far fa-circle nav-icon"></i>
+                                    <p>{{ __('common.modules') }}</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                 </ul>
             </nav>
             <!-- /.sidebar-menu -->

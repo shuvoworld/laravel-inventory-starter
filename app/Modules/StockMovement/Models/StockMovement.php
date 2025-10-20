@@ -4,6 +4,7 @@ namespace App\Modules\StockMovement\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
@@ -31,7 +32,27 @@ class StockMovement extends Model implements AuditableContract
 
     public function reference()
     {
-        return $this->morphTo();
+        return $this->morphTo('reference', 'reference_type', 'reference_id');
+    }
+
+    /**
+     * Get the actual reference model with error handling
+     */
+    public function getReferenceWithFallback()
+    {
+        try {
+            return $this->reference;
+        } catch (\Exception $e) {
+            Log::error('StockMovement reference resolution failed', [
+                'stock_movement_id' => $this->id,
+                'reference_type' => $this->reference_type,
+                'reference_id' => $this->reference_id,
+                'error' => $e->getMessage()
+            ]);
+
+            // Return null if the relationship can't be resolved
+            return null;
+        }
     }
 
     public function user()
@@ -81,6 +102,7 @@ class StockMovement extends Model implements AuditableContract
 
             // Adjustments
             'manual_adjustment' => '✋ Manual Adjustment',
+            'stock_correction' => '🔧 Manual Stock Correction',
         ];
     }
 
@@ -106,7 +128,7 @@ class StockMovement extends Model implements AuditableContract
             return 'out';
         }
 
-        return 'adjustment'; // Default for manual_adjustment
+        return 'adjustment'; // Default for manual_adjustment, stock_correction
     }
 
     /**
@@ -139,6 +161,7 @@ class StockMovement extends Model implements AuditableContract
             ],
             'adjustment' => [
                 'manual_adjustment' => '✋ Manual Adjustment',
+                'stock_correction' => '🔧 Manual Stock Correction',
             ]
         ];
     }

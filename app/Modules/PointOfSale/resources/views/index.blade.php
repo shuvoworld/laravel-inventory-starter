@@ -1459,7 +1459,19 @@
                     <img src="${item.image || '/images/product-placeholder.svg'}" alt="${item.name}" class="cart-item-image">
                     <div class="cart-item-details">
                         <div class="cart-item-name">${item.name}</div>
-                        <div class="cart-item-price">$${parseFloat(item.price).toFixed(2)} each</div>
+                        <div class="cart-item-price" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="font-size: 0.75rem; color: #6c757d;">$</span>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value="${parseFloat(item.price).toFixed(2)}"
+                                onchange="updatePrice(${item.id}, this.value)"
+                                style="width: 80px; padding: 0.25rem 0.5rem; border: 1px solid #dee2e6; border-radius: 4px; font-size: 0.9rem;"
+                                onclick="event.stopPropagation();"
+                            />
+                            <span style="font-size: 0.75rem; color: #6c757d;">each</span>
+                        </div>
                     </div>
                     <div class="quantity-controls">
                         <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${item.quantity - 1})">
@@ -1506,6 +1518,39 @@
             .catch(error => {
                 console.error('Error updating cart:', error);
                 showToast('Error updating cart', 'error');
+            });
+        }
+
+        // Update item price
+        function updatePrice(productId, newPrice) {
+            if (newPrice < 0) {
+                showToast('Price cannot be negative', 'error');
+                return;
+            }
+
+            fetch('/pos/update-cart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    custom_price: parseFloat(newPrice)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateCartDisplay(data.cart);
+                    showToast('Price updated successfully', 'success');
+                } else {
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating price:', error);
+                showToast('Error updating price', 'error');
             });
         }
 

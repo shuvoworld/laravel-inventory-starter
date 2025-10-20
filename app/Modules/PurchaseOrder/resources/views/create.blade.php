@@ -30,6 +30,17 @@
                     <input id="order_date" type="date" name="order_date" class="form-control @error('order_date') is-invalid @enderror" value="{{ old('order_date', date('Y-m-d')) }}" required>
                     @error('order_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
+                <div class="col-md-6">
+                    <label for="status" class="form-label">Status *</label>
+                    <select id="status" name="status" class="form-control @error('status') is-invalid @enderror" required>
+                        <option value="pending" {{ old('status', 'pending') == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="confirmed" {{ old('status') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                        <option value="processing" {{ old('status') == 'processing' ? 'selected' : '' }}>Processing</option>
+                        <option value="received" {{ old('status') == 'received' ? 'selected' : '' }}>Received</option>
+                        <option value="cancelled" {{ old('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    </select>
+                    @error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
                 <div class="col-12">
                     <label for="notes" class="form-label">Notes</label>
                     <textarea id="notes" name="notes" class="form-control @error('notes') is-invalid @enderror" rows="3">{{ old('notes') }}</textarea>

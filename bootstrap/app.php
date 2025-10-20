@@ -40,8 +40,8 @@ return Application::configure(basePath: dirname(__DIR__))
         }
     })
     ->withSchedule(function (Schedule $schedule) {
-        // Schedule hourly stock synchronization from movements
-        $schedule->job(new SyncProductStockFromMovements())
+        // Schedule hourly stock synchronization from movements using artisan command
+        $schedule->command('product:sync-stock')
             ->hourly()
             ->description('Synchronize product stock quantities from stock movements')
             ->onSuccess(function () {
@@ -49,9 +49,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     'scheduled_at' => now()->format('Y-m-d H:i:s')
                 ]);
             })
-            ->onFailure(function (\Exception $e) {
+            ->onFailure(function () {
                 \Log::error('Hourly stock synchronization failed', [
-                    'error' => $e->getMessage(),
                     'scheduled_at' => now()->format('Y-m-d H:i:s')
                 ]);
             });

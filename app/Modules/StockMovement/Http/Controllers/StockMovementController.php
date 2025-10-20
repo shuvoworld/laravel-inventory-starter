@@ -127,6 +127,105 @@ class StockMovementController extends Controller
         return view('stock-movement::create', compact('products', 'transactionTypesByDirection', 'currentStock'));
     }
 
+    /**
+     * Create Manual Stock Correction form page
+     */
+    public function createCorrection(): View
+    {
+        $products = Product::orderBy('name')->get();
+        $currentStock = [];
+
+        foreach ($products as $product) {
+            $currentStock[$product->id] = StockMovement::getCurrentStockFromMovements($product->id);
+        }
+
+        return view('stock-movement::correction', compact('products', 'currentStock'));
+    }
+
+    /**
+     * Store manual stock correction
+     */
+    public function storeCorrection(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'correction_type' => 'required|in:set,adjust',
+            'target_stock' => 'required_if:correction_type,set|integer|min:0',
+            'adjustment_quantity' => 'required_if:correction_type,adjust|integer',
+            'reason' => 'required|string|max:255',
+            'notes' => 'nullable|string|max:500'
+        ]);
+
+        $product = Product::findOrFail($request->product_id);
+        $currentStock = StockMovement::getCurrentStockFromMovements($product->id);
+        $correctionType = $request->correction_type;
+        $reason = $request->reason;
+
+        if ($correctionType === 'set') {
+            // Set to exact target stock
+            $targetStock = $request->target_stock;
+            $difference = $targetStock - $currentStock;
+
+            if ($difference === 0) {
+                return back()->withInput()->withErrors([
+                    'target_stock' => 'Target stock is the same as current stock. No correction needed.'
+                ]);
+            }
+
+            $quantity = abs($difference);
+            $movementType = $difference > 0 ? 'in' : 'out';
+
+            $notes = $request->notes ?: "Manual stock correction: Set from {$currentStock} to {$targetStock} (" . ($difference >= 0 ? '+' : '') . "{$difference}) - {$reason}";
+
+            // Create stock correction movement
+            StockMovement::create([
+                'store_id' => auth()->user()->store_id,
+                'product_id' => $product->id,
+                'movement_type' => $movementType,
+                'transaction_type' => 'stock_correction',
+                'quantity' => $quantity,
+                'reference_type' => null,
+                'reference_id' => null,
+                'notes' => $notes,
+                'user_id' => auth()->id(),
+            ]);
+
+        } else {
+            // Adjust by quantity
+            $adjustmentQuantity = $request->adjustment_quantity;
+
+            if ($adjustmentQuantity === 0) {
+                return back()->withInput()->withErrors([
+                    'adjustment_quantity' => 'Adjustment quantity cannot be zero.'
+                ]);
+            }
+
+            $movementType = $adjustmentQuantity > 0 ? 'in' : 'out';
+            $quantity = abs($adjustmentQuantity);
+
+            $notes = $request->notes ?: "Manual stock correction: " . ($adjustmentQuantity >= 0 ? '+' : '') . "{$adjustmentQuantity} units - {$reason}";
+
+            // Create stock correction movement
+            StockMovement::create([
+                'store_id' => auth()->user()->store_id,
+                'product_id' => $product->id,
+                'movement_type' => $movementType,
+                'transaction_type' => 'stock_correction',
+                'quantity' => $quantity,
+                'reference_type' => null,
+                'reference_id' => null,
+                'notes' => $notes,
+                'user_id' => auth()->id(),
+            ]);
+        }
+
+        // Clear stock calculation cache for this product
+        \App\Services\StockCalculationService::clearCache($product->id);
+
+        return redirect()->route('modules.stock-movement.index')
+            ->with('success', "Manual stock correction completed for {$product->name}. Reason: {$reason}");
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
@@ -225,6 +324,10 @@ class StockMovementController extends Controller
                 break;
             case 'promotional':
                 StockMovementService::recordPromotional($request->product_id, $request->quantity, $notes);
+                break;
+
+            case 'stock_correction':
+                StockMovementService::recordAdjustment($request->product_id, $movementType, $request->quantity, $notes);
                 break;
 
             // Default

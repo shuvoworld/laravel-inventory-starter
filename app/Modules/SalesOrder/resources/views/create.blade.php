@@ -49,7 +49,7 @@
                         <select name="items[0][product_id]" class="form-control product-select select2" required>
                             <option value="">Select Product</option>
                             @foreach($products as $product)
-                                <option value="{{ $product->id }}" data-price="{{ $product->price }}" data-stock="{{ $product->quantity_on_hand }}">
+                                <option value="{{ $product->id }}" data-price="{{ $product->target_price ?? $product->price }}" data-floor-price="{{ $product->floor_price }}" data-target-price="{{ $product->target_price }}" data-stock="{{ $product->quantity_on_hand }}">
                                     {{ $product->name }} (Stock: {{ $product->quantity_on_hand }})
                                 </option>
                             @endforeach
@@ -272,6 +272,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (e.target.classList.contains('quantity-input') || e.target.classList.contains('price-input') ||
             e.target.classList.contains('discount-type') || e.target.classList.contains('discount-rate')) {
+
+            // Validate floor price when price is changed
+            if (e.target.classList.contains('price-input')) {
+                validateFloorPrice(e.target);
+            }
+
             calculateRowTotal(e.target.closest('.order-item'));
         }
 
@@ -283,6 +289,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('input', function(e) {
         if (e.target.classList.contains('quantity-input') || e.target.classList.contains('price-input') ||
             e.target.classList.contains('discount-rate') || e.target.id === 'discount_rate' || e.target.id === 'paid_amount') {
+
+            // Validate floor price when price is changed
+            if (e.target.classList.contains('price-input')) {
+                validateFloorPrice(e.target);
+            }
+
             calculateOrderTotal();
         }
     });
@@ -348,6 +360,37 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('changeDisplay').textContent = '$' + change.toFixed(2);
         } else {
             changeRow.style.display = 'none';
+        }
+    }
+
+    function validateFloorPrice(priceInput) {
+        const row = priceInput.closest('.order-item');
+        const productSelect = row.querySelector('.product-select');
+        const selectedOption = productSelect.selectedOptions[0];
+        const price = parseFloat(priceInput.value) || 0;
+        const floorPrice = parseFloat(selectedOption.dataset.floorPrice) || 0;
+
+        if (floorPrice > 0 && price < floorPrice) {
+            priceInput.setCustomValidity(`Price cannot be below floor price ($${floorPrice.toFixed(2)})`);
+            priceInput.classList.add('is-invalid');
+
+            // Show error message
+            let errorDiv = row.querySelector('.floor-price-error');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'floor-price-error text-danger small mt-1';
+                priceInput.parentNode.appendChild(errorDiv);
+            }
+            errorDiv.textContent = `Minimum price: $${floorPrice.toFixed(2)}`;
+        } else {
+            priceInput.setCustomValidity('');
+            priceInput.classList.remove('is-invalid');
+
+            // Remove error message
+            const errorDiv = row.querySelector('.floor-price-error');
+            if (errorDiv) {
+                errorDiv.remove();
+            }
         }
     }
 

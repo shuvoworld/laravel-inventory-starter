@@ -43,8 +43,10 @@ class PointOfSaleController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'sku' => $product->sku,
-                'price' => $product->price,
+                'price' => $product->target_price ?? $product->price,
                 'cost_price' => $product->cost_price,
+                'floor_price' => $product->floor_price,
+                'target_price' => $product->target_price,
                 'quantity' => $quantity,
                 'image' => $product->image_url,
                 'brand' => $product->brand ? $product->brand->name : null,
@@ -106,7 +108,9 @@ class PointOfSaleController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'sku' => $product->sku,
-                'price' => $product->price,
+                'price' => $product->target_price ?? $product->price,
+                'floor_price' => $product->floor_price,
+                'target_price' => $product->target_price,
                 'quantity' => $product->quantity_on_hand,
                 'image' => $product->image_url,
                 'brand' => $product->brand ? $product->brand->name : null
@@ -141,7 +145,9 @@ class PointOfSaleController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'sku' => $product->sku,
-                'price' => $product->price,
+                'price' => $product->target_price ?? $product->price,
+                'floor_price' => $product->floor_price,
+                'target_price' => $product->target_price,
                 'quantity' => $product->quantity_on_hand,
                 'image' => $product->image_url,
                 'brand' => $product->brand ? $product->brand->name : null
@@ -175,8 +181,10 @@ class PointOfSaleController extends Controller
                     'id' => $product->id,
                     'name' => $product->name,
                     'sku' => $product->sku,
-                    'price' => $product->price,
+                    'price' => $product->target_price ?? $product->price,
                     'cost_price' => $product->cost_price,
+                    'floor_price' => $product->floor_price,
+                    'target_price' => $product->target_price,
                     'quantity' => $product->quantity_on_hand,
                     'image' => $product->image_url,
                     'brand' => $product->brand ? $product->brand->name : null,
@@ -230,13 +238,13 @@ class PointOfSaleController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1'
+            'quantity' => 'nullable|integer|min:1',
+            'custom_price' => 'nullable|numeric|min:0'
         ]);
 
         $productId = $request->product_id;
-        $quantity = $request->quantity;
-
         $cart = $this->getCart();
+
         if (!isset($cart[$productId])) {
             return response()->json([
                 'success' => false,
@@ -244,15 +252,38 @@ class PointOfSaleController extends Controller
             ], 404);
         }
 
-        $product = Product::findOrFail($productId);
-        if ($product->quantity_on_hand < $quantity) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Insufficient stock. Only ' . $product->quantity_on_hand . ' units available.'
-            ], 400);
+        // Update quantity if provided
+        if ($request->has('quantity')) {
+            $quantity = $request->quantity;
+            $product = Product::findOrFail($productId);
+
+            if ($product->quantity_on_hand < $quantity) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Insufficient stock. Only ' . $product->quantity_on_hand . ' units available.'
+                ], 400);
+            }
+
+            $cart[$productId]['quantity'] = $quantity;
         }
 
-        $this->updateCartItem($productId, $quantity);
+        // Update custom price if provided
+        if ($request->has('custom_price')) {
+            $customPrice = $request->custom_price;
+            $product = Product::findOrFail($productId);
+
+            // Validate that custom price is not below floor price
+            if ($product->floor_price && $customPrice < $product->floor_price) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Price cannot be below floor price (' . number_format($product->floor_price, 2) . ')'
+                ], 400);
+            }
+
+            $cart[$productId]['price'] = $customPrice;
+        }
+
+        $this->setCart($cart);
 
         return response()->json([
             'success' => true,
@@ -609,6 +640,8 @@ class PointOfSaleController extends Controller
                 'quantity' => $item['quantity'],
                 'price' => $item['price'],
                 'cost_price' => $item['cost_price'],
+                'floor_price' => $item['floor_price'] ?? null,
+                'target_price' => $item['target_price'] ?? null,
                 'subtotal' => $itemSubtotal,
                 'image' => $item['image'],
                 'brand' => $item['brand'],

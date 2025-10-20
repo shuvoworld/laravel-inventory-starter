@@ -29,6 +29,7 @@
         </div>
     </div>
 </div>
+@endsection
 
 @push('scripts')
 <script>
@@ -61,4 +62,4 @@
         });
     });
 </script>
-@endsection
+@endpush

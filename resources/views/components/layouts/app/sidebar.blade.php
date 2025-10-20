@@ -1,13 +1,15 @@
+@php
+    use App\Models\Module;use App\Modules\Settings\Models\Settings;
+    $storeLogo = Settings::get('store_logo');
+    $storeName = Settings::get('store_name', config('app.name'));
+@endphp
+
 <aside :class="{ 'w-full md:w-64': sidebarOpen, 'w-0 md:w-16 hidden md:block': !sidebarOpen }"
        class="relative z-20 bg-white border-end sidebar-transition overflow-hidden">
     <div class="h-100 d-flex flex-column">
         <!-- Store Logo -->
         <div class="p-3 border-bottom" x-show="sidebarOpen">
             <div class="text-center">
-                @php
-                    use App\Models\Module;$storeLogo = \App\Modules\Settings\Models\Settings::get('store_logo');
-                    $storeName = \App\Modules\Settings\Models\Settings::get('store_name', config('app.name'));
-                @endphp
                 @if($storeLogo)
                     <img src="{{ asset('storage/' . $storeLogo) }}" alt="{{ $storeName }}" class="img-fluid mb-2" style="max-height: 60px;">
                 @else
@@ -19,64 +21,23 @@
             </div>
         </div>
 
+        <!-- Navigation -->
         <nav class="flex-1 overflow-y-auto py-3">
             <ul class="nav nav-pills flex-column small px-2 gap-1">
+                <!-- Dashboard -->
                 <li class="nav-item">
-                    <a class="nav-link d-flex align-items-center {{ request()->routeIs('dashboard*') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                    <a class="nav-link d-flex align-items-center {{ request()->routeIs('dashboard*') ? 'active' : '' }}"
+                       href="{{ route('dashboard') }}">
                         <i class="fas fa-house me-2"></i>
                         <span x-show="sidebarOpen">Dashboard</span>
                     </a>
                 </li>
 
-                @can('types.view')
-                    @if(Module::isActive('types'))
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.types.*') ? 'active' : '' }}" href="{{ route('modules.types.index') }}">
-                                <i class="fas fa-tags me-2"></i>
-                                <span x-show="sidebarOpen">Types</span>
-                            </a>
-                        </li>
-                    @endif
-                @endcan
-
-                @can('users.view')
-                    @if(Module::isActive('users'))
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.users.*') ? 'active' : '' }}" href="{{ route('modules.users.index') }}">
-                                <i class="fas fa-users me-2"></i>
-                                <span x-show="sidebarOpen">Users</span>
-                            </a>
-                        </li>
-                    @endif
-                @endcan
-
-                @can('roles.view')
-                    @if(Module::isActive('roles'))
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.roles.*') ? 'active' : '' }}" href="{{ route('modules.roles.index') }}">
-                                <i class="fas fa-user-shield me-2"></i>
-                                <span x-show="sidebarOpen">Roles</span>
-                            </a>
-                        </li>
-                    @endif
-                @endcan
-
-                @can('permissions.view')
-                    @if(Module::isActive('permissions'))
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.permissions.*') ? 'active' : '' }}"
-                               href="{{ route('modules.permissions.index') }}">
-                                <i class="fas fa-key me-2"></i>
-                                <span x-show="sidebarOpen">Permissions</span>
-                            </a>
-                        </li>
-                    @endif
-                @endcan
-
                 <!-- Point of Sale -->
                 @can('sales-order.create')
                     <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('pos.*') ? 'active' : '' }}" href="{{ route('pos.index') }}" target="_blank">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('pos.*') ? 'active' : '' }}"
+                           href="{{ route('pos.index') }}" target="_blank">
                             <i class="fas fa-cash-register me-2"></i>
                             <span x-show="sidebarOpen">POS</span>
                             <span class="badge bg-success ms-auto" x-show="sidebarOpen">
@@ -85,7 +46,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('pos.pos2') ? 'active' : '' }}" href="{{ route('pos.pos2') }}" target="_blank">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('pos.pos2') ? 'active' : '' }}"
+                           href="{{ route('pos.pos2') }}" target="_blank">
                             <i class="fas fa-cash-register me-2"></i>
                             <span x-show="sidebarOpen">POS-2</span>
                             <span class="badge bg-success ms-auto" x-show="sidebarOpen">
@@ -95,14 +57,15 @@
                     </li>
                 @endcan
 
-                <!-- Sales & Inventory Section -->
+                <!-- Sales & Inventory -->
                 <li class="nav-item mt-3 mb-2">
                     <span x-show="sidebarOpen" class="text-muted small fw-bold px-3">SALES & INVENTORY</span>
                 </li>
 
                 @can('customers.view')
                     <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.customers.*') ? 'active' : '' }}" href="{{ route('modules.customers.index') }}">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.customers.*') ? 'active' : '' }}"
+                           href="{{ route('modules.customers.index') }}">
                             <i class="fas fa-user-tie me-2"></i>
                             <span x-show="sidebarOpen">Customers</span>
                         </a>
@@ -114,7 +77,8 @@
                         $lowStockCount = \App\Modules\Products\Models\Product::lowStock()->count();
                     @endphp
                     <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.products.*') ? 'active' : '' }}" href="{{ route('modules.products.index') }}">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.products.*') ? 'active' : '' }}"
+                           href="{{ route('modules.products.index') }}">
                             <i class="fas fa-box me-2"></i>
                             <span x-show="sidebarOpen">Products</span>
                             @if($lowStockCount > 0)
@@ -127,7 +91,8 @@
                 @can('brand.view')
                     @if(Module::isActive('brand'))
                         <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.brand.*') ? 'active' : '' }}" href="{{ route('modules.brand.index') }}">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.brand.*') ? 'active' : '' }}"
+                               href="{{ route('modules.brand.index') }}">
                                 <i class="fas fa-copyright me-2"></i>
                                 <span x-show="sidebarOpen">Brands</span>
                             </a>
@@ -138,7 +103,8 @@
                 @can('attribute-set.view')
                     @if(Module::isActive('attribute-set'))
                         <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.attribute-set.*') ? 'active' : '' }}" href="{{ route('modules.attribute-set.index') }}">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.attribute-set.*') ? 'active' : '' }}"
+                               href="{{ route('modules.attribute-set.index') }}">
                                 <i class="fas fa-layer-group me-2"></i>
                                 <span x-show="sidebarOpen">Attribute Sets</span>
                             </a>
@@ -149,7 +115,8 @@
                 @can('product-attribute.view')
                     @if(Module::isActive('product-attribute'))
                         <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.product-attribute.*') ? 'active' : '' }}" href="{{ route('modules.product-attribute.index') }}">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.product-attribute.*') ? 'active' : '' }}"
+                               href="{{ route('modules.product-attribute.index') }}">
                                 <i class="fas fa-sliders-h me-2"></i>
                                 <span x-show="sidebarOpen">Attributes</span>
                             </a>
@@ -190,27 +157,23 @@
                 @endcan
 
                 @can('purchase-return.view')
-                    @if(Module::isActive('purchase-return'))
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.purchase-return.*') ? 'active' : '' }}"
-                               href="{{ route('modules.purchase-return.index') }}">
-                                <i class="fas fa-undo-alt me-2"></i>
-                                <span x-show="sidebarOpen">Purchase Returns</span>
-                            </a>
-                        </li>
-                    @endif
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.purchase-return.*') ? 'active' : '' }}"
+                           href="{{ route('modules.purchase-return.index') }}">
+                            <i class="fas fa-undo-alt me-2"></i>
+                            <span x-show="sidebarOpen">Purchase Returns</span>
+                        </a>
+                    </li>
                 @endcan
 
                 @can('suppliers.view')
-                    @if(Module::isActive('suppliers'))
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.suppliers.*') ? 'active' : '' }}"
-                               href="{{ route('modules.suppliers.index') }}">
-                                <i class="fas fa-handshake me-2"></i>
-                                <span x-show="sidebarOpen">Suppliers</span>
-                            </a>
-                        </li>
-                    @endif
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.suppliers.*') ? 'active' : '' }}"
+                           href="{{ route('modules.suppliers.index') }}">
+                            <i class="fas fa-handshake me-2"></i>
+                            <span x-show="sidebarOpen">Suppliers</span>
+                        </a>
+                    </li>
                 @endcan
 
                 @can('stock-movement.view')
@@ -235,20 +198,22 @@
                     @endif
                 @endcan
 
-                <!-- Reports Section -->
+                <!-- Reports -->
                 @can('reports.view')
                     @if(Module::isActive('reports'))
                         <li class="nav-item mt-3 mb-2">
                             <span x-show="sidebarOpen" class="text-muted small fw-bold px-3">REPORTS</span>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.*') ? 'active' : '' }}" href="{{ route('modules.reports.index') }}">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.*') && !request()->routeIs('modules.reports.stock*') ? 'active' : '' }}"
+                               href="{{ route('modules.reports.index') }}">
                                 <i class="fas fa-chart-line me-2"></i>
                                 <span x-show="sidebarOpen">Reports</span>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.stock*') ? 'active' : '' }}" href="{{ route('modules.reports.stock') }}">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.stock*') ? 'active' : '' }}"
+                               href="{{ route('modules.reports.stock') }}">
                                 <i class="fas fa-cubes me-2"></i>
                                 <span x-show="sidebarOpen">Stock Report</span>
                             </a>
@@ -256,34 +221,87 @@
                     @endif
                 @endcan
 
-                <!-- Expenses Section -->
+                <!-- Expenses -->
                 @can('expense.view')
+                    <li class="nav-item mt-3 mb-2">
+                        <span x-show="sidebarOpen" class="text-muted small fw-bold px-3">EXPENSES</span>
+                    </li>
                     <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.expenses.*') ? 'active' : '' }}" href="{{ route('modules.expenses.index') }}">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.expenses.*') ? 'active' : '' }}"
+                           href="{{ route('modules.expenses.index') }}">
                             <i class="fas fa-money-bill-wave me-2"></i>
                             <span x-show="sidebarOpen">Expenses</span>
                         </a>
                     </li>
                 @endcan
 
-                <!-- Expense Categories Section -->
                 @can('expense-category.view')
                     <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.expense-category.*') ? 'active' : '' }}" href="{{ route('modules.expense-category.index') }}">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.expense-category.*') ? 'active' : '' }}"
+                           href="{{ route('modules.expense-category.index') }}">
                             <i class="fas fa-tags me-2"></i>
-                            <span x-show="sidebarOpen">Categories</span>
+                            <span x-show="sidebarOpen">Expense Categories</span>
                         </a>
                     </li>
                 @endcan
 
-                <!-- Settings Section -->
+                <!-- Settings -->
                 <li class="nav-item mt-3 mb-2">
                     <span x-show="sidebarOpen" class="text-muted small fw-bold px-3">SETTINGS</span>
                 </li>
 
+                @can('types.view')
+                    @if(Module::isActive('types'))
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.types.*') ? 'active' : '' }}"
+                               href="{{ route('modules.types.index') }}">
+                                <i class="fas fa-tags me-2"></i>
+                                <span x-show="sidebarOpen">Types</span>
+                            </a>
+                        </li>
+                    @endif
+                @endcan
+
+                @can('users.view')
+                    @if(Module::isActive('users'))
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.users.*') ? 'active' : '' }}"
+                               href="{{ route('modules.users.index') }}">
+                                <i class="fas fa-users me-2"></i>
+                                <span x-show="sidebarOpen">Users</span>
+                            </a>
+                        </li>
+                    @endif
+                @endcan
+
+                @can('roles.view')
+                    @if(Module::isActive('roles'))
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.roles.*') ? 'active' : '' }}"
+                               href="{{ route('modules.roles.index') }}">
+                                <i class="fas fa-user-shield me-2"></i>
+                                <span x-show="sidebarOpen">Roles</span>
+                            </a>
+                        </li>
+                    @endif
+                @endcan
+
+                @can('permissions.view')
+                    @if(Module::isActive('permissions'))
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.permissions.*') ? 'active' : '' }}"
+                               href="{{ route('modules.permissions.index') }}">
+                                <i class="fas fa-key me-2"></i>
+                                <span x-show="sidebarOpen">Permissions</span>
+                            </a>
+                        </li>
+                    @endif
+                @endcan
+
                 @can('settings.view')
                     <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.settings.*') ? 'active' : '' }}" href="{{ route('modules.settings.index') }}">
+                        <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.settings.*') ? 'active' : '' }}"
+                           href="{{ route('modules.settings.index') }}">
                             <i class="fas fa-cog me-2"></i>
                             <span x-show="sidebarOpen">Settings</span>
                         </a>
@@ -303,8 +321,9 @@
                 @endcan
 
                 @role('admin')
-                <li class="nav-item mt-2">
-                    <a class="nav-link d-flex align-items-center {{ request()->routeIs('admin.modules.*') ? 'active' : '' }}" href="{{ route('admin.modules.index') }}">
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center {{ request()->routeIs('admin.modules.*') ? 'active' : '' }}"
+                       href="{{ route('admin.modules.index') }}">
                         <i class="fas fa-cubes me-2"></i>
                         <span x-show="sidebarOpen">Module Dictionary</span>
                     </a>

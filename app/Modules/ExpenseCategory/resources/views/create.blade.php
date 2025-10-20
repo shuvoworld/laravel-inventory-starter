@@ -24,11 +24,11 @@
                     <div class="mb-3">
                         <label for="color" class="form-label">Color</label>
                         <div class="d-flex gap-2">
-                            <input type="color" class="form-control form-control-color" id="color" name="color" value="{{ old('color', '#6B728') }}" maxlength="7">
-                            <input type="text" class="form-control" value="{{ old('color', '#6B728') }}" placeholder="#6B728" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$">
+                            <input type="color" class="form-control form-control-color" id="colorPicker" value="{{ old('color', '#6B7280') }}" style="width: 60px;">
+                            <input type="text" class="form-control @error('color') is-invalid @enderror" id="color" name="color" value="{{ old('color', '#6B7280') }}" placeholder="#6B7280" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$">
                         </div>
                         @error('color')
-                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
@@ -67,3 +67,22 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    // Sync color picker with text input
+    const colorPicker = document.getElementById('colorPicker');
+    const colorText = document.getElementById('color');
+
+    colorPicker.addEventListener('input', function() {
+        colorText.value = this.value.toUpperCase();
+    });
+
+    colorText.addEventListener('input', function() {
+        const value = this.value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+            colorPicker.value = value;
+        }
+    });
+</script>
+@endpush

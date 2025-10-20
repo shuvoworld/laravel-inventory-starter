@@ -2,7 +2,12 @@
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3 mb-0">Stock Report</h1>
+    <div>
+        <h1 class="h3 mb-0">Stock Report</h1>
+        <span class="badge bg-success">
+            <i class="fas fa-exchange-alt me-1"></i> Data from Stock Movements
+        </span>
+    </div>
     <a href="{{ route('modules.reports.index') }}" class="btn btn-secondary">
         <i class="fas fa-arrow-left me-1"></i> Back to Reports
     </a>
@@ -127,27 +132,16 @@
             </div>
             <div class="card-body">
                 <div class="row text-center">
-                    <div class="col-md-4">
+                    <div class="col-md-12">
                         <div class="mb-3">
-                            <div class="fs-4">${{ number_format($valuation['total_cost_value'], 2) }}</div>
-                            <small class="text-muted">Cost Value</small>
+                            <div class="fs-2">${{ number_format($valuation['total_cost_value'], 2) }}</div>
+                            <small class="text-muted">Total Stock Cost Value</small>
+                        </div>
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <small>Stock valuation based on Average Cost from purchase orders</small>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <div class="fs-4">${{ number_format($valuation['total_market_value'], 2) }}</div>
-                            <small class="text-muted">Market Value</small>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <div class="fs-4 text-success">${{ number_format($valuation['total_potential_profit'], 2) }}</div>
-                            <small class="text-muted">Potential Profit</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="text-center">
-                    <small class="text-muted">Overall Profit Margin: <strong>{{ number_format($valuation['overall_profit_margin'], 1) }}%</strong></small>
                 </div>
             </div>
         </div>

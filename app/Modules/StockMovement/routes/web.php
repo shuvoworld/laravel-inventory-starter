@@ -21,6 +21,15 @@ Route::middleware(['auth'])->prefix('modules/stock-movement')->name('modules.sto
         ->middleware('permission:stock-movement.create')
         ->name('store');
 
+    // Manual stock correction routes
+    Route::get('/correction', [StockMovementController::class, 'createCorrection'])
+        ->middleware('permission:stock-movement.create')
+        ->name('correction.create');
+
+    Route::post('/correction', [StockMovementController::class, 'storeCorrection'])
+        ->middleware('permission:stock-movement.create')
+        ->name('correction.store');
+
     Route::get('/{id}', [StockMovementController::class, 'show'])
         ->middleware('permission:stock-movement.view')
         ->name('show');

@@ -7,6 +7,8 @@ use App\Services\StockCalculationService;
 use App\Services\WeightedAverageCostService;
 use App\Services\SalesPriceAnalysisService;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class Product extends Model
 {
@@ -15,14 +17,46 @@ class Product extends Model
     protected $table = 'products';
 
     protected $fillable = [
-        'store_id', 'sku', 'name', 'image', 'brand_id', 'unit', 'price', 'cost_price', 'profit_margin', 'quantity_on_hand', 'reorder_level',
+        'store_id', 'sku', 'name', 'image', 'brand_id', 'unit', 'cost_price', 'quantity_on_hand', 'reorder_level',
+        'minimum_profit_margin', 'standard_profit_margin', 'floor_price', 'target_price',
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
         'cost_price' => 'decimal:2',
-        'profit_margin' => 'decimal:2',
+        'minimum_profit_margin' => 'decimal:2',
+        'standard_profit_margin' => 'decimal:2',
+        'floor_price' => 'decimal:2',
+        'target_price' => 'decimal:2',
     ];
+
+    /**
+     * Boot the model and set up event listeners
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Automatically calculate floor_price and target_price when saving
+        static::saving(function ($product) {
+            $product->calculatePrices();
+        });
+    }
+
+    /**
+     * Calculate floor_price and target_price based on cost_price and profit margins
+     * Logic: Floor Price = Product Cost + (Product Cost × Minimum Profit Margin %)
+     * Logic: Target Price = Product Cost + (Product Cost × Standard Profit Margin %)
+     */
+    public function calculatePrices()
+    {
+        if ($this->cost_price) {
+            // Floor Price = Cost Price + (Cost Price × Minimum Profit Margin %)
+            $this->floor_price = $this->cost_price + ($this->cost_price * ($this->minimum_profit_margin / 100));
+
+            // Target Price = Cost Price + (Cost Price × Standard Profit Margin %)
+            $this->target_price = $this->cost_price + ($this->cost_price * ($this->standard_profit_margin / 100));
+        }
+    }
 
     public function salesOrderItems()
     {

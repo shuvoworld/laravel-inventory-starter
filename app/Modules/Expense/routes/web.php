@@ -16,6 +16,10 @@ Route::middleware(['auth'])->prefix('modules/expenses')->name('modules.expenses.
         ->middleware('permission:expense.create')
         ->name('store');
 
+    Route::get('/data', [ExpenseController::class, 'data'])
+        ->middleware('permission:expense.view')
+        ->name('data');
+
     Route::get('/{id}/edit', [ExpenseController::class, 'edit'])
         ->middleware('permission:expense.edit')
         ->name('edit');
@@ -31,8 +35,4 @@ Route::middleware(['auth'])->prefix('modules/expenses')->name('modules.expenses.
     Route::get('/{id}', [ExpenseController::class, 'show'])
         ->middleware('permission:expense.view')
         ->name('show');
-
-    Route::get('/data', [ExpenseController::class, 'data'])
-        ->middleware('permission:expense.view')
-        ->name('data');
 });

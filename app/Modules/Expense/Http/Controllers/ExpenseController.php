@@ -91,7 +91,7 @@ class ExpenseController extends Controller
             'status' => 'active'
         ]);
 
-        return redirect()->route('expenses.index')->with('success', 'Expense recorded successfully.');
+        return redirect()->route('modules.expenses.index')->with('success', 'Expense recorded successfully.');
     }
 
     public function edit(int $id): View
@@ -127,7 +127,7 @@ class ExpenseController extends Controller
             'notes' => $request->notes,
         ]);
 
-        return redirect()->route('expenses.index')->with('success', 'Expense updated successfully.');
+        return redirect()->route('modules.expenses.index')->with('success', 'Expense updated successfully.');
     }
 
     public function show(int $id): View
@@ -140,7 +140,7 @@ class ExpenseController extends Controller
     {
         $expense = Expense::findOrFail($id);
         $expense->delete();
-        return redirect()->route('expenses.index')->with('success', 'Expense deleted successfully.');
+        return redirect()->route('modules.expenses.index')->with('success', 'Expense deleted successfully.');
     }
 
     private function getPaymentMethods(): array
