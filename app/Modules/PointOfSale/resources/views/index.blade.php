@@ -947,6 +947,14 @@
                 <div id="cashPaymentSection" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 2px solid #e9ecef;">
                     <div style="margin-bottom: 0.5rem;">
                         <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; color: #4a5568;">Amount Received:</label>
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                            <div class="form-check" style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" class="form-check-input" id="fullyPaidCheckbox" style="width: 1.2rem; height: 1.2rem; cursor: pointer;">
+                                <label for="fullyPaidCheckbox" class="form-check-label" style="font-size: 0.9rem; font-weight: 600; color: #4a5568; cursor: pointer; margin: 0;">
+                                    Fully Paid
+                                </label>
+                            </div>
+                        </div>
                         <input type="number" id="amountReceived" placeholder="0.00" min="0" step="0.01" style="width: 100%; padding: 0.75rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1.1rem; font-weight: 600;">
                     </div>
                     <div class="total-row" style="color: #2d3748; font-weight: 600;">
@@ -1290,6 +1298,12 @@
             const amountReceived = document.getElementById('amountReceived');
             if (amountReceived) {
                 amountReceived.addEventListener('input', updateCashChange);
+            }
+
+            // Fully paid checkbox handling
+            const fullyPaidCheckbox = document.getElementById('fullyPaidCheckbox');
+            if (fullyPaidCheckbox) {
+                fullyPaidCheckbox.addEventListener('change', handleFullyPaid);
             }
 
             // Complete payment
@@ -2040,6 +2054,23 @@
             changeElement.style.color = change >= 0 ? '#48bb78' : '#e53e3e';
         }
 
+        function handleFullyPaid() {
+            const amountReceivedInput = document.getElementById('amountReceived');
+            const totalElement = document.getElementById('total');
+            const fullyPaidCheckbox = document.getElementById('fullyPaidCheckbox');
+
+            if (!amountReceivedInput || !totalElement || !fullyPaidCheckbox) return;
+
+            if (fullyPaidCheckbox.checked) {
+                const total = parseFloat(totalElement.textContent.replace('$', '').replace(',', '')) || 0;
+                amountReceivedInput.value = total.toFixed(2);
+                amountReceivedInput.dispatchEvent(new Event('input'));
+            } else {
+                amountReceivedInput.value = '';
+                amountReceivedInput.dispatchEvent(new Event('input'));
+            }
+        }
+
         // Print receipt
         function printReceipt(orderId) {
             console.log('POS: Printing receipt for order:', orderId);
@@ -2111,6 +2142,12 @@
             // Clear cash payment
             document.getElementById('cashPaymentSection').style.display = 'none';
             document.getElementById('amountReceived').value = '';
+
+            // Clear fully paid checkbox
+            const fullyPaidCheckbox = document.getElementById('fullyPaidCheckbox');
+            if (fullyPaidCheckbox) {
+                fullyPaidCheckbox.checked = false;
+            }
 
             const modal = new bootstrap.Modal(document.getElementById('paymentSuccessModal'));
             modal.show();

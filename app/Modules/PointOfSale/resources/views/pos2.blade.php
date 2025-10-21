@@ -441,6 +441,75 @@
             font-size: 18px;
             font-weight: 700;
             color: #4f46e5;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .cart-item-price-info {
+            margin-bottom: 12px;
+            padding-left: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .unit-price-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280 !important;
+            margin: 0;
+            min-width: 70px;
+        }
+
+        .unit-price-input-wrapper {
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 4px 8px;
+            transition: all 0.2s ease;
+            flex: 1;
+        }
+
+        .unit-price-input-wrapper:hover {
+            border-color: #4f46e5;
+            background: #f8f9ff;
+        }
+
+        .unit-price-input-wrapper:focus-within {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .currency-symbol {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-right: 4px;
+        }
+
+        .unit-price-input {
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            text-align: right;
+            width: 100%;
+            outline: none;
+            padding: 2px 0;
+        }
+
+        .unit-price-input:focus {
+            color: #4f46e5;
+        }
+
+        .total-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: #4f46e5;
         }
 
         .empty-cart-modern {
@@ -745,6 +814,42 @@
             font-size: 18px;
         }
 
+        .fully-paid-section {
+            margin-bottom: 12px;
+        }
+
+        .fully-paid-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .fully-paid-checkbox:hover {
+            background: rgba(255, 255, 255, 0.8);
+            border-color: rgba(251, 191, 36, 0.5);
+        }
+
+        .fully-paid-checkbox .form-check-input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #f59e0b;
+        }
+
+        .fully-paid-checkbox .form-check-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #92400e;
+            cursor: pointer;
+            margin: 0;
+            user-select: none;
+        }
+
   
         .action-buttons-modern {
             padding: 20px;
@@ -1002,6 +1107,14 @@
 
             <div class="cash-input-section" id="cashInputSectionModern">
                 <h4>Cash Received</h4>
+                <div class="fully-paid-section">
+                    <div class="form-check fully-paid-checkbox">
+                        <input type="checkbox" class="form-check-input" id="fullyPaidCheckboxModern">
+                        <label for="fullyPaidCheckboxModern" class="form-check-label">
+                            Fully Paid
+                        </label>
+                    </div>
+                </div>
                 <input type="number" class="cash-input-modern" id="cashInputModern" placeholder="0.00" step="0.01" min="0">
                 <div class="change-display">
                     <span class="label">Change:</span>
@@ -1223,6 +1336,12 @@
                     posState.cashReceived = parseFloat(this.value) || 0;
                     calculateChange();
                 });
+            }
+
+            // Fully paid checkbox handling for POS2
+            const fullyPaidCheckboxModern = document.getElementById('fullyPaidCheckboxModern');
+            if (fullyPaidCheckboxModern) {
+                fullyPaidCheckboxModern.addEventListener('change', handleFullyPaidModern);
             }
 
             // Direct discount editing
@@ -1460,13 +1579,31 @@
                             <i class="ph-x"></i>
                         </button>
                     </div>
+                    <div class="cart-item-price-info">
+                        <label class="unit-price-label">Unit Price:</label>
+                        <div class="unit-price-input-wrapper">
+                            <span class="currency-symbol">$</span>
+                            <input type="number"
+                                   class="unit-price-input"
+                                   value="${parseFloat(item.price).toFixed(2)}"
+                                   step="0.01"
+                                   min="0"
+                                   data-product-id="${item.id}"
+                                   data-original-price="${item.price}"
+                                   onchange="updateUnitPrice(${item.id}, this.value)"
+                                   onfocus="this.select()"
+                                   onkeydown="handleUnitPriceKeydown(event, ${item.id}, this)">
+                        </div>
+                    </div>
                     <div class="cart-item-controls">
                         <div class="quantity-controls">
                             <button class="qty-btn" onclick="updateQuantity(${item.id}, ${item.quantity - 1})">-</button>
                             <div class="qty-display">${item.quantity}</div>
                             <button class="qty-btn" onclick="updateQuantity(${item.id}, ${item.quantity + 1})">+</button>
                         </div>
-                        <div class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</div>
+                        <div class="cart-item-price">
+                            <div class="total-price" id="total-price-${item.id}">$${(item.price * item.quantity).toFixed(2)}</div>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -1546,6 +1683,87 @@
                     changeElement.textContent = '$0.00';
                 }
             }
+        }
+
+        function handleFullyPaidModern() {
+            const cashInput = document.getElementById('cashInputModern');
+            const fullyPaidCheckbox = document.getElementById('fullyPaidCheckboxModern');
+
+            if (!cashInput || !fullyPaidCheckbox) return;
+
+            if (fullyPaidCheckbox.checked) {
+                const totals = calculateTotals();
+                cashInput.value = totals.total.toFixed(2);
+                posState.cashReceived = totals.total;
+                cashInput.dispatchEvent(new Event('input'));
+            } else {
+                cashInput.value = '';
+                posState.cashReceived = 0;
+                cashInput.dispatchEvent(new Event('input'));
+            }
+        }
+
+        function handleUnitPriceKeydown(event, productId, input) {
+            // Handle Enter key to apply the price
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                input.blur(); // This will trigger the onchange event
+                return;
+            }
+
+            // Handle Escape key to revert to original price
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                input.value = input.dataset.originalPrice;
+                input.blur();
+                return;
+            }
+        }
+
+        function updateUnitPrice(productId, newPrice) {
+            const price = parseFloat(newPrice);
+            if (isNaN(price) || price < 0) {
+                // Reset to original price if invalid
+                const input = document.querySelector(`input[data-product-id="${productId}"]`);
+                if (input) {
+                    input.value = input.dataset.originalPrice;
+                }
+                return;
+            }
+
+            fetch('/pos/update-cart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    custom_price: price
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    posState.cart = data.cart.items || [];
+                    updateCartDisplay();
+                } else {
+                    // Reset to original price if there's an error
+                    const input = document.querySelector(`input[data-product-id="${productId}"]`);
+                    if (input) {
+                        input.value = input.dataset.originalPrice;
+                    }
+                    alert(data.message || 'Error updating unit price');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating unit price:', error);
+                // Reset to original price if there's an error
+                const input = document.querySelector(`input[data-product-id="${productId}"]`);
+                if (input) {
+                    input.value = input.dataset.originalPrice;
+                }
+            });
         }
 
         function updateQuantity(productId, quantity) {
@@ -1725,6 +1943,9 @@
 
             const cashInput = document.getElementById('cashInputModern');
             if (cashInput) cashInput.value = '';
+
+            const fullyPaidCheckboxModern = document.getElementById('fullyPaidCheckboxModern');
+            if (fullyPaidCheckboxModern) fullyPaidCheckboxModern.checked = false;
 
             const discountInput = document.getElementById('discountInputModern');
             if (discountInput) discountInput.value = '';
