@@ -3,9 +3,29 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h3 mb-0">Profit & Loss Report</h1>
-    <a href="{{ route('modules.reports.index') }}" class="btn btn-secondary">
-        <i class="fas fa-arrow-left me-1"></i> Back to Reports
-    </a>
+    <div class="btn-group" role="group">
+        <a href="{{ route('modules.reports.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Reports
+        </a>
+        <button class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown" data-bs-display="static">
+            <i class="fas fa-download me-1"></i> Export
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><a href="#" class="dropdown-item" data-export="pdf">
+                <i class="fas fa-file-pdf me-2"></i> Export as PDF
+            </a></li>
+            <li><a href="#" class="dropdown-item" data-export="excel">
+                <i class="fas fa-file-excel me-2"></i> Export as Excel
+            </a></li>
+            <li><a href="#" class="dropdown-item" data-export="csv">
+                <i class="fas fa-file-csv me-2"></i> Export as CSV
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a href="#" class="dropdown-item" data-export="print">
+                <i class="fas fa-print me-2"></i> Print Report
+            </a></li>
+        </ul>
+    </div>
 </div>
 
 <!-- Period Selection and Date Filter -->
@@ -149,45 +169,60 @@
                     <i class="fas fa-file-invoice-dollar me-2"></i>Profit & Loss Statement
                 </h5>
             </div>
-            <div class="card-body">
-                <table class="table table-borderless">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover align-middle">
+                        <thead class="table-primary text-white">
+                            <tr>
+                                <th colspan="2">Financial Metric</th>
+                                <th class="text-end">Amount</th>
+                                <th class="text-center">Percentage/Count</th>
+                            </tr>
+                        </thead>
                     <tbody>
                         <!-- Revenue Section -->
-                        <tr class="bg-light">
-                            <td colspan="2"><strong>REVENUE</strong></td>
+                        <tr class="table-success text-white">
+                            <td colspan="3"><i class="fas fa-chart-line me-2"></i><strong>REVENUE SECTION</strong></td>
                         </tr>
                         <tr>
-                            <td class="ps-3">Sales Revenue</td>
-                            <td class="text-end">${{ number_format($data['revenue']['total_revenue'], 2) }}</td>
+                            <td class="ps-3"><i class="fas fa-shopping-cart text-success me-2"></i> Sales Revenue</td>
+                            <td class="text-end fw-bold text-success">${{ number_format($data['revenue']['total_revenue'], 2) }}</td>
+                            <td class="text-center text-muted">{{ $data['orders']['sales_orders_count'] }} orders</td>
                         </tr>
-                        <tr>
-                            <td class="ps-3 text-muted">Sales Orders ({{ $data['orders']['sales_orders_count'] }})</td>
-                            <td class="text-end text-muted">{{ number_format($data['revenue']['total_sales_quantity']) }} items</td>
+                        <tr class="bg-success bg-opacity-10">
+                            <td class="ps-3 text-muted">Items Sold</td>
+                            <td class="text-end text-muted">{{ number_format($data['revenue']['total_sales_quantity']) }}</td>
+                            <td class="text-center text-muted">Units</td>
                         </tr>
-                        <tr>
+                        <tr class="bg-success bg-opacity-10">
                             <td class="ps-3 text-muted">Average Order Value</td>
                             <td class="text-end text-muted">${{ number_format($data['revenue']['average_order_value'], 2) }}</td>
+                            <td class="text-center text-muted">Per Order</td>
                         </tr>
-                        <tr class="border-bottom">
-                            <td><strong>Total Revenue</strong></td>
-                            <td class="text-end"><strong>${{ number_format($data['revenue']['total_revenue'], 2) }}</strong></td>
+                        <tr class="border-2 border-success">
+                            <td class="ps-3 fw-bold"><strong>Total Revenue</strong></td>
+                            <td class="text-end fw-bold text-success"><strong>${{ number_format($data['revenue']['total_revenue'], 2) }}</strong></td>
+                            <td class="text-center"><span class="badge bg-success text-white">100%</span></td>
                         </tr>
 
                         <!-- Cost Section -->
-                        <tr class="bg-light">
-                            <td colspan="2"><strong>COSTS</strong></td>
+                        <tr class="table-danger text-white">
+                            <td colspan="3"><i class="fas fa-shopping-cart me-2"></i><strong>COSTS SECTION</strong></td>
                         </tr>
                         <tr>
-                            <td class="ps-3">Cost of Goods Sold</td>
-                            <td class="text-end text-danger">${{ number_format($data['costs']['cogs'], 2) }}</td>
+                            <td class="ps-3"><i class="fas fa-box text-danger me-2"></i>Cost of Goods Sold</td>
+                            <td class="text-end fw-bold text-danger">${{ number_format($data['costs']['cogs'], 2) }}</td>
+                            <td class="text-center text-muted">{{ number_format($data['costs']['cogs_percentage'], 1) }}% of Revenue</td>
                         </tr>
-                        <tr>
-                            <td class="ps-3 text-muted">Purchase Orders ({{ $data['orders']['purchase_orders_count'] }})</td>
+                        <tr class="bg-danger bg-opacity-10">
+                            <td class="ps-3 text-muted">Purchase Orders</td>
+                            <td class="text-end text-muted">{{ $data['orders']['purchase_orders_count'] }} orders</td>
                             <td class="text-end text-muted">${{ number_format($data['costs']['total_purchases'], 2) }}</td>
                         </tr>
-                        <tr class="border-bottom">
-                            <td><strong>Gross Profit</strong></td>
-                            <td class="text-end"><strong class="text-success">${{ number_format($data['profit']['gross_profit'], 2) }}</strong></td>
+                        <tr class="border-2 border-danger">
+                            <td class="ps-3 fw-bold"><strong>Gross Profit</strong></td>
+                            <td class="text-end fw-bold {{ $data['profit']['gross_profit'] >= 0 ? 'text-success' : 'text-danger' }}">${{ number_format($data['profit']['gross_profit'], 2) }}</td>
+                            <td class="text-center {{ $data['profit']['gross_profit'] >= 0 ? 'text-success' : 'text-danger' }}"><strong>{{ number_format($data['profit']['gross_profit_margin'], 1) }}%</strong></td>
                         </tr>
 
                         <!-- Operating Expenses Section -->
@@ -479,6 +514,154 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     @endif
 });
+
+    // Export functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle export dropdown clicks
+        const exportButtons = document.querySelectorAll('[data-export]');
+        exportButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const exportType = this.dataset.export;
+                handleExport(exportType);
+            });
+        });
+
+        function handleExport(type) {
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(url.search);
+
+            // Add export parameter to URL
+            params.set('export', type);
+
+            // Create new URL with export parameter
+            const exportUrl = `${window.location.pathname}?${params.toString()}`;
+
+            // Show loading indicator
+            showExportLoading(type);
+
+            // Download file
+            fetch(exportUrl, {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': type === 'pdf' ? 'application/pdf' : 'text/csv'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    if (type === 'pdf') {
+                        // For PDF, open in new tab
+                        response.blob().then(blob => {
+                            const pdfUrl = window.URL.createObjectURL(blob);
+                            window.open(pdfUrl, '_blank');
+                        });
+                    } else if (type === 'excel') {
+                        // For Excel, handle as file download
+                        response.blob().then(blob => {
+                            const excelUrl = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = excelUrl;
+                            link.download = `profit-loss-report-${{ new Date().toISOString().split('T')[0] }}.xlsx`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(excelUrl);
+                        });
+                    } else if (type === 'csv') {
+                        // For CSV, handle as file download
+                        response.blob().then(blob => {
+                            const csvUrl = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = csvUrl;
+                            link.download = `profit-loss-report-${{ new Date().toISOString().split('T')[0] }}.csv`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(csvUrl);
+                        });
+                    }
+
+                    // Show success notification
+                    showExportNotification(type, 'success');
+                } else {
+                    showExportNotification(type, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Export failed:', error);
+                showExportNotification(type, 'error');
+            })
+            .finally(() => {
+                hideExportLoading(type);
+            });
+        }
+
+        function handleExport(type) {
+            if (type === 'print') {
+                // Print report
+                window.print();
+            } else {
+                handleFileExport(type);
+            }
+        }
+
+        function showExportLoading(type) {
+            const button = document.querySelector(`[data-export="${type}"]`);
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>Exporting...`;
+            }
+        }
+
+        function hideExportLoading(type) {
+            const button = document.querySelector(`[data-export="${type}"]`);
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = button.innerHTML.replace(/<i class="fas fa-spinner fa-spin me-2"><\/i>Exporting.../, '');
+            }
+        }
+
+        function showExportNotification(type, status) {
+            const icons = {
+                success: '<i class="fas fa-check-circle text-success"></i>',
+                error: '<i class="fas fa-exclamation-triangle text-danger"></i>'
+            };
+
+            const messages = {
+                pdf: 'PDF report',
+                excel: 'Excel file',
+                csv: 'CSV file',
+                print: 'Print job',
+                error: 'export failed'
+            };
+
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${status === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 250px;';
+            notification.innerHTML = `
+                <div class="d-flex align-items-center">
+                    ${icons[status === 'success' ? 'success' : 'error']}
+                    <div class="ms-3">
+                        <strong>${status === 'success' ? 'Export started' : 'Export failed'}</strong>
+                        <div class="small">${status === 'success' ? `Your ${messages[type]} is being prepared` : 'Please try again later'}</div>
+                    </div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto-remove notification after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+    });
 </script>
 @endpush
 @endsection

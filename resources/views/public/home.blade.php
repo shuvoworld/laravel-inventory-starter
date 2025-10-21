@@ -18,12 +18,23 @@
             --gradient-success: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             --gradient-info: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             --gradient-warning: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --gradient-gold: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            --gradient-coral: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            --gradient-teal: linear-gradient(135deg, #14B8A6 0%, #0D9488 100%);
         }
 
         body {
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
             font-family: 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .navbar {
@@ -35,6 +46,20 @@
         .hero-section {
             padding: 120px 0 80px;
             color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="0.5" fill="white" opacity="0.03"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
+            z-index: 1;
         }
 
         .hero-title {
@@ -126,6 +151,30 @@
         .feature-icon.green { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
         .feature-icon.red { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); }
 
+        .feature-card.border-0 {
+            border: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card.border-0::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            z-index: 1;
+            transition: all 0.4s ease;
+        }
+
+        .feature-card.border-0:hover::before {
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2));
+            transform: scale(1.5);
+        }
+
         .stats-section {
             padding: 60px 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -198,8 +247,8 @@
     <section class="features-section">
         <div class="container">
             <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">আপনার ব্যবসার জন্য ১০০% উপযোগী</h2>
-                <p class="text-muted">ইনভেন্টরি এবং বিক্রয় পরিচালনার জন্য প্রয়োজনীয় সবকিছু এক জায়গায়</p>
+                <h2 class="display-5 fw-bold mb-3">🚀 আপনার ব্যবসার জন্য ২.০ - স্মার্ট স্মার্টইনভেন্স</h2>
+                <p class="text-muted">ইনভেন্টরি এবং বিক্রয় পরিচালনার জন্য প্রয়োজনীয় সবকিছু, একবারুরু পরিবর্তন ও ব্যবসারজন্য বিক্রিং</p>
             </div>
 
             <div class="row g-4">
@@ -208,9 +257,10 @@
                         <div class="feature-icon purple">
                             <i class="fas fa-box"></i>
                         </div>
-                        <h3 class="h5 text-center mb-3">ইনভেন্টরি ব্যবস্থাপনা</h3>
+                        <h3 class="h5 text-center mb-3">স্মার্ট-সমার্ট ইনভেন্টরি</h3>
                         <p class="text-muted text-center">
-                            উন্নত স্টক নিয়ন্ত্রণ, কম স্টক সতর্কতা এবং মাল্টি-লোকেশন সাপোর্ট সহ রিয়েল-টাইমে আপনার পণ্য ট্র্যাক করুন।
+                            📦 উন্নত স্টক নিয়ন্ত্রণ, কম স্টক সতর্কতা, এবং স্বয়ং মাল্টি-লোকেশন সাপোর্ট সহ রিয়েল-টাইমে আপনার পণ্য ট্র্যাক করুন।
+                            <strong>⚡ নতুন:</strong> রিয়েল-টাইম, সম্পর্ট ব্যবসাথাপনা, মাল্টি-লোকেশন সাপোর্ট সহ রিয়েল-টাইমে।
                         </p>
                     </div>
                 </div>
@@ -222,7 +272,8 @@
                         </div>
                         <h3 class="h5 text-center mb-3">বিক্রয় অর্ডার</h3>
                         <p class="text-muted text-center">
-                            স্বয়ংক্রিয় চালান, পেমেন্ট ট্র্যাকিং এবং গ্রাহক ব্যবস্থাপনা সহ দক্ষতার সাথে বিক্রয় অর্ডার প্রক্রিয়া করুন।
+                            💰 <strong>ইউনিট মূল্যেন্স:</strong> স্বয়ংক্রিয় চালান, পেমেন্ট ট্র্যাকিং এবং গ্রাহক ব্যবস্থাপনা সহ দক্ষতার সাথে।
+                            ⚡ <strong>ফুলি পেমেন্ট:</strong> প্রতিটি ইউনিটের মূল্যে সম্পাদনা, রিয়েল টাইম-লাইন পরিচালনা করুন এবং সম্পূর্ণ দামের সম্পর্ক তৈরি করুন।
                         </p>
                     </div>
                 </div>
@@ -272,32 +323,6 @@
                         <p class="text-muted text-center">
                             উন্নত ব্যবহারকারী রোল, অনুমতি এবং ব্যাপক অ্যাক্সেস নিয়ন্ত্রণ দিয়ে আপনার ডেটা সুরক্ষিত করুন।
                         </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Stats Section -->
-    <section class="stats-section">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4 col-6 mb-4 mb-md-0">
-                    <div class="stat-card">
-                        <div class="stat-number">৯৯.৯%</div>
-                        <div class="stat-label">আপটাইম</div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-6 mb-4 mb-md-0">
-                    <div class="stat-card">
-                        <div class="stat-number">১০০%</div>
-                        <div class="stat-label">ডাটা সুরক্ষা</div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-12">
-                    <div class="stat-card">
-                        <div class="stat-number">২৪/৭</div>
-                        <div class="stat-label">সাপোর্ট</div>
                     </div>
                 </div>
             </div>

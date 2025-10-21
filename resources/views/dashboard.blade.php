@@ -12,7 +12,7 @@ function formatMoney($amount) {
 @endphp
 
 @section('content')
-<!-- Financial Overview Section -->
+<!-- Enhanced Financial Overview Section -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card bg-gradient-primary">
@@ -392,21 +392,70 @@ function formatMoney($amount) {
             </div>
             <div class="card-body p-0">
                 @if($recentSalesOrders->count() > 0)
-                    @foreach($recentSalesOrders as $order)
-                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
-                            <div>
-                                <strong>{{ $order->order_number }}</strong><br>
-                                <small class="text-muted">{{ $order->customer->name ?? 'N/A' }}</small>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-success font-weight-bold">{{ formatMoney($order->total_amount) }}</div>
-                                <small class="text-muted">{{ $order->created_at->diffForHumans() }}</small>
-                            </div>
-                        </div>
-                    @endforeach
-                @else
-                    <div class="p-3 text-center text-muted">
-                        No recent sales orders
+                    <div class="table-responsive mb-0">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-start">Order #</th>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($recentSalesOrders as $order)
+                                    <tr class="align-middle">
+                                        <td>
+                                            <span class="badge bg-primary text-white">{{ $order->order_number }}</span>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ $order->customer->name ?? 'Walk-in' }}</strong>
+                                                @if($order->customer->email)
+                                                    <br><small class="text-muted">{{ $order->customer->email }}</small>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold text-success">{{ formatMoney($order->total_amount) }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-column align-items-start">
+                                                <small class="text-muted mb-1">{{ $order->created_at->format('M j, Y') }}</small>
+                                                @switch($order->status)
+                                                    @case('pending')
+                                                        <span class="badge bg-warning">Pending</span>
+                                                        @break
+                                                    @case('confirmed')
+                                                        <span class="badge bg-info">Confirmed</span>
+                                                        @break
+                                                    @case('delivered')
+                                                        <span class="badge bg-success">Delivered</span>
+                                                        @break
+                                                    @case('cancelled')
+                                                        <span class="badge bg-danger">Cancelled</span>
+                                                        @break
+                                                    @case('refunded')
+                                                        <span class="badge bg-secondary">Refunded</span>
+                                                        @break
+                                                    @default
+                                                        <span class="badge bg-secondary">{{ $order->status }}</span>
+                                                @endswitch
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @else
+                    <div class="p-5 text-center text-muted">
+                        <i class="fas fa-shopping-cart fa-2x mb-3 opacity-50"></i>
+                        <p class="mb-0">No recent sales orders</p>
+                        <a href="{{ route('modules.sales-order.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i> Create First Order
+                        </a>
                     </div>
                 @endif
             </div>
@@ -483,21 +532,70 @@ function formatMoney($amount) {
                 <a href="{{ route('modules.products.index') }}" class="btn btn-sm btn-outline-primary">View all</a>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table id="dashboard-products-table" class="table table-striped table-hover table-sm mb-0 w-100">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>SKU</th>
-                                <th>Price</th>
-                                <th>Stock</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
+                @if($recentProducts && $recentProducts->count() > 0)
+                    <div class="table-responsive">
+                        <table id="dashboard-products-table" class="table table-hover align-middle">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th class="border-0">Product</th>
+                                    <th class="border-0">SKU</th>
+                                    <th class="text-center border-0">Price</th>
+                                    <th class="text-center border-0">Stock</th>
+                                    <th class="text-center border-0">Status</th>
+                                    <th class="text-end border-0">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($recentProducts as $product)
+                                    <tr>
+                                        <td class="text-start">
+                                            <div class="d-flex align-items-center">
+                                                @if($product->image)
+                                                    <img src="{{ asset('storage/' . $product->image) }}"
+                                                         alt="{{ $product->name }}"
+                                                         class="rounded-circle me-2"
+                                                         style="width: 32px; height: 32px; object-fit: cover;">
+                                                @endif
+                                                <div>
+                                                    <strong>{{ Str::limit($product->name, 35) }}</strong>
+                                                    @if($product->sku)
+                                                        <small class="text-muted d-block">SKU: {{ $product->sku }}</small>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center"><span class="badge bg-light text-dark">{{ $product->sku ?? 'N/A' }}</span></td>
+                                        <td class="text-center fw-bold">{{ formatMoney($product->target_price ?? $product->price) }}</td>
+                                        <td class="text-center">
+                                            <span class="badge {{ $product->quantity_on_hand > 10 ? 'bg-danger' : ($product->quantity_on_hand > 5 ? 'bg-warning' : 'bg-success') }} text-white">
+                                                {{ $product->quantity_on_hand }}
+                                            </span>
+                                            <small class="d-block text-muted">
+                                                {{ $product->quantity_on_hand > 10 ? 'Critical Low' : ($product->quantity_on_hand > 5 ? 'Low Stock' : 'Good Stock') }}
+                                            </small>
+                                        </td>
+                                        <td class="text-center">{{ $product->status === 'active' ? 'Available' : 'Inactive' }}</td>
+                                        <td class="text-end fw-bold text-success">{{ formatMoney(($product->target_price ?? $product->price) * $product->quantity_on_hand) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="text-center py-5">
+                        <i class="fas fa-cube fa-3x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">No recent products to display</p>
+                        @can('products.create')
+                            <a href="{{ route('modules.products.create') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add Product
+                            </a>
+                        @endcan
+                    </div>
+                @endif
             </div>
+        </div>
+    </div>
+    @can('products.view')
         </div>
     </div>
     @endcan
