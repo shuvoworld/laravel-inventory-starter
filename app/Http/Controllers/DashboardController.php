@@ -9,6 +9,7 @@ use App\Modules\Products\Models\Product;
 use App\Modules\Customers\Models\Customer;
 use App\Modules\StoreSettings\Models\StoreSetting;
 use App\Modules\StockMovement\Models\StockMovement;
+use App\Modules\PurchaseOrder\Models\PurchaseOrder;
 use App\Services\StockCalculationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -136,6 +137,11 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $recentPurchaseOrders = PurchaseOrder::with('supplier')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
         $recentExpenses = OperatingExpense::orderBy('created_at', 'desc')
             ->take(5)
             ->get();
@@ -199,6 +205,7 @@ class DashboardController extends Controller
             'outOfStockProducts',
             'stockIntegrity',
             'recentSalesOrders',
+            'recentPurchaseOrders',
             'recentExpenses',
             'totalCustomers',
             'totalProducts',
@@ -579,7 +586,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get simplified Profit and Loss data (4 sections only)
+     * Get simplified Profit and Loss data (5 sections including purchases)
      */
     private function getProfitLossData(Carbon $startDate, Carbon $endDate): array
     {
@@ -588,7 +595,12 @@ class DashboardController extends Controller
             ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
             ->sum('total_amount');
 
-        // 2. COST OF GOODS SOLD - Calculate from stock movements using WAC
+        // 2. PURCHASES - Total purchase amount from purchase orders
+        $purchases = PurchaseOrder::whereBetween('order_date', [$startDate, $endDate])
+            ->whereIn('status', ['confirmed', 'processing', 'received'])
+            ->sum('total_amount');
+
+        // 3. COST OF GOODS SOLD - Calculate from stock movements using WAC
         $salesMovements = StockMovement::whereBetween('created_at', [$startDate, $endDate])
             ->where('transaction_type', 'sale')
             ->with('product')
@@ -614,7 +626,7 @@ class DashboardController extends Controller
             }
         }
 
-        // 3. OPERATING EXPENSES - All business expenses (from both tables)
+        // 4. OPERATING EXPENSES - All business expenses (from both tables)
         $operatingExpenses = OperatingExpense::getExpensesForPeriod($startDate, $endDate);
 
         // Add expenses from the Expense module
@@ -624,11 +636,12 @@ class DashboardController extends Controller
 
         $totalExpenses = $operatingExpenses + $generalExpenses;
 
-        // 4. NET PROFIT/LOSS - Income - COGS - Operating Expenses
+        // 5. NET PROFIT/LOSS - Income - COGS - Operating Expenses
         $netProfit = $income - $cogs - $totalExpenses;
 
         return [
             'income' => $income,
+            'purchases' => $purchases,
             'cogs' => $cogs,
             'operating_expenses' => $totalExpenses,
             'net_profit' => $netProfit,

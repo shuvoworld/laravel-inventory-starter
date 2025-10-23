@@ -221,6 +221,7 @@
                     @endif
                 @endcan
 
+                
                 <!-- Expenses -->
                 @can('expense.view')
                     <li class="nav-item mt-3 mb-2">

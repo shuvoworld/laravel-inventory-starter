@@ -79,16 +79,25 @@
                     <label for="reason" class="form-label">Correction Reason *</label>
                     <select id="reason" name="reason" class="form-control @error('reason') is-invalid @enderror" required>
                         <option value="">Select Reason</option>
-                        <option value="Physical Count Discrepancy" {{ old('reason') == 'Physical Count Discrepancy' ? 'selected' : '' }}>Physical Count Discrepancy</option>
-                        <option value="Data Entry Error" {{ old('reason') == 'Data Entry Error' ? 'selected' : '' }}>Data Entry Error</option>
-                        <option value="Damaged Goods Found" {{ old('reason') == 'Damaged Goods Found' ? 'selected' : '' }}>Damaged Goods Found</option>
-                        <option value="Expired Items Discovered" {{ old('reason') == 'Expired Items Discovered' ? 'selected' : '' }}>Expired Items Discovered</option>
-                        <option value="Lost Items Recovered" {{ old('reason') == 'Lost Items Recovered' ? 'selected' : '' }}>Lost Items Recovered</option>
-                        <option value="Supplier Return" {{ old('reason') == 'Supplier Return' ? 'selected' : '' }}>Supplier Return</option>
-                        <option value="Quality Control" {{ old('reason') == 'Quality Control' ? 'selected' : '' }}>Quality Control</option>
-                        <option value="Theft/Loss" {{ old('reason') == 'Theft/Loss' ? 'selected' : '' }}>Theft/Loss</option>
-                        <option value="System Error" {{ old('reason') == 'System Error' ? 'selected' : '' }}>System Error</option>
-                        <option value="Other" {{ old('reason') == 'Other' ? 'selected' : '' }}>Other</option>
+                        <optgroup label="Stock Management">
+                            <option value="Opening Balance" {{ old('reason') == 'Opening Balance' ? 'selected' : '' }}>🏪 Opening Balance (Initial Stock Setup)</option>
+                            <option value="Physical Count Discrepancy" {{ old('reason') == 'Physical Count Discrepancy' ? 'selected' : '' }}>Physical Count Discrepancy</option>
+                            <option value="Lost Items Recovered" {{ old('reason') == 'Lost Items Recovered' ? 'selected' : '' }}>Lost Items Recovered</option>
+                        </optgroup>
+                        <optgroup label="Error Corrections">
+                            <option value="Data Entry Error" {{ old('reason') == 'Data Entry Error' ? 'selected' : '' }}>Data Entry Error</option>
+                            <option value="System Error" {{ old('reason') == 'System Error' ? 'selected' : '' }}>System Error</option>
+                        </optgroup>
+                        <optgroup label="Issues & Losses">
+                            <option value="Damaged Goods Found" {{ old('reason') == 'Damaged Goods Found' ? 'selected' : '' }}>Damaged Goods Found</option>
+                            <option value="Expired Items Discovered" {{ old('reason') == 'Expired Items Discovered' ? 'selected' : '' }}>Expired Items Discovered</option>
+                            <option value="Theft/Loss" {{ old('reason') == 'Theft/Loss' ? 'selected' : '' }}>Theft/Loss</option>
+                        </optgroup>
+                        <optgroup label="Other">
+                            <option value="Supplier Return" {{ old('reason') == 'Supplier Return' ? 'selected' : '' }}>Supplier Return</option>
+                            <option value="Quality Control" {{ old('reason') == 'Quality Control' ? 'selected' : '' }}>Quality Control</option>
+                            <option value="Other" {{ old('reason') == 'Other' ? 'selected' : '' }}>Other</option>
+                        </optgroup>
                     </select>
                     @error('reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>

@@ -12,6 +12,7 @@ use App\Modules\Products\Models\Product;
 use App\Modules\Suppliers\Models\Supplier;
 use App\Models\SupplierPayment;
 use App\Services\StockMovementService;
+use App\Services\AccountingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -292,7 +293,7 @@ class PurchaseOrderController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $purchaseOrder) {
-            SupplierPayment::create([
+            $supplierPayment = SupplierPayment::create([
                 'supplier_id' => $purchaseOrder->supplier_id,
                 'purchase_order_id' => $purchaseOrder->id,
                 'payment_date' => $request->payment_date,
@@ -301,6 +302,14 @@ class PurchaseOrderController extends Controller
                 'reference_number' => $request->reference_number,
                 'notes' => $request->notes,
             ]);
+
+            // Post payment to accounting
+            try {
+                AccountingService::postSupplierPayment($supplierPayment);
+            } catch (\Exception $e) {
+                \Log::error('Error posting supplier payment to accounting: ' . $e->getMessage());
+                // Continue even if accounting posting fails
+            }
         });
 
         return redirect()->route('modules.purchase-order.show', $id)->with('success', 'Payment added successfully.');

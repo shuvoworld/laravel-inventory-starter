@@ -38,7 +38,7 @@ class RolePermissionSeeder extends Seeder
             'expense.view', 'expense.create', 'expense.edit', 'expense.delete',
             // Expense Category Management
             'expense-category.view', 'expense-category.create', 'expense-category.edit', 'expense-category.delete',
-        ];
+                    ];
 
         foreach ($permissions as $perm) {
             Permission::findOrCreate($perm, $guard);
@@ -47,6 +47,14 @@ class RolePermissionSeeder extends Seeder
         // Define roles and attach permissions
         $roles = [
             'admin' => $permissions, // admin gets all
+            'store-admin' => [
+                // Store admin gets basic access
+                'users.view', 'users.create', 'users.edit', // Limited user management
+                'types.view', 'types.create', 'types.edit', // Product types
+                'blog-category.view', 'blog-category.create', 'blog-category.edit', // Categories
+                'expense.view', 'expense.create', 'expense.edit', // Expenses
+                'expense-category.view', 'expense-category.create', 'expense-category.edit', // Expense categories
+            ],
             'editor' => [
                 // As example, editor can manage Types except delete and manage Blog Categories (no delete)
                 'types.view', 'types.create', 'types.edit',

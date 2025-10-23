@@ -10,6 +10,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use OwenIt\Auditing\Auditable;
 use App\Traits\BelongsToStore;
 use App\Services\WeightedAverageCostService;
+use App\Services\AccountingService;
 use Carbon\Carbon;
 
 class PurchaseOrder extends Model implements AuditableContract
@@ -72,6 +73,16 @@ class PurchaseOrder extends Model implements AuditableContract
             // Update Weighted Average Cost when purchase order status changes to 'received'
             if ($purchaseOrder->wasChanged('status') && in_array($purchaseOrder->status, ['received', 'confirmed'])) {
                 $purchaseOrder->updateWeightedAverageCosts();
+
+                // Post purchase order to accounting when received
+                if ($purchaseOrder->status === 'received') {
+                    try {
+                        AccountingService::postPurchaseOrder($purchaseOrder);
+                    } catch (\Exception $e) {
+                        \Log::error('Error posting purchase order to accounting: ' . $e->getMessage());
+                        // Continue even if accounting posting fails
+                    }
+                }
             }
         });
     }

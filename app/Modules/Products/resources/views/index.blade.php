@@ -30,8 +30,10 @@
                         <th>Name</th>
                         <th>Unit</th>
                         <th>Cost Price</th>
-                        <th>Selling Price</th>
-                        <th>Profit Margin</th>
+                        <th>Minimum Profit Margin</th>
+                        <th>Floor Price</th>
+                        <th>Standard Profit Margin (%)</th>
+                        <th>Target Price</th>
                         <th>On Hand</th>
                         <th>Actions</th>
                     </tr>
@@ -64,8 +66,10 @@
                 { data: 'name' },
                 { data: 'unit' },
                 { data: 'cost_price' },
-                { data: 'price' },
-                { data: 'profit_margin' },
+                { data: 'minimum_profit_margin' },
+                { data: 'floor_price' },
+                { data: 'standard_profit_margin' },
+                { data: 'target_price' },
                 { data: 'quantity_on_hand' },
                 { data: 'actions', orderable: false, searchable: false },
             ],

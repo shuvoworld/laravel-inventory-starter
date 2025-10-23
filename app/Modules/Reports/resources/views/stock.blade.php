@@ -148,116 +148,6 @@
     </div>
 </div>
 
-<!-- Brand Breakdown -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Stock by Brand</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Brand</th>
-                                <th class="text-center">Products</th>
-                                <th class="text-end">Quantity</th>
-                                <th class="text-end">Value</th>
-                                <th class="text-end">Avg Cost/Unit</th>
-                                <th class="text-center">Low Stock Items</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($overview['brands_breakdown'] as $brand => $data)
-                            <tr>
-                                <td class="fw-bold">{{ $brand }}</td>
-                                <td class="text-center">{{ $data['product_count'] }}</td>
-                                <td class="text-end">{{ number_format($data['total_quantity']) }}</td>
-                                <td class="text-end">${{ number_format($data['total_value'], 2) }}</td>
-                                <td class="text-end">
-                                    ${{ number_format($data['total_quantity'] > 0 ? $data['total_value'] / $data['total_quantity'] : 0, 2) }}
-                                </td>
-                                <td class="text-center">
-                                    @if($data['low_stock_count'] > 0)
-                                        <span class="badge bg-warning">{{ $data['low_stock_count'] }}</span>
-                                    @else
-                                        <span class="text-muted">0</span>
-                                    @endif
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Reorder Recommendations -->
-@if($reorderRecommendations->count() > 0)
-<div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0">Reorder Recommendations</h5>
-        <a href="{{ route('modules.reports.stock.reorder-recommendations') }}" class="btn btn-sm btn-outline-primary">
-            View All
-        </a>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Product</th>
-                        <th>SKU</th>
-                        <th class="text-center">Current Stock</th>
-                        <th class="text-center">Reorder Level</th>
-                        <th class="text-center">Recommended Qty</th>
-                        <th class="text-end">Est. Cost</th>
-                        <th class="text-center">Urgency</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($reorderRecommendations as $item)
-                    <tr>
-                        <td>
-                            <div>{{ $item['name'] }}</div>
-                            <small class="text-muted">Brand: {{ $item['brand'] }}</small>
-                        </td>
-                        <td>{{ $item['sku'] }}</td>
-                        <td class="text-center">
-                            <span class="badge bg-{{ $item['current_stock'] <= 0 ? 'danger' : 'warning' }}">
-                                {{ $item['current_stock'] }}
-                            </span>
-                        </td>
-                        <td class="text-center">{{ $item['reorder_level'] }}</td>
-                        <td class="text-center">{{ $item['recommended_quantity'] }}</td>
-                        <td class="text-end">${{ number_format($item['estimated_cost'], 2) }}</td>
-                        <td class="text-center">
-                            <span class="badge bg-{{ $item['urgency'] === 'critical' ? 'danger' : ($item['urgency'] === 'high' ? 'warning' : 'info') }}">
-                                {{ ucfirst($item['urgency']) }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="{{ route('modules.products.edit', $item['id']) }}" class="btn btn-outline-primary">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a href="{{ route('modules.products.show', $item['id']) }}" class="btn btn-outline-info">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-@endif
 
 <!-- Quick Actions -->
 <div class="card">
@@ -281,12 +171,7 @@
                     <i class="fas fa-calculator me-1"></i> Stock Valuation
                 </a>
             </div>
-            <div class="col-md-3 mb-2">
-                <a href="{{ route('modules.reports.stock.reorder-recommendations') }}" class="btn btn-warning w-100">
-                    <i class="fas fa-shopping-cart me-1"></i> Reorder List
-                </a>
-            </div>
-        </div>
+          </div>
     </div>
 </div>
 @endsection

@@ -3,7 +3,13 @@
 @section('content')
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title mb-0">Create Stock Adjustment</h3>
+        <h3 class="card-title mb-0">
+            @if(request('type') === 'opening_balance')
+                <i class="fas fa-balance-scale me-2"></i>Set Opening Balance
+            @else
+                <i class="fas fa-plus me-2"></i>Create Stock Adjustment
+            @endif
+        </h3>
     </div>
     <form method="POST" action="{{ route('modules.stock-movement.store') }}">
         @csrf
@@ -22,37 +28,36 @@
                     @error('product_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
-                <div class="col-md-6">
-                    <label for="type" class="form-label">Adjustment Type *</label>
-                    <select id="type" name="type" class="form-control @error('type') is-invalid @enderror" required>
-                        <option value="">Select Type</option>
-                        <option value="in" {{ old('type') == 'in' ? 'selected' : '' }}>Stock In (Increase)</option>
-                        <option value="out" {{ old('type') == 'out' ? 'selected' : '' }}>Stock Out (Decrease)</option>
-                        <option value="adjustment" {{ old('type') == 'adjustment' ? 'selected' : '' }}>Stock Adjustment (Correction)</option>
-                    </select>
-                    @error('type')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-
-                <div class="col-md-6">
+            <div class="col-md-6">
                     <label for="quantity" class="form-label">Quantity *</label>
                     <input id="quantity" type="number" name="quantity" class="form-control @error('quantity') is-invalid @enderror" value="{{ old('quantity') }}" min="1" required>
                     @error('quantity')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="col-md-6">
-                    <label for="reason" class="form-label">Reason *</label>
-                    <select id="reason" name="reason" class="form-control @error('reason') is-invalid @enderror" required>
-                        <option value="">Select Reason</option>
-                        <option value="Stock Count Correction" {{ old('reason') == 'Stock Count Correction' ? 'selected' : '' }}>Stock Count Correction</option>
-                        <option value="Damaged Goods" {{ old('reason') == 'Damaged Goods' ? 'selected' : '' }}>Damaged Goods</option>
-                        <option value="Expired Items" {{ old('reason') == 'Expired Items' ? 'selected' : '' }}>Expired Items</option>
-                        <option value="Lost/Stolen" {{ old('reason') == 'Lost/Stolen' ? 'selected' : '' }}>Lost/Stolen</option>
-                        <option value="Found Items" {{ old('reason') == 'Found Items' ? 'selected' : '' }}>Found Items</option>
-                        <option value="Supplier Return" {{ old('reason') == 'Supplier Return' ? 'selected' : '' }}>Supplier Return</option>
-                        <option value="Quality Control" {{ old('reason') == 'Quality Control' ? 'selected' : '' }}>Quality Control</option>
-                        <option value="Other" {{ old('reason') == 'Other' ? 'selected' : '' }}>Other</option>
+                    <label for="transaction_type" class="form-label">Transaction Type *</label>
+                    <select id="transaction_type" name="transaction_type" class="form-control @error('transaction_type') is-invalid @enderror" required>
+                        <option value="">Select Transaction Type</option>
+                        <optgroup label="Stock IN (Increase Stock)">
+                            <option value="opening_stock" {{ old('transaction_type') == 'opening_stock' || request('type') === 'opening_balance' ? 'selected' : '' }}>🏪 Opening Balance</option>
+                            <option value="stock_count_correction" {{ old('transaction_type') == 'stock_count_correction' ? 'selected' : '' }}>✏️ Stock Count (+)</option>
+                            <option value="recovery_found" {{ old('transaction_type') == 'recovery_found' ? 'selected' : '' }}>🔍 Found/Recovered</option>
+                            <option value="sale_return" {{ old('transaction_type') == 'sale_return' ? 'selected' : '' }}>↩️ Sales Return</option>
+                            <option value="transfer_in" {{ old('transaction_type') == 'transfer_in' ? 'selected' : '' }}>📥 Transfer IN</option>
+                        </optgroup>
+                        <optgroup label="Stock OUT (Decrease Stock)">
+                            <option value="damage" {{ old('transaction_type') == 'damage' ? 'selected' : '' }}>⚠️ Damage</option>
+                            <option value="expired" {{ old('transaction_type') == 'expired' ? 'selected' : '' }}>⏰ Expired</option>
+                            <option value="lost_missing" {{ old('transaction_type') == 'lost_missing' ? 'selected' : '' }}>❌ Lost/Missing</option>
+                            <option value="theft" {{ old('transaction_type') == 'theft' ? 'selected' : '' }}>🔒 Theft</option>
+                            <option value="stock_count_correction_minus" {{ old('transaction_type') == 'stock_count_correction_minus' ? 'selected' : '' }}>✏️ Stock Count (-)</option>
+                            <option value="quality_control" {{ old('transaction_type') == 'quality_control' ? 'selected' : '' }}>🚫 Quality Control</option>
+                        </optgroup>
+                        <optgroup label="Other">
+                            <option value="manual_adjustment" {{ old('transaction_type') == 'manual_adjustment' ? 'selected' : '' }}>✋ Manual Adjustment</option>
+                        </optgroup>
                     </select>
-                    @error('reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    @error('transaction_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="col-12">
@@ -94,7 +99,12 @@
 
         <div class="card-footer d-flex gap-2">
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save me-1"></i> Create Adjustment
+                <i class="fas fa-save me-1"></i>
+                @if(request('type') === 'opening_balance')
+                    Set Opening Balance
+                @else
+                    Create Adjustment
+                @endif
             </button>
             <a href="{{ route('modules.stock-movement.index') }}" class="btn btn-secondary">Cancel</a>
         </div>
@@ -105,7 +115,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const productSelect = document.getElementById('product_id');
-    const typeSelect = document.getElementById('type');
+    const transactionTypeSelect = document.getElementById('transaction_type');
     const quantityInput = document.getElementById('quantity');
     const stockPreview = document.getElementById('stock-preview');
     const noPreview = document.getElementById('no-preview');
@@ -113,12 +123,38 @@ document.addEventListener('DOMContentLoaded', function() {
     const adjustmentDisplay = document.getElementById('adjustment-display');
     const newStockSpan = document.getElementById('new-stock');
 
+    // Stock IN transaction types
+    const stockInTypes = ['opening_stock', 'stock_count_correction', 'recovery_found', 'sale_return', 'transfer_in'];
+
+    // Show opening balance help text
+    function showOpeningBalanceHelp() {
+        const selectedType = transactionTypeSelect.value;
+        const helpText = document.getElementById('opening-balance-help');
+
+        if (selectedType === 'opening_stock') {
+            if (!helpText) {
+                const helpDiv = document.createElement('div');
+                helpDiv.id = 'opening-balance-help';
+                helpDiv.className = 'alert alert-info mt-3';
+                helpDiv.innerHTML = `
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Opening Balance:</strong> Use this to set initial stock quantities when first setting up your inventory or when reconciling physical counts at the beginning of a period.
+                `;
+                transactionTypeSelect.parentNode.appendChild(helpDiv);
+            }
+        } else {
+            if (helpText) {
+                helpText.remove();
+            }
+        }
+    }
+
     function updatePreview() {
         const selectedOption = productSelect.selectedOptions[0];
-        const type = typeSelect.value;
+        const transactionType = transactionTypeSelect.value;
         const quantity = parseInt(quantityInput.value) || 0;
 
-        if (!selectedOption || !selectedOption.dataset.stock || !type || !quantity) {
+        if (!selectedOption || !selectedOption.dataset.stock || !transactionType || !quantity) {
             stockPreview.classList.add('d-none');
             noPreview.classList.remove('d-none');
             return;
@@ -128,10 +164,16 @@ document.addEventListener('DOMContentLoaded', function() {
         let adjustment = 0;
         let newStock = currentStock;
 
-        if (type === 'in') {
+        // Determine if this is a stock IN or OUT movement
+        if (stockInTypes.includes(transactionType)) {
             adjustment = quantity;
             newStock = currentStock + quantity;
-            adjustmentDisplay.innerHTML = '<span class="text-success">+' + quantity + '</span>';
+        } else {
+            adjustment = -quantity;
+            newStock = Math.max(0, currentStock - quantity);
+        }
+
+                adjustmentDisplay.innerHTML = '<span class="text-success">+' + quantity + '</span>';
         } else if (type === 'out') {
             adjustment = -quantity;
             newStock = currentStock - quantity;
@@ -158,12 +200,33 @@ document.addEventListener('DOMContentLoaded', function() {
             newStockSpan.className = '';
         }
 
+        // Show adjustment with appropriate color
+        if (adjustment > 0) {
+            adjustmentDisplay.innerHTML = '<span class="text-success">+' + adjustment + '</span>';
+        } else if (adjustment < 0) {
+            adjustmentDisplay.innerHTML = '<span class="text-danger">' + adjustment + '</span>';
+        } else {
+            adjustmentDisplay.innerHTML = '<span class="text-muted">0</span>';
+        }
+
+        currentStockSpan.textContent = currentStock;
+        newStockSpan.textContent = newStock;
+
+        if (newStock < 0) {
+            newStockSpan.className = 'text-danger';
+        } else {
+            newStockSpan.className = '';
+        }
+
         stockPreview.classList.remove('d-none');
         noPreview.classList.add('d-none');
     }
 
     productSelect.addEventListener('change', updatePreview);
-    typeSelect.addEventListener('change', updatePreview);
+    transactionTypeSelect.addEventListener('change', function() {
+        showOpeningBalanceHelp();
+        updatePreview();
+    });
     quantityInput.addEventListener('input', updatePreview);
 });
 </script>

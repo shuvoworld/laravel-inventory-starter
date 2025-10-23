@@ -162,119 +162,105 @@
 
 <div class="row">
     <div class="col-md-8">
-        <!-- Detailed P&L Statement -->
+        <!-- Simple Financial Summary -->
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="fas fa-file-invoice-dollar me-2"></i>Profit & Loss Statement
+                    <i class="fas fa-chart-line me-2"></i>Financial Summary
                 </h5>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-hover align-middle">
-                        <thead class="table-primary text-white">
-                            <tr>
-                                <th colspan="2">Financial Metric</th>
-                                <th class="text-end">Amount</th>
-                                <th class="text-center">Percentage/Count</th>
-                            </tr>
-                        </thead>
-                    <tbody>
-                        <!-- Revenue Section -->
-                        <tr class="table-success text-white">
-                            <td colspan="3"><i class="fas fa-chart-line me-2"></i><strong>REVENUE SECTION</strong></td>
-                        </tr>
-                        <tr>
-                            <td class="ps-3"><i class="fas fa-shopping-cart text-success me-2"></i> Sales Revenue</td>
-                            <td class="text-end fw-bold text-success">${{ number_format($data['revenue']['total_revenue'], 2) }}</td>
-                            <td class="text-center text-muted">{{ $data['orders']['sales_orders_count'] }} orders</td>
-                        </tr>
-                        <tr class="bg-success bg-opacity-10">
-                            <td class="ps-3 text-muted">Items Sold</td>
-                            <td class="text-end text-muted">{{ number_format($data['revenue']['total_sales_quantity']) }}</td>
-                            <td class="text-center text-muted">Units</td>
-                        </tr>
-                        <tr class="bg-success bg-opacity-10">
-                            <td class="ps-3 text-muted">Average Order Value</td>
-                            <td class="text-end text-muted">${{ number_format($data['revenue']['average_order_value'], 2) }}</td>
-                            <td class="text-center text-muted">Per Order</td>
-                        </tr>
-                        <tr class="border-2 border-success">
-                            <td class="ps-3 fw-bold"><strong>Total Revenue</strong></td>
-                            <td class="text-end fw-bold text-success"><strong>${{ number_format($data['revenue']['total_revenue'], 2) }}</strong></td>
-                            <td class="text-center"><span class="badge bg-success text-white">100%</span></td>
-                        </tr>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Money In -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <h6 class="card-title text-success mb-3">
+                                    <i class="fas fa-arrow-down me-2"></i>Money In (Sales)
+                                </h6>
+                                <h3 class="text-success">${{ number_format($data['revenue']['total_revenue'], 2) }}</h3>
+                                <p class="text-muted mb-1">{{ $data['orders']['sales_orders_count'] }} sales orders</p>
+                                <p class="text-muted mb-0">{{ number_format($data['revenue']['total_sales_quantity']) }} items sold</p>
+                            </div>
+                        </div>
+                    </div>
 
-                        <!-- Cost Section -->
-                        <tr class="table-danger text-white">
-                            <td colspan="3"><i class="fas fa-shopping-cart me-2"></i><strong>COSTS SECTION</strong></td>
-                        </tr>
-                        <tr>
-                            <td class="ps-3"><i class="fas fa-box text-danger me-2"></i>Cost of Goods Sold</td>
-                            <td class="text-end fw-bold text-danger">${{ number_format($data['costs']['cogs'], 2) }}</td>
-                            <td class="text-center text-muted">{{ number_format($data['costs']['cogs_percentage'], 1) }}% of Revenue</td>
-                        </tr>
-                        <tr class="bg-danger bg-opacity-10">
-                            <td class="ps-3 text-muted">Purchase Orders</td>
-                            <td class="text-end text-muted">{{ $data['orders']['purchase_orders_count'] }} orders</td>
-                            <td class="text-end text-muted">${{ number_format($data['costs']['total_purchases'], 2) }}</td>
-                        </tr>
-                        <tr class="border-2 border-danger">
-                            <td class="ps-3 fw-bold"><strong>Gross Profit</strong></td>
-                            <td class="text-end fw-bold {{ $data['profit']['gross_profit'] >= 0 ? 'text-success' : 'text-danger' }}">${{ number_format($data['profit']['gross_profit'], 2) }}</td>
-                            <td class="text-center {{ $data['profit']['gross_profit'] >= 0 ? 'text-success' : 'text-danger' }}"><strong>{{ number_format($data['profit']['gross_profit_margin'], 1) }}%</strong></td>
-                        </tr>
+                    <!-- Money Out -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card border-danger">
+                            <div class="card-body text-center">
+                                <h6 class="card-title text-danger mb-3">
+                                    <i class="fas fa-arrow-up me-2"></i>Money Out (Costs)
+                                </h6>
+                                <h3 class="text-danger">${{ number_format($data['costs']['cogs'] + $data['costs']['operating_expenses'], 2) }}</h3>
+                                <p class="text-muted mb-1">${{ number_format($data['costs']['cogs'], 2) }} product costs</p>
+                                <p class="text-muted mb-0">${{ number_format($data['costs']['operating_expenses'], 2) }} expenses</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                        <!-- Operating Expenses Section -->
-                        <tr class="bg-light">
-                            <td colspan="2"><strong>OPERATING EXPENSES</strong></td>
-                        </tr>
-                        @if(count($data['expenses_by_category']) > 0)
-                            @foreach($data['expenses_by_category'] as $expense)
-                                <tr>
-                                    <td class="ps-3">{{ $expense['category_label'] }}</td>
-                                    <td class="text-end text-warning">${{ number_format($expense['total'], 2) }}</td>
-                                </tr>
-                            @endforeach
-                        @else
-                            <tr>
-                                <td class="ps-3 text-muted">No operating expenses recorded</td>
-                                <td class="text-end text-muted">$0.00</td>
-                            </tr>
-                        @endif
-                        <tr class="border-bottom">
-                            <td><strong>Total Operating Expenses</strong></td>
-                            <td class="text-end"><strong class="text-warning">${{ number_format($data['costs']['operating_expenses'], 2) }}</strong></td>
-                        </tr>
-
-                        <!-- Net Profit Section -->
-                        <tr class="bg-light">
-                            <td colspan="2"><strong>NET PROFIT</strong></td>
-                        </tr>
-                        <tr>
-                            <td class="ps-3">Gross Profit</td>
-                            <td class="text-end text-success">${{ number_format($data['profit']['gross_profit'], 2) }}</td>
-                        </tr>
-                        <tr>
-                            <td class="ps-3">Less: Operating Expenses</td>
-                            <td class="text-end text-warning">${{ number_format($data['costs']['operating_expenses'], 2) }}</td>
-                        </tr>
-                        <tr class="border-top border-bottom">
-                            <td><strong>Net Profit (Loss)</strong></td>
-                            <td class="text-end">
-                                <strong class="{{ $data['profit']['net_profit'] >= 0 ? 'text-success' : 'text-danger' }}">
+                <!-- Profit/Loss Summary -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card {{ $data['profit']['net_profit'] >= 0 ? 'border-success' : 'border-danger' }}">
+                            <div class="card-body text-center">
+                                <h6 class="card-title mb-3">
+                                    @if($data['profit']['net_profit'] >= 0)
+                                        <i class="fas fa-smile me-2 text-success"></i>
+                                        <span class="text-success">Great! You Made Profit</span>
+                                    @else
+                                        <i class="fas fa-frown me-2 text-danger"></i>
+                                        <span class="text-danger">Loss - Need to Improve</span>
+                                    @endif
+                                </h6>
+                                <h2 class="{{ $data['profit']['net_profit'] >= 0 ? 'text-success' : 'text-danger' }}">
                                     ${{ number_format($data['profit']['net_profit'], 2) }}
-                                </strong>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="ps-3 text-muted">Net Profit Margin</td>
-                            <td class="text-end text-muted {{ $data['profit']['net_profit_margin'] >= 0 ? 'text-success' : 'text-danger' }}">
-                                {{ number_format($data['profit']['net_profit_margin'], 1) }}%
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                                </h2>
+                                <p class="text-muted mb-0">
+                                    This is {{ number_format(abs($data['profit']['net_profit_margin']), 1) }}%
+                                    @if($data['profit']['net_profit'] >= 0) profit @else loss @endif
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simple Breakdown -->
+                @if(count($data['expenses_by_category']) > 0)
+                <div class="mt-4">
+                    <h6 class="mb-3">Expense Breakdown:</h6>
+                    <div class="row">
+                        @foreach($data['expenses_by_category'] as $expense)
+                            <div class="col-md-4 mb-2">
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                                    <span>{{ $expense['category_label'] }}</span>
+                                    <strong class="text-warning">${{ number_format($expense['total'], 2) }}</strong>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                <!-- Performance Tips -->
+                <div class="mt-4">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-lightbulb me-2"></i>Quick Tips:
+                        </h6>
+                        <ul class="mb-0">
+                            @if($data['profit']['net_profit'] < 0)
+                                <li>Try to reduce expenses or increase sales prices</li>
+                                <li>Look for ways to sell more products</li>
+                            @else
+                                <li>Good job! Keep tracking your expenses</li>
+                                <li>Consider ways to increase your profit margin</li>
+                            @endif
+                            <li>Regular reviews help improve business performance</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -561,7 +547,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const excelUrl = window.URL.createObjectURL(blob);
                             const link = document.createElement('a');
                             link.href = excelUrl;
-                            link.download = `profit-loss-report-${{ new Date().toISOString().split('T')[0] }}.xlsx`;
+                            link.download = `profit-loss-report-{{ now()->format('Y-m-d') }}.xlsx`;
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
@@ -573,7 +559,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const csvUrl = window.URL.createObjectURL(blob);
                             const link = document.createElement('a');
                             link.href = csvUrl;
-                            link.download = `profit-loss-report-${{ new Date().toISOString().split('T')[0] }}.csv`;
+                            link.download = `profit-loss-report-{{ now()->format('Y-m-d') }}.csv`;
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);

@@ -4,9 +4,14 @@
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h1 class="h3 mb-0">Stock Movements</h1>
     @can('stock-movement.create')
-        <a href="{{ route('modules.stock-movement.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Add Stock Adjustment
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('modules.stock-movement.create') }}" class="btn btn-outline-primary">
+                <i class="fas fa-plus me-1"></i> Stock Adjustment
+            </a>
+            <a href="{{ route('modules.stock-movement.create') }}?type=opening_balance" class="btn btn-success">
+                <i class="fas fa-balance-scale me-1"></i> Opening Balance
+            </a>
+        </div>
     @endcan
 </div>
 

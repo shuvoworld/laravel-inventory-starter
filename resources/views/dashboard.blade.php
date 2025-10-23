@@ -523,6 +523,161 @@ function formatMoney($amount) {
     @endcan
 </div>
 
+<!-- Recent Transactions Section with Tabs -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-receipt me-2"></i>
+                    Recent Transactions
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <ul class="nav nav-tabs px-3 pt-3" id="transactionTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales" type="button" role="tab" aria-controls="sales" aria-selected="true">
+                            <i class="fas fa-shopping-cart me-1"></i> Sales
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="purchase-tab" data-bs-toggle="tab" data-bs-target="#purchase" type="button" role="tab" aria-controls="purchase" aria-selected="false">
+                            <i class="fas fa-shopping-bag me-1"></i> Purchase
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="transactionTabsContent">
+                    <!-- Sales Tab -->
+                    <div class="tab-pane fade show active" id="sales" role="tabpanel" aria-labelledby="sales-tab">
+                        @can('sales-order.view')
+                            @if($recentSalesOrders->count() > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="text-start">Date</th>
+                                                <th>Amount</th>
+                                                <th>Customer</th>
+                                                <th class="text-end">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($recentSalesOrders as $sale)
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex flex-column">
+                                                            <span class="fw-bold">{{ $sale->order_date->format('M j, Y') }}</span>
+                                                            <small class="text-muted">{{ $sale->order_number }}</small>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-success fs-6">{{ formatMoney($sale->total_amount) }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <div>
+                                                            <strong>{{ $sale->customer->name ?? 'Walk-in' }}</strong>
+                                                            @if($sale->customer && $sale->customer->email)
+                                                                <br><small class="text-muted">{{ $sale->customer->email }}</small>
+                                                            @endif
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <a href="{{ route('modules.sales-order.show', $sale->id) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-eye"></i> View
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="p-3 text-center border-top">
+                                    <a href="{{ route('modules.sales-order.index') }}" class="text-primary">
+                                        View all sales <i class="fas fa-arrow-right ms-1"></i>
+                                    </a>
+                                </div>
+                            @else
+                                <div class="p-4 text-center text-muted">
+                                    <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
+                                    <p>No recent sales transactions</p>
+                                </div>
+                            @endif
+                        @else
+                            <div class="p-4 text-center text-muted">
+                                <i class="fas fa-lock fa-2x mb-3 opacity-25"></i>
+                                <p>You don't have permission to view sales orders</p>
+                            </div>
+                        @endcan
+                    </div>
+
+                    <!-- Purchase Tab -->
+                    <div class="tab-pane fade" id="purchase" role="tabpanel" aria-labelledby="purchase-tab">
+                        @can('purchase-order.view')
+                            @if($recentPurchaseOrders->count() > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="text-start">Date</th>
+                                                <th>Amount</th>
+                                                <th>Supplier</th>
+                                                <th class="text-end">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($recentPurchaseOrders as $purchase)
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex flex-column">
+                                                            <span class="fw-bold">{{ $purchase->order_date->format('M j, Y') }}</span>
+                                                            <small class="text-muted">{{ $purchase->po_number }}</small>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-warning text-dark fs-6">{{ formatMoney($purchase->total_amount) }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <div>
+                                                            <strong>{{ $purchase->supplier->name ?? $purchase->supplier_name }}</strong>
+                                                            @if($purchase->supplier && $purchase->supplier->email)
+                                                                <br><small class="text-muted">{{ $purchase->supplier->email }}</small>
+                                                            @endif
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <a href="{{ route('modules.purchase-order.show', $purchase->id) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-eye"></i> View
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="p-3 text-center border-top">
+                                    <a href="{{ route('modules.purchase-order.index') }}" class="text-primary">
+                                        View all purchases <i class="fas fa-arrow-right ms-1"></i>
+                                    </a>
+                                </div>
+                            @else
+                                <div class="p-4 text-center text-muted">
+                                    <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
+                                    <p>No recent purchase transactions</p>
+                                </div>
+                            @endif
+                        @else
+                            <div class="p-4 text-center text-muted">
+                                <i class="fas fa-lock fa-2x mb-3 opacity-25"></i>
+                                <p>You don't have permission to view purchase orders</p>
+                            </div>
+                        @endcan
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row mt-4">
     @can('products.view')
     <div class="col-lg-6">

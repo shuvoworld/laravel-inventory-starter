@@ -90,4 +90,5 @@ if (is_dir($modulesPath)) {
     }
 }
 
+
 require __DIR__.'/auth.php';

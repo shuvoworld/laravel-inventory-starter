@@ -153,6 +153,43 @@ class SalesOrder extends Model implements AuditableContract
         return 0;
     }
 
+    public function customerPayments()
+    {
+        return $this->hasMany(\App\Models\CustomerPayment::class, 'sales_order_id');
+    }
+
+    /**
+     * Update payment status based on paid amount
+     */
+    public function updatePaymentStatus()
+    {
+        if ($this->paid_amount >= $this->total_amount) {
+            $this->payment_status = 'paid';
+        } elseif ($this->paid_amount > 0) {
+            $this->payment_status = 'partial';
+        } else {
+            $this->payment_status = 'pending';
+        }
+
+        $this->save();
+    }
+
+    /**
+     * Get remaining amount to be paid
+     */
+    public function getRemainingAmount()
+    {
+        return $this->total_amount - $this->paid_amount;
+    }
+
+    /**
+     * Check if order is fully paid
+     */
+    public function isFullyPaid()
+    {
+        return $this->paid_amount >= $this->total_amount;
+    }
+
       public static function create(array $attributes = [])
     {
         // Ensure store_id is set before generating order number
