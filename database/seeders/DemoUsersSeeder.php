@@ -35,6 +35,9 @@ class DemoUsersSeeder extends Seeder
                 'is_active' => 1,
             ]
         );
+        // Remove all existing roles first to avoid conflicts
+        $adminUser->syncRoles([]);
+        // Assign store-admin role
         $adminUser->assignRole('store-admin');
 
         // Create Store User Demo User
@@ -47,10 +50,17 @@ class DemoUsersSeeder extends Seeder
                 'is_active' => 1,
             ]
         );
+        // Remove all existing roles first to avoid conflicts
+        $storeUser->syncRoles([]);
+        // Assign store-user role
         $storeUser->assignRole('store-user');
 
-        $this->command->info('Demo users created successfully!');
-        $this->command->info('Store Admin: admin@demo.com / password');
-        $this->command->info('Store User: user@demo.com / password');
+        $this->command->info('✓ Demo users created successfully!');
+        $this->command->info('✓ Store Admin: admin@demo.com / password');
+        $this->command->info('  - Role: store-admin');
+        $this->command->info('  - Permissions: ' . $adminUser->getAllPermissions()->count());
+        $this->command->info('✓ Store User: user@demo.com / password');
+        $this->command->info('  - Role: store-user');
+        $this->command->info('  - Permissions: ' . $storeUser->getAllPermissions()->count());
     }
 }

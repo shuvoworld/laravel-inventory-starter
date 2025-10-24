@@ -41,12 +41,12 @@ class SalesOrderController extends Controller
             })
             ->addColumn('status_badge', function (SalesOrder $item) {
                 $badges = [
-                    'pending' => 'bg-warning bg-opacity-25 text-warning border border-warning-subtle',
-                    'on_hold' => 'bg-secondary bg-opacity-25 text-secondary border border-secondary-subtle',
-                    'confirmed' => 'bg-info bg-opacity-25 text-info border border-info-subtle',
-                    'processing' => 'bg-primary bg-opacity-25 text-primary border border-primary-subtle',
-                    'shipped' => 'bg-light bg-opacity-75 text-dark border border-secondary',
-                    'delivered' => 'bg-success bg-opacity-25 text-success border border-success-subtle',
+                    'pending' => 'bg-opacity-25 text-warning border border-warning-subtle',
+                    'on_hold' => 'bg-opacity-25 text-secondary border border-secondary-subtle',
+                    'confirmed' => 'bg-opacity-25 text-info border border-info-subtle',
+                    'processing' => 'bg-opacity-25 text-primary border border-primary-subtle',
+                    'shipped' => 'bg-opacity-75 text-dark border border-secondary',
+                    'delivered' => 'bg-opacity-25 text-success border border-success-subtle',
                     'cancelled' => 'bg-danger bg-opacity-25 text-danger border border-danger-subtle'
                 ];
                 $class = $badges[$item->status] ?? 'bg-secondary bg-opacity-25 text-secondary';
@@ -72,11 +72,11 @@ class SalesOrderController extends Controller
             })
             ->addColumn('payment_status_badge', function (SalesOrder $item) {
                 $badges = [
-                    'pending' => 'bg-warning bg-opacity-25 text-warning border border-warning-subtle',
-                    'partial' => 'bg-info bg-opacity-25 text-info border border-info-subtle',
-                    'paid' => 'bg-success bg-opacity-25 text-success border border-success-subtle',
-                    'overpaid' => 'bg-primary bg-opacity-25 text-primary border border-primary-subtle',
-                    'refunded' => 'bg-danger bg-opacity-25 text-danger border border-danger-subtle'
+                    'pending' => 'bg-warning bg-opacity-25 text-white border border-warning-subtle',
+                    'partial' => 'bg-info bg-opacity-25 text-white border border-info-subtle',
+                    'paid' => 'bg-success bg-opacity-25 text-white border border-success-subtle',
+                    'overpaid' => 'bg-primary bg-opacity-25 text-white border border-primary-subtle',
+                    'refunded' => 'bg-danger bg-opacity-25 text-white border border-danger-subtle'
                 ];
                 $class = $badges[$item->payment_status] ?? 'bg-secondary bg-opacity-25 text-secondary';
 

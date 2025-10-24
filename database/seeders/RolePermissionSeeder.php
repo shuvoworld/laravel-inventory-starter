@@ -38,30 +38,23 @@ class RolePermissionSeeder extends Seeder
             'expense.view', 'expense.create', 'expense.edit', 'expense.delete',
             // Expense Category Management
             'expense-category.view', 'expense-category.create', 'expense-category.edit', 'expense-category.delete',
-                    ];
+        ];
 
         foreach ($permissions as $perm) {
             Permission::findOrCreate($perm, $guard);
         }
 
         // Define roles and attach permissions
+        // NOTE: store-admin and store-user roles are managed by StoreAdminRoleSeeder
+        // DO NOT override them here to avoid permission conflicts
         $roles = [
-            'admin' => $permissions, // admin gets all
-            'store-admin' => [
-                // Store admin gets basic access
-                'users.view', 'users.create', 'users.edit', // Limited user management
-                'types.view', 'types.create', 'types.edit', // Product types
-                'blog-category.view', 'blog-category.create', 'blog-category.edit', // Categories
-                'expense.view', 'expense.create', 'expense.edit', // Expenses
-                'expense-category.view', 'expense-category.create', 'expense-category.edit', // Expense categories
-            ],
             'editor' => [
-                // As example, editor can manage Types except delete and manage Blog Categories (no delete)
+                // Editor can manage Types except delete and manage Blog Categories (no delete)
                 'types.view', 'types.create', 'types.edit',
                 'blog-category.view', 'blog-category.create', 'blog-category.edit',
             ],
             'viewer' => [
-                // read-only access
+                // Read-only access
                 'types.view',
                 'blog-category.view',
             ],
@@ -69,7 +62,10 @@ class RolePermissionSeeder extends Seeder
 
         foreach ($roles as $roleName => $perms) {
             $role = Role::findOrCreate($roleName, $guard);
-            $role->syncPermissions($perms);
+            // Only sync if role doesn't have permissions already (don't override)
+            if ($role->permissions->isEmpty()) {
+                $role->syncPermissions($perms);
+            }
         }
 
         // Optionally create an admin user if none exists
@@ -79,7 +75,15 @@ class RolePermissionSeeder extends Seeder
                 'email' => 'admin@example.com',
                 'password' => 'password', // Will be hashed by cast
             ]);
-            $admin->assignRole('admin');
+            // Assign admin role if it exists, otherwise super-admin
+            if (Role::where('name', 'admin')->exists()) {
+                $admin->assignRole('admin');
+            } elseif (Role::where('name', 'super-admin')->exists()) {
+                $admin->assignRole('super-admin');
+            }
         }
+
+        $this->command->info('✓ Additional roles and permissions seeded (editor, viewer)');
+        $this->command->info('✓ NOTE: Run StoreAdminRoleSeeder for store-admin and store-user roles');
     }
 }
