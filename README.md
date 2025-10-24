@@ -6,9 +6,8 @@ A complete, easy-to-use inventory and sales management system designed for retai
 
 ## 📸 Screenshots
 
-<img height="700" alt="Dashboard" src="https://github.com/user-attachments/assets/0b0df547-6fbf-4837-85b5-ea4e99dedc92" />
+<img width="1920" height="2612" alt="image" src="https://github.com/user-attachments/assets/6843630d-bd4b-4b76-b11f-f5290f143f91" />
 
-<img height="700" alt="Stock Management" src="https://github.com/user-attachments/assets/de3ae2fe-5516-4984-885a-2a1a108093af" />
 
 ---
 
