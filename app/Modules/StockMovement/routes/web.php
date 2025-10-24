@@ -23,33 +23,35 @@ Route::middleware(['auth'])->prefix('modules/stock-movement')->name('modules.sto
 
     // Manual stock correction routes
     Route::get('/correction', [StockMovementController::class, 'createCorrection'])
-        ->middleware('permission:stock-movement.create')
+        ->middleware('permission:stock-movement.view')
         ->name('correction.create');
 
     Route::post('/correction', [StockMovementController::class, 'storeCorrection'])
         ->middleware('permission:stock-movement.create')
         ->name('correction.store');
 
-    Route::get('/{id}', [StockMovementController::class, 'show'])
+    // Opening balance routes
+    Route::get('/opening-balance', [StockMovementController::class, 'openingBalance'])
         ->middleware('permission:stock-movement.view')
-        ->name('show');
+        ->name('opening-balance');
 
-    Route::get('/{id}/edit', [StockMovementController::class, 'edit'])
-        ->middleware('permission:stock-movement.edit')
-        ->name('edit');
+    Route::post('/opening-balance', [StockMovementController::class, 'storeOpeningBalance'])
+        ->middleware('permission:stock-movement.create')
+        ->name('opening-balance.store');
 
-    Route::put('/{id}', [StockMovementController::class, 'update'])
-        ->middleware('permission:stock-movement.edit')
-        ->name('update');
+    // Bulk correction route
+    Route::get('/bulk-correction', [StockMovementController::class, 'bulkCorrection'])
+        ->middleware('permission:stock-movement.view')
+        ->name('bulk-correction');
 
-    Route::delete('/{id}', [StockMovementController::class, 'destroy'])
-        ->middleware('permission:stock-movement.delete')
-        ->name('destroy');
-
-    // Report routes
+    // Report routes (must come before parameterized routes)
     Route::get('/report', [StockMovementController::class, 'report'])
         ->middleware('permission:stock-movement.view')
         ->name('report');
+
+    Route::get('/simple-report', [StockMovementController::class, 'simpleReport'])
+        ->middleware('permission:stock-movement.view')
+        ->name('simple-report');
 
     Route::get('/product/{productId}/history', [StockMovementController::class, 'productHistory'])
         ->middleware('permission:stock-movement.view')
@@ -76,6 +78,11 @@ Route::middleware(['auth'])->prefix('modules/stock-movement')->name('modules.sto
         ->middleware('permission:stock-movement.reconcile')
         ->name('reconcile');
 
+    // Temporary route for testing (remove in production)
+    Route::get('/reconcile-test', [StockMovementController::class, 'reconcile'])
+        ->middleware('permission:stock-movement.view')
+        ->name('reconcile.test');
+
     Route::post('/reconcile', [StockMovementController::class, 'processReconciliation'])
         ->middleware('permission:stock-movement.reconcile')
         ->name('reconcile.process');
@@ -87,4 +94,21 @@ Route::middleware(['auth'])->prefix('modules/stock-movement')->name('modules.sto
     Route::get('/api/stock-from-movements', [StockMovementController::class, 'getStockFromMovements'])
         ->middleware('permission:stock-movement.view')
         ->name('api.stock-from-movements');
+
+    // Parameterized routes (must come last)
+    Route::get('/{id}', [StockMovementController::class, 'show'])
+        ->middleware('permission:stock-movement.view')
+        ->name('show');
+
+    Route::get('/{id}/edit', [StockMovementController::class, 'edit'])
+        ->middleware('permission:stock-movement.edit')
+        ->name('edit');
+
+    Route::put('/{id}', [StockMovementController::class, 'update'])
+        ->middleware('permission:stock-movement.edit')
+        ->name('update');
+
+    Route::delete('/{id}', [StockMovementController::class, 'destroy'])
+        ->middleware('permission:stock-movement.delete')
+        ->name('destroy');
 });

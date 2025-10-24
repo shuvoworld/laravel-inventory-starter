@@ -38,22 +38,33 @@
                     <label for="transaction_type" class="form-label">Transaction Type *</label>
                     <select id="transaction_type" name="transaction_type" class="form-control @error('transaction_type') is-invalid @enderror" required>
                         <option value="">Select Transaction Type</option>
-                        <optgroup label="Stock IN (Increase Stock)">
+
+                        <optgroup label="📦 STOCK IN (Increase Stock)">
                             <option value="opening_stock" {{ old('transaction_type') == 'opening_stock' || request('type') === 'opening_balance' ? 'selected' : '' }}>🏪 Opening Balance</option>
+                            <option value="purchase" {{ old('transaction_type') == 'purchase' ? 'selected' : '' }}>📦 Purchase Order</option>
+                            <option value="sale_return" {{ old('transaction_type') == 'sale_return' ? 'selected' : '' }}>↩️ Sales Return</option>
+                            <option value="purchase_return" {{ old('transaction_type') == 'purchase_return' ? 'selected' : '' }}>🔄 Purchase Return</option>
+                            <option value="transfer_in" {{ old('transaction_type') == 'transfer_in' ? 'selected' : '' }}>📥 Transfer IN</option>
                             <option value="stock_count_correction" {{ old('transaction_type') == 'stock_count_correction' ? 'selected' : '' }}>✏️ Stock Count (+)</option>
                             <option value="recovery_found" {{ old('transaction_type') == 'recovery_found' ? 'selected' : '' }}>🔍 Found/Recovered</option>
-                            <option value="sale_return" {{ old('transaction_type') == 'sale_return' ? 'selected' : '' }}>↩️ Sales Return</option>
-                            <option value="transfer_in" {{ old('transaction_type') == 'transfer_in' ? 'selected' : '' }}>📥 Transfer IN</option>
+                            <option value="manufacturing_in" {{ old('transaction_type') == 'manufacturing_in' ? 'selected' : '' }}>🏭 Manufacturing IN</option>
                         </optgroup>
-                        <optgroup label="Stock OUT (Decrease Stock)">
+
+                        <optgroup label="📤 STOCK OUT (Decrease Stock)">
+                            <option value="sale" {{ old('transaction_type') == 'sale' ? 'selected' : '' }}>💰 Sales Order</option>
                             <option value="damage" {{ old('transaction_type') == 'damage' ? 'selected' : '' }}>⚠️ Damage</option>
-                            <option value="expired" {{ old('transaction_type') == 'expired' ? 'selected' : '' }}>⏰ Expired</option>
                             <option value="lost_missing" {{ old('transaction_type') == 'lost_missing' ? 'selected' : '' }}>❌ Lost/Missing</option>
                             <option value="theft" {{ old('transaction_type') == 'theft' ? 'selected' : '' }}>🔒 Theft</option>
+                            <option value="expired" {{ old('transaction_type') == 'expired' ? 'selected' : '' }}>⏰ Expired</option>
+                            <option value="transfer_out" {{ old('transaction_type') == 'transfer_out' ? 'selected' : '' }}>📤 Transfer OUT</option>
                             <option value="stock_count_correction_minus" {{ old('transaction_type') == 'stock_count_correction_minus' ? 'selected' : '' }}>✏️ Stock Count (-)</option>
                             <option value="quality_control" {{ old('transaction_type') == 'quality_control' ? 'selected' : '' }}>🚫 Quality Control</option>
+                            <option value="manufacturing_out" {{ old('transaction_type') == 'manufacturing_out' ? 'selected' : '' }}>🏭 Manufacturing OUT</option>
+                            <option value="promotional" {{ old('transaction_type') == 'promotional' ? 'selected' : '' }}>🎁 Promotional/Sample</option>
                         </optgroup>
-                        <optgroup label="Other">
+
+                        <optgroup label="🔧 STOCK ADJUSTMENTS">
+                            <option value="stock_correction" {{ old('transaction_type') == 'stock_correction' ? 'selected' : '' }}>🔧 Manual Stock Correction</option>
                             <option value="manual_adjustment" {{ old('transaction_type') == 'manual_adjustment' ? 'selected' : '' }}>✋ Manual Adjustment</option>
                         </optgroup>
                     </select>

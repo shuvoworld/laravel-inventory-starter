@@ -276,6 +276,14 @@ class DashboardController extends Controller
             ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
             ->sum('total_amount');
 
+        // Recent stock movements (today)
+        $stockMovementsToday = StockMovement::with('product')
+            ->where('created_at', '>=', $startOfDay)
+            ->where('created_at', '<=', $endOfDay)
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+
         // Quick access data
         $totalCustomers = Customer::count();
         $totalProducts = Product::count();
@@ -290,6 +298,7 @@ class DashboardController extends Controller
             'avgOrderValue',
             'weekSales',
             'recentOrders',
+            'stockMovementsToday',
             'totalCustomers',
             'totalProducts',
             'companyInfo',

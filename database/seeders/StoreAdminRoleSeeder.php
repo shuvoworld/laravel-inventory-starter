@@ -67,6 +67,10 @@ class StoreAdminRoleSeeder extends Seeder
             'suppliers.delete',
             // Stock Movement permissions
             'stock-movement.view',
+            'stock-movement.create',
+            'stock-movement.edit',
+            'stock-movement.delete',
+            'stock-movement.reconcile',
             // Reports permissions
             'reports.view',
             // Settings permissions
@@ -99,17 +103,20 @@ class StoreAdminRoleSeeder extends Seeder
             'purchase-return.delete',
         ];
 
-        // Define permissions for store-user (sales-only)
+        // Define permissions for store-user (sales and basic stock management)
         $storeUserPermissions = [
-            // Sales Order permissions only
+            // Sales Order permissions
             'sales-order.view',
             'sales-order.create',
             'sales-order.edit',
             'sales-order.delete',
             // Customer view for sales
             'customers.view',
-            // Product view for sales
+            // Product view for sales and basic stock operations
             'products.view',
+            // Basic Stock Movement permissions (view and basic adjustments)
+            'stock-movement.view',
+            'stock-movement.create',
             // Reports permissions for stock monitoring
             'reports.view',
         ];

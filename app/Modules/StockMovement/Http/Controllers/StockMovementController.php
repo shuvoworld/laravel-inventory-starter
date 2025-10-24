@@ -35,11 +35,11 @@ class StockMovementController extends Controller
                 $movementType = $item->movement_type ?? $item->type ?? 'adjustment';
 
                 $badges = [
-                    'in' => 'bg-success bg-opacity-25 text-success border border-success-subtle',
-                    'out' => 'bg-danger bg-opacity-25 text-danger border border-danger-subtle',
-                    'adjustment' => 'bg-warning bg-opacity-25 text-warning border border-warning-subtle'
+                    'in' => 'text-success border border-success-subtle',
+                    'out' => 'text-danger border border-danger-subtle',
+                    'adjustment' => 'text-warning border border-warning-subtle'
                 ];
-                $class = $badges[$movementType] ?? 'bg-secondary bg-opacity-25 text-secondary';
+                $class = $badges[$movementType] ?? 'text-secondary';
 
                 // Add more descriptive icons and text
                 $icons = [
@@ -77,12 +77,12 @@ class StockMovementController extends Controller
 
                 // Color code based on movement direction
                 $directionColors = [
-                    'in' => 'bg-success bg-opacity-25 text-success border border-success-subtle',
-                    'out' => 'bg-danger bg-opacity-25 text-danger border border-danger-subtle',
-                    'adjustment' => 'bg-warning bg-opacity-25 text-warning border border-warning-subtle'
+                    'in' => 'text-success border border-success-subtle',
+                    'out' => 'text-danger border border-danger-subtle',
+                    'adjustment' => 'text-warning border border-warning-subtle'
                 ];
 
-                $colorClass = $directionColors[$movementDirection] ?? 'bg-secondary bg-opacity-25 text-secondary';
+                $colorClass = $directionColors[$movementDirection] ?? 'text-secondary';
 
                 // Add direction icons
                 $directionIcons = [
@@ -96,7 +96,7 @@ class StockMovementController extends Controller
                 // Add special styling for critical movements
                 $criticalTypes = ['damage', 'lost_missing', 'theft', 'expired', 'quality_control'];
                 if (in_array($transactionType, $criticalTypes)) {
-                    $colorClass = 'bg-danger bg-opacity-25 text-danger border border-danger-subtle fw-bold';
+                    $colorClass = 'text-danger border border-danger-subtle fw-bold';
                 }
 
                 $reference_id = $item->reference_id ? " #{$item->reference_id}" : '';
@@ -140,6 +140,87 @@ class StockMovementController extends Controller
         }
 
         return view('stock-movement::correction', compact('products', 'currentStock'));
+    }
+
+    /**
+     * Display opening balance form
+     */
+    public function openingBalance(): View
+    {
+        $products = Product::orderBy('name')->get();
+        $currentStock = [];
+
+        foreach ($products as $product) {
+            $currentStock[$product->id] = StockMovement::getCurrentStockFromMovements($product->id);
+        }
+
+        return view('stock-movement::opening-balance', compact('products', 'currentStock'));
+    }
+
+    /**
+     * Store opening balance entries
+     */
+    public function storeOpeningBalance(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'products' => 'required|array|min:1',
+            'products.*.product_id' => 'required|exists:products,id',
+            'products.*.opening_quantity' => 'required|integer|min:0',
+            'opening_date' => 'required|date',
+            'notes' => 'nullable|string|max:500'
+        ]);
+
+        $openingDate = \Carbon\Carbon::parse($request->opening_date);
+        $notes = $request->notes ?: "Initial opening balance setup";
+
+        foreach ($request->products as $productData) {
+            if (empty($productData['opening_quantity'])) {
+                continue; // Skip products with 0 quantity
+            }
+
+            $product = Product::findOrFail($productData['product_id']);
+            $openingQuantity = $productData['opening_quantity'];
+
+            // Create opening balance stock movement
+            StockMovement::create([
+                'store_id' => auth()->user()->store_id,
+                'product_id' => $product->id,
+                'movement_type' => 'in',
+                'transaction_type' => 'opening_stock',
+                'quantity' => $openingQuantity,
+                'reference_type' => null,
+                'reference_id' => null,
+                'notes' => "Opening balance: {$openingQuantity} units - {$notes}",
+                'user_id' => auth()->id(),
+                'created_at' => $openingDate,
+                'updated_at' => $openingDate,
+            ]);
+
+            // Update product quantity
+            $product->quantity_on_hand = $openingQuantity;
+            $product->save();
+        }
+
+        // Clear stock calculation cache
+        \App\Services\StockCalculationService::clearCache();
+
+        return redirect()->route('modules.stock-movement.opening-balance')
+            ->with('success', count($request->products) . ' opening balance entries created successfully.');
+    }
+
+    /**
+     * Display bulk stock correction form
+     */
+    public function bulkCorrection(): View
+    {
+        $products = Product::orderBy('name')->get();
+        $currentStock = [];
+
+        foreach ($products as $product) {
+            $currentStock[$product->id] = StockMovement::getCurrentStockFromMovements($product->id);
+        }
+
+        return view('stock-movement::bulk-correction', compact('products', 'currentStock'));
     }
 
     /**
@@ -340,28 +421,28 @@ class StockMovementController extends Controller
             ->with('success', 'Stock movement created successfully. Transaction type: ' . StockMovement::getTransactionTypes()[$request->transaction_type]);
     }
 
-    public function show(int $id): View
+    public function show($id): View
     {
-        $item = StockMovement::findOrFail($id);
+        $item = StockMovement::findOrFail((int)$id);
         return view('stock-movement::show', compact('item'));
     }
 
-    public function edit(int $id): View
+    public function edit($id): View
     {
-        $item = StockMovement::findOrFail($id);
+        $item = StockMovement::findOrFail((int)$id);
         return view('stock-movement::edit', compact('item'));
     }
 
-    public function update(UpdateStockMovementRequest $request, int $id): RedirectResponse
+    public function update(UpdateStockMovementRequest $request, $id): RedirectResponse
     {
-        $item = StockMovement::findOrFail($id);
+        $item = StockMovement::findOrFail((int)$id);
         $item->update($request->validated());
         return redirect()->route('modules.stock-movement.index')->with('success', 'StockMovement updated.');
     }
 
-    public function destroy(int $id): RedirectResponse
+    public function destroy($id): RedirectResponse
     {
-        $item = StockMovement::findOrFail($id);
+        $item = StockMovement::findOrFail((int)$id);
         $item->delete();
         return redirect()->route('modules.stock-movement.index')->with('success', 'StockMovement deleted.');
     }
@@ -386,9 +467,9 @@ class StockMovementController extends Controller
     /**
      * Display product stock history
      */
-    public function productHistory(Request $request, int $productId): View
+    public function productHistory(Request $request, $productId): View
     {
-        $product = Product::findOrFail($productId);
+        $product = Product::findOrFail((int)$productId);
         $startDate = $request->get('start_date', now()->subDays(30)->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
 
@@ -404,9 +485,9 @@ class StockMovementController extends Controller
     /**
      * Display audit trail for a movement
      */
-    public function auditTrail(int $id): View
+    public function auditTrail($id): View
     {
-        $auditData = StockMovementReportService::getAuditTrail($id);
+        $auditData = StockMovementReportService::getAuditTrail((int)$id);
         return view('stock-movement::audit-trail', compact('auditData'));
     }
 
@@ -554,5 +635,46 @@ class StockMovementController extends Controller
             'discrepancy' => $product->quantity_on_hand - $currentStock,
             'last_updated' => StockMovement::where('product_id', $productId)->latest()->value('created_at')
         ]);
+    }
+
+    /**
+     * Display simple transaction report in tabular format
+     */
+    public function simpleReport(Request $request): View
+    {
+        $filters = $request->only(['start_date', 'end_date', 'product_id', 'movement_type']);
+        $products = Product::orderBy('name')->pluck('name', 'id');
+
+        // Build query with filters
+        $query = StockMovement::with('product', 'user')
+            ->latest();
+
+        if (!empty($filters['start_date'])) {
+            $query->whereDate('created_at', '>=', $filters['start_date']);
+        }
+        if (!empty($filters['end_date'])) {
+            $query->whereDate('created_at', '<=', $filters['end_date']);
+        }
+        if (!empty($filters['product_id'])) {
+            $query->where('product_id', $filters['product_id']);
+        }
+        if (!empty($filters['movement_type'])) {
+            $query->where('movement_type', $filters['movement_type']);
+        }
+
+        // Limit to recent transactions for simple report (last 100)
+        $transactions = $query->limit(100)->get();
+
+        // Calculate summary statistics
+        $summary = [
+            'total_transactions' => $transactions->count(),
+            'total_in' => $transactions->where('movement_type', 'in')->sum('quantity'),
+            'total_out' => $transactions->where('movement_type', 'out')->sum('quantity'),
+            'total_adjustments' => $transactions->where('movement_type', 'adjustment')->sum('quantity'),
+        ];
+
+        return view('stock-movement::simple-report', compact(
+            'transactions', 'filters', 'products', 'summary'
+        ));
     }
 }

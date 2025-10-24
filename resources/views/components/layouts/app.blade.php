@@ -47,38 +47,20 @@
     <!-- DataTables CSS (global) -->
     <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
 
+    <!-- Custom Theme CSS -->
+    <link rel="stylesheet" href="{{ asset('css/custom-theme.css') }}">
+
     @stack('styles')
 
     <style>
-        /* Sidebar styling normalization */
-        aside .sidebar-transition {
-            background: white !important;
-            border-right: 1px solid #e5e7eb !important;
-        }
-
-        /* Sidebar navigation links */
+        /* Sidebar navigation links - sizing only */
         aside nav .nav-link {
             font-size: 0.9rem;
             line-height: 1.25rem;
             padding: 0.625rem 0.75rem;
             border-radius: 0.375rem;
-            color: #4b5563;
             transition: all 0.15s ease-in-out;
             margin-bottom: 0.125rem;
-        }
-
-        aside nav .nav-link:hover {
-            background-color: #f3f4f6;
-            color: #1f2937;
-        }
-
-        aside nav .nav-link.active {
-            background-color: #667eea;
-            color: white;
-        }
-
-        aside nav .nav-link.active:hover {
-            background-color: #5568d3;
         }
 
         aside nav .nav-link i {
@@ -86,11 +68,20 @@
             text-align: center;
         }
 
-        /* Section headers */
+        /* Active sidebar link uses primary color */
+        aside nav .nav-link.active {
+            background-color: var(--primary-color) !important;
+            color: white !important;
+        }
+
+        aside nav .nav-link.active:hover {
+            background-color: var(--primary-dark) !important;
+        }
+
+        /* Section headers - sizing only */
         aside nav .text-muted {
             font-size: 0.75rem;
             letter-spacing: 0.05em;
-            color: #9ca3af !important;
         }
 
         /* Collapsed sidebar icons */

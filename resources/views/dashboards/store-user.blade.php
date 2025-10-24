@@ -17,7 +17,7 @@
     <div class="row g-3 mb-4">
         <!-- Today's Revenue -->
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card border-0 shadow-sm metric-card-primary h-100">
                 <div class="card-body text-white">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
@@ -35,7 +35,7 @@
 
         <!-- Today's Orders -->
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="card border-0 shadow-sm metric-card-accent h-100">
                 <div class="card-body text-white">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
@@ -53,7 +53,7 @@
 
         <!-- Average Order Value -->
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="card border-0 shadow-sm metric-card-secondary h-100">
                 <div class="card-body text-white">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
@@ -71,7 +71,7 @@
 
         <!-- This Week's Sales -->
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <div class="card border-0 shadow-sm metric-card-dark h-100">
                 <div class="card-body text-white">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
@@ -266,5 +266,102 @@
             </div>
         </div>
     </div>
+
+    <!-- Stock Movements Section -->
+    @can('stock-movement.view')
+    <div class="row g-3 mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-exchange-alt text-primary me-2"></i>Today's Stock Movements</h5>
+                    <span class="badge bg-primary">{{ $stockMovementsToday->count() }} movements</span>
+                </div>
+                <div class="card-body p-0">
+                    @if($stockMovementsToday->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Product</th>
+                                        <th>Transaction Type</th>
+                                        <th>Movement</th>
+                                        <th class="text-end">Quantity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($stockMovementsToday as $movement)
+                                    <tr>
+                                        <td><small class="text-muted">{{ $movement->created_at->format('h:i A') }}</small></td>
+                                        <td><strong>{{ $movement->product->name ?? 'N/A' }}</strong></td>
+                                        <td>
+                                            @php
+                                                $transactionColors = [
+                                                    'sale' => 'success',
+                                                    'purchase' => 'primary',
+                                                    'sale_return' => 'info',
+                                                    'purchase_return' => 'warning',
+                                                    'damage' => 'danger',
+                                                    'lost_missing' => 'dark',
+                                                    'theft' => 'danger',
+                                                    'expired' => 'secondary',
+                                                    'transfer_in' => 'info',
+                                                    'transfer_out' => 'warning',
+                                                    'stock_correction' => 'warning',
+                                                    'opening_stock' => 'primary',
+                                                ];
+                                                $color = $transactionColors[$movement->transaction_type] ?? 'secondary';
+                                            @endphp
+                                            <span class="badge bg-{{ $color }} text-white">
+                                                {{ ucfirst(str_replace('_', ' ', $movement->transaction_type)) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($movement->movement_type === 'in')
+                                                <span class="badge bg-success bg-opacity-25 text-success border border-success-subtle">
+                                                    <i class="fas fa-arrow-down me-1"></i>Stock IN
+                                                </span>
+                                            @elseif($movement->movement_type === 'out')
+                                                <span class="badge bg-danger bg-opacity-25 text-danger border border-danger-subtle">
+                                                    <i class="fas fa-arrow-up me-1"></i>Stock OUT
+                                                </span>
+                                            @else
+                                                <span class="badge bg-warning bg-opacity-25 text-warning border border-warning-subtle">
+                                                    <i class="fas fa-exchange-alt me-1"></i>Adjustment
+                                                </span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end">
+                                            @if($movement->movement_type === 'in')
+                                                <span class="fw-bold text-success">+{{ $movement->quantity }}</span>
+                                            @elseif($movement->movement_type === 'out')
+                                                <span class="fw-bold text-danger">-{{ $movement->quantity }}</span>
+                                            @else
+                                                <span class="fw-bold text-warning">{{ $movement->quantity }}</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="p-5 text-center">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">No stock movements today</p>
+                        </div>
+                    @endif
+                </div>
+                @if($stockMovementsToday->count() > 0)
+                <div class="card-footer bg-white text-center">
+                    <a href="{{ route('modules.stock-movement.index') }}" class="text-decoration-none">
+                        View All Stock Movements <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+    @endcan
 </div>
 @endsection

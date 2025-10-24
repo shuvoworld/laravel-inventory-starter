@@ -8,7 +8,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="card-title mb-0">
             <i class="fas fa-wrench me-2"></i>
-            Manual Stock Correction
+            Stock Management: Stock Correction
         </h3>
         <a href="{{ route('modules.stock-movement.index') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-1"></i> Back to Stock Movements

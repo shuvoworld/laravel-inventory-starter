@@ -194,6 +194,18 @@ class StockMovement extends Model implements AuditableContract
         return $totalIn - $totalOut;
     }
 
+    /**
+     * Get recent movements for a product
+     */
+    public static function getProductMovements(int $productId, int $limit = 10)
+    {
+        return self::where('product_id', $productId)
+            ->with(['user'])
+            ->latest()
+            ->limit($limit)
+            ->get();
+    }
+
     protected static function boot()
     {
         parent::boot();

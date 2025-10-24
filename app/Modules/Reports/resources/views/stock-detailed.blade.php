@@ -109,8 +109,8 @@
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-striped" id="stockTable">
-                <thead class="table-dark">
+            <table class="table table-hover align-middle datatable-minimal table-sm" id="stockTable">
+                <thead>
                     <tr>
                         <th>Product</th>
                         <th>Brand</th>
