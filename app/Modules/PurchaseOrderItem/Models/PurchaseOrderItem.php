@@ -20,6 +20,7 @@ class PurchaseOrderItem extends Model implements AuditableContract
         'store_id',
         'purchase_order_id',
         'product_id',
+        'variant_id',
         'quantity',
         'unit_price',
         'total_price',
@@ -34,6 +35,7 @@ class PurchaseOrderItem extends Model implements AuditableContract
     protected $auditInclude = [
         'purchase_order_id',
         'product_id',
+        'variant_id',
         'quantity',
         'unit_price',
         'total_price',
@@ -47,5 +49,40 @@ class PurchaseOrderItem extends Model implements AuditableContract
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(\App\Modules\Products\Models\ProductVariant::class, 'variant_id');
+    }
+
+    /**
+     * Get the full display name including variant information
+     */
+    public function getDisplayName(): string
+    {
+        $name = $this->product->name ?? 'Unknown Product';
+
+        if ($this->variant_id && $this->variant) {
+            $name .= ' (' . $this->variant->variant_name . ')';
+        }
+
+        return $name;
+    }
+
+    /**
+     * Get the effective SKU (variant SKU if available, otherwise product SKU)
+     */
+    public function getEffectiveSku(): string
+    {
+        return $this->variant?->sku ?? $this->product?->sku ?? 'N/A';
+    }
+
+    /**
+     * Get the effective cost price (variant cost if available, otherwise product cost)
+     */
+    public function getEffectiveCostPrice(): float
+    {
+        return $this->variant?->cost_price ?? $this->product?->cost_price ?? 0;
     }
 }

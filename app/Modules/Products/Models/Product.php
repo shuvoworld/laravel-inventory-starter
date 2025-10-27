@@ -19,6 +19,7 @@ class Product extends Model
     protected $fillable = [
         'store_id', 'sku', 'name', 'image', 'brand_id', 'unit', 'cost_price', 'quantity_on_hand', 'reorder_level',
         'minimum_profit_margin', 'standard_profit_margin', 'floor_price', 'target_price',
+        'has_variants', 'variant_type',
     ];
 
     protected $casts = [
@@ -27,6 +28,7 @@ class Product extends Model
         'standard_profit_margin' => 'decimal:2',
         'floor_price' => 'decimal:2',
         'target_price' => 'decimal:2',
+        'has_variants' => 'boolean',
     ];
 
     /**
@@ -84,10 +86,70 @@ class Product extends Model
     }
 
     /**
+     * Get all variants for this product
+     */
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    /**
+     * Get only active variants for this product
+     */
+    public function activeVariants()
+    {
+        return $this->hasMany(ProductVariant::class)->where('is_active', true);
+    }
+
+    /**
+     * Get the default variant for this product
+     */
+    public function defaultVariant()
+    {
+        return $this->hasOne(ProductVariant::class)->where('is_default', true);
+    }
+
+    /**
+     * Get total stock across all variants or product stock
+     */
+    public function getTotalStock(): int
+    {
+        if ($this->has_variants) {
+            return $this->variants()->sum('quantity_on_hand');
+        }
+        return $this->quantity_on_hand;
+    }
+
+    /**
+     * Get total stock value across all variants using target prices
+     */
+    public function getTotalStockValue(): float
+    {
+        if ($this->has_variants) {
+            $total = 0;
+            foreach ($this->variants as $variant) {
+                $price = $variant->getEffectiveTargetPrice() ?? 0;
+                $total += $price * $variant->quantity_on_hand;
+            }
+            return $total;
+        }
+        return ($this->target_price ?? 0) * $this->quantity_on_hand;
+    }
+
+    /**
      * Determine if the product is low on stock based on its reorder level using movements-based calculation.
      */
     public function isLowStock(): bool
     {
+        // For products with variants, check if any variant is low on stock
+        if ($this->has_variants) {
+            return $this->activeVariants()
+                ->where('is_active', true)
+                ->whereColumn('quantity_on_hand', '<=', 'reorder_level')
+                ->exists();
+        }
+
+        // For non-variant products, use existing logic
         $currentStock = StockCalculationService::getStockForProduct($this->id);
         $reorderLevel = $this->reorder_level ?? 10;
         return $currentStock <= $reorderLevel;

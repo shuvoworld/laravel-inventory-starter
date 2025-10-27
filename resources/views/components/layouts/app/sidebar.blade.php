@@ -9,12 +9,12 @@
         <nav class="flex-1 overflow-y-auto py-3" x-data="{
             openMenus: {
                 pos: {{ request()->routeIs('pos.*') ? 'true' : 'false' }},
-                products: {{ request()->routeIs('modules.products.*') || request()->routeIs('modules.brand.*') || request()->routeIs('modules.attribute-set.*') || request()->routeIs('modules.product-attribute.*') ? 'true' : 'false' }},
+                products: {{ request()->routeIs('modules.products.*') || request()->routeIs('modules.brand.*') || request()->routeIs('modules.attribute-set.*') || request()->routeIs('modules.product-attribute.*') || request()->routeIs('modules.product-variant.*') || request()->routeIs('modules.variant-options.*') ? 'true' : 'false' }},
                 sales: {{ request()->routeIs('modules.sales-order.*') || request()->routeIs('modules.sales-return.*') || request()->routeIs('modules.customers.*') ? 'true' : 'false' }},
                 purchases: {{ request()->routeIs('modules.purchase-order.*') || request()->routeIs('modules.purchase-return.*') || request()->routeIs('modules.suppliers.*') ? 'true' : 'false' }},
                 inventory: {{ request()->routeIs('modules.stock-movement.*') ? 'true' : 'false' }},
                 expenses: {{ request()->routeIs('modules.operating-expenses.*') || request()->routeIs('modules.expenses.*') || request()->routeIs('modules.expense-category.*') ? 'true' : 'false' }},
-                reports: {{ request()->routeIs('modules.reports.*') ? 'true' : 'false' }},
+                reports: {{ request()->routeIs('modules.reports.*') || request()->routeIs('reports.*') ? 'true' : 'false' }},
                 settings: {{ request()->routeIs('modules.types.*') || request()->routeIs('modules.users.*') || request()->routeIs('modules.roles.*') || request()->routeIs('modules.permissions.*') || request()->routeIs('modules.settings.*') || request()->routeIs('modules.store-settings.*') || request()->routeIs('admin.modules.*') ? 'true' : 'false' }}
             }
         }">
@@ -63,9 +63,9 @@
                 @endif
 
                 <!-- Products -->
-                @if(auth()->user()->can('products.view') || auth()->user()->can('brand.view') || auth()->user()->can('attribute-set.view') || auth()->user()->can('product-attribute.view'))
+                @if(auth()->user()->can('products.view') || auth()->user()->can('brand.view') || auth()->user()->can('attribute-set.view') || auth()->user()->can('product-attribute.view') || auth()->user()->can('variant-options.view') || auth()->user()->can('product-variant.view'))
                     <li class="nav-item" x-show="sidebarOpen">
-                        <a class="nav-link d-flex align-items-center justify-content-between {{ request()->routeIs('modules.products.*') || request()->routeIs('modules.brand.*') || request()->routeIs('modules.attribute-set.*') || request()->routeIs('modules.product-attribute.*') ? 'active' : '' }}"
+                        <a class="nav-link d-flex align-items-center justify-content-between {{ request()->routeIs('modules.products.*') || request()->routeIs('modules.brand.*') || request()->routeIs('modules.attribute-set.*') || request()->routeIs('modules.product-attribute.*') || request()->routeIs('modules.product-variant.*') || request()->routeIs('modules.variant-options.*') ? 'active' : '' }}"
                            href="#"
                            @click.prevent="openMenus.products = !openMenus.products"
                            :class="{ 'active': openMenus.products }">
@@ -126,6 +126,39 @@
                                        href="{{ route('modules.product-attribute.index') }}">
                                         <i class="fas fa-sliders-h me-2"></i>
                                         <span>Attributes</span>
+                                    </a>
+                                </li>
+                            @endif
+                        @endcan
+
+                        @can('variant-options.view')
+                            @if(Module::isActive('products'))
+                                <li class="nav-item">
+                                    <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.variant-options.*') ? 'active' : '' }}"
+                                       href="{{ route('modules.variant-options.index') }}">
+                                        <i class="fas fa-tags me-2"></i>
+                                        <span>Variant Options</span>
+                                    </a>
+                                </li>
+                            @endif
+                        @endcan
+
+                        @can('product-variant.view')
+                            @if(Module::isActive('products'))
+                                @php
+                                    $lowStockVariantsCount = \App\Modules\Products\Models\ProductVariant::where('quantity_on_hand', '<=', \App\Modules\Products\Models\ProductVariant::whereNotNull('reorder_level')->first()?->reorder_level ?? 5)
+                                        ->where('quantity_on_hand', '>', 0)
+                                        ->where('is_active', true)
+                                        ->count();
+                                @endphp
+                                <li class="nav-item">
+                                    <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.product-variant.*') ? 'active' : '' }}"
+                                       href="{{ route('modules.product-variant.index') }}">
+                                        <i class="fas fa-layer-group me-2"></i>
+                                        <span>Product Variants</span>
+                                        @if($lowStockVariantsCount > 0)
+                                            <span class="badge bg-warning ms-auto">{{ $lowStockVariantsCount }}</span>
+                                        @endif
                                     </a>
                                 </li>
                             @endif
@@ -379,10 +412,52 @@
                             x-collapse
                             class="nav nav-pills flex-column small ps-4 gap-1">
                             <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.*') && !request()->routeIs('modules.reports.stock*') ? 'active' : '' }}"
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.*') && !request()->routeIs('modules.reports.daily-sales*') && !request()->routeIs('modules.reports.daily-purchase*') && !request()->routeIs('modules.reports.weekly-performance*') && !request()->routeIs('modules.reports.low-stock-alert*') && !request()->routeIs('modules.reports.stock*') && !request()->routeIs('modules.reports.supplier-due*') && !request()->routeIs('modules.reports.customer-due*') ? 'active' : '' }}"
                                    href="{{ route('modules.reports.index') }}">
                                     <i class="fas fa-chart-line me-2"></i>
                                     <span>Financial Reports</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.daily-sales*') || request()->routeIs('reports.daily-sales') ? 'active' : '' }}"
+                                   href="{{ route('modules.reports.daily-sales') }}">
+                                    <i class="fas fa-calendar-day me-2"></i>
+                                    <span>Daily Sales Report</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.daily-purchase*') || request()->routeIs('reports.daily-purchase') ? 'active' : '' }}"
+                                   href="{{ route('modules.reports.daily-purchase') }}">
+                                    <i class="fas fa-shopping-cart me-2"></i>
+                                    <span>Daily Purchase Report</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.weekly-performance*') || request()->routeIs('reports.weekly-performance') ? 'active' : '' }}"
+                                   href="{{ route('modules.reports.weekly-performance') }}">
+                                    <i class="fas fa-calendar-week me-2"></i>
+                                    <span>Weekly Performance</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.low-stock-alert*') || request()->routeIs('reports.low-stock-alert') ? 'active' : '' }}"
+                                   href="{{ route('modules.reports.low-stock-alert') }}">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <span>Low Stock Alert</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.supplier-due*') ? 'active' : '' }}"
+                                   href="{{ route('modules.reports.supplier-due') }}">
+                                    <i class="fas fa-user-friends me-2"></i>
+                                    <span>Supplier Due Report</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link d-flex align-items-center {{ request()->routeIs('modules.reports.customer-due*') ? 'active' : '' }}"
+                                   href="{{ route('modules.reports.customer-due') }}">
+                                    <i class="fas fa-users me-2"></i>
+                                    <span>Customer Due Report</span>
                                 </a>
                             </li>
                             <li class="nav-item">

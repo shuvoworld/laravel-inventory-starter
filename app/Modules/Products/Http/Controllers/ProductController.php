@@ -115,22 +115,22 @@ class ProductController extends Controller
         return redirect()->route('modules.products.index')->with('success', 'Product created');
     }
 
-    public function show(int $id): View
+    public function show($id): View
     {
         $item = Product::findOrFail($id);
 
         return view('products::show', compact('item'));
     }
 
-    public function edit(int $id): View
+    public function edit($id): View
     {
-        $item = Product::findOrFail($id);
+        $item = Product::with('variants.optionValues.option')->findOrFail($id);
         $brands = Brand::active()->orderBy('name')->get();
 
         return view('products::edit', compact('item', 'brands'));
     }
 
-    public function update(Request $request, int $id): RedirectResponse
+    public function update(Request $request, $id): RedirectResponse
     {
         $item = Product::findOrFail($id);
 
@@ -143,7 +143,10 @@ class ProductController extends Controller
             'unit' => ['nullable', 'string', 'max:50'],
             'price' => ['nullable', 'numeric', 'min:0'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
+            'minimum_profit_margin' => ['required', 'numeric', 'min:0'],
+            'standard_profit_margin' => ['required', 'numeric', 'min:0'],
             'reorder_level' => ['nullable', 'integer', 'min:0'],
+            'has_variants' => ['nullable', 'boolean'],
         ]);
 
         // Handle image removal
@@ -166,7 +169,10 @@ class ProductController extends Controller
             'unit' => $validated['unit'] ?? null,
             'price' => $validated['price'] ?? 0,
             'cost_price' => $validated['cost_price'] ?? 0,
+            'minimum_profit_margin' => $validated['minimum_profit_margin'],
+            'standard_profit_margin' => $validated['standard_profit_margin'],
             'reorder_level' => $validated['reorder_level'] ?? 0,
+            'has_variants' => $request->boolean('has_variants'),
         ]);
 
         // Calculate profit margin
@@ -175,7 +181,7 @@ class ProductController extends Controller
         return redirect()->route('modules.products.index')->with('success', 'Product updated');
     }
 
-    public function destroy(int $id): RedirectResponse
+    public function destroy($id): RedirectResponse
     {
         $item = Product::findOrFail($id);
 

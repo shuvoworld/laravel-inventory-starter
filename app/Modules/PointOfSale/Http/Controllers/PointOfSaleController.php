@@ -31,30 +31,53 @@ class PointOfSaleController extends Controller
         session()->forget('pos_cart');
     }
 
-    private function addItemToCart($product, $quantity)
+    private function addItemToCart($product, $quantity, $variant = null)
     {
         $cart = $this->getCart();
-        $productId = $product->id;
 
-        if (isset($cart[$productId])) {
-            $cart[$productId]['quantity'] += $quantity;
+        // Create unique cart key: product_id or product_id-variant_id
+        $cartKey = $variant ? "{$product->id}-{$variant->id}" : (string)$product->id;
+
+        if (isset($cart[$cartKey])) {
+            $cart[$cartKey]['quantity'] += $quantity;
         } else {
-            $cart[$productId] = [
-                'id' => $product->id,
-                'name' => $product->name,
-                'sku' => $product->sku,
-                'price' => $product->target_price ?? $product->price,
-                'cost_price' => $product->cost_price,
-                'floor_price' => $product->floor_price,
-                'target_price' => $product->target_price,
-                'quantity' => $quantity,
-                'image' => $product->image_url,
-                'brand' => $product->brand ? $product->brand->name : null,
-            ];
+            if ($variant) {
+                // Adding variant to cart
+                $cart[$cartKey] = [
+                    'product_id' => $product->id,
+                    'variant_id' => $variant->id,
+                    'product_name' => $product->name,
+                    'variant_name' => $variant->variant_name,
+                    'name' => $product->name . ' (' . $variant->variant_name . ')',
+                    'sku' => $variant->sku ?? $product->sku,
+                    'price' => $variant->getEffectiveTargetPrice(),
+                    'cost_price' => $variant->getEffectiveCostPrice(),
+                    'floor_price' => $variant->getEffectiveFloorPrice(),
+                    'target_price' => $variant->getEffectiveTargetPrice(),
+                    'quantity' => $quantity,
+                    'image' => $variant->image_url ?? $product->image_url,
+                    'brand' => $product->brand ? $product->brand->name : null,
+                ];
+            } else {
+                // Adding regular product to cart
+                $cart[$cartKey] = [
+                    'product_id' => $product->id,
+                    'variant_id' => null,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'price' => $product->target_price ?? $product->price,
+                    'cost_price' => $product->cost_price,
+                    'floor_price' => $product->floor_price,
+                    'target_price' => $product->target_price,
+                    'quantity' => $quantity,
+                    'image' => $product->image_url,
+                    'brand' => $product->brand ? $product->brand->name : null,
+                ];
+            }
         }
 
         $this->setCart($cart);
-        return $cart[$productId];
+        return $cart[$cartKey];
     }
 
     private function updateCartItem($productId, $quantity)
@@ -90,34 +113,86 @@ class PointOfSaleController extends Controller
 
         // Get featured products and categories
         $featuredProducts = Product::where('quantity_on_hand', '>', 0)
-            ->with('brand')
+            ->orWhereHas('activeVariants', function($q) {
+                $q->where('quantity_on_hand', '>', 0);
+            })
+            ->with(['brand', 'activeVariants.optionValues.option'])
             ->orderBy('name')
             ->take(20)
             ->get();
 
         $categories = $this->getProductCategories();
         $recentProducts = Product::where('quantity_on_hand', '>', 0)
-            ->with('brand')
+            ->orWhereHas('activeVariants', function($q) {
+                $q->where('quantity_on_hand', '>', 0);
+            })
+            ->with(['brand', 'activeVariants.optionValues.option'])
             ->orderBy('updated_at', 'desc')
             ->take(12)
             ->get();
 
         // Prepare products data for JavaScript
         $featuredProductsData = $featuredProducts->map(function($product) {
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'sku' => $product->sku,
-                'price' => $product->target_price ?? $product->price,
-                'floor_price' => $product->floor_price,
-                'target_price' => $product->target_price,
-                'quantity' => $product->quantity_on_hand,
-                'image' => $product->image_url,
-                'brand' => $product->brand ? $product->brand->name : null
-            ];
+            return $this->formatProductForPOS($product);
         });
 
         return view('point-of-sale::index', compact('featuredProductsData', 'categories', 'recentProducts'));
+    }
+
+    /**
+     * Format product data for POS with variant support
+     */
+    private function formatProductForPOS($product): array
+    {
+        $data = [
+            'id' => $product->id,
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'has_variants' => $product->has_variants,
+            'image' => $product->image_url,
+            'brand' => $product->brand ? $product->brand->name : null,
+        ];
+
+        if ($product->has_variants && $product->activeVariants->isNotEmpty()) {
+            // Product has variants - show aggregate data
+            $data['price'] = $product->activeVariants->min(function($v) {
+                return $v->getEffectiveTargetPrice();
+            });
+            $data['max_price'] = $product->activeVariants->max(function($v) {
+                return $v->getEffectiveTargetPrice();
+            });
+            $data['quantity'] = $product->activeVariants->sum('quantity_on_hand');
+            $data['variants_count'] = $product->activeVariants->count();
+            $data['variants'] = $product->activeVariants->map(function($variant) {
+                return [
+                    'id' => $variant->id,
+                    'name' => $variant->variant_name,
+                    'sku' => $variant->sku,
+                    'price' => $variant->getEffectiveTargetPrice(),
+                    'floor_price' => $variant->getEffectiveFloorPrice(),
+                    'target_price' => $variant->getEffectiveTargetPrice(),
+                    'cost_price' => $variant->getEffectiveCostPrice(),
+                    'quantity' => $variant->quantity_on_hand,
+                    'image' => $variant->image_url,
+                    'is_default' => $variant->is_default,
+                    'options' => $variant->optionValues->map(function($optionValue) {
+                        return [
+                            'option' => $optionValue->option->name,
+                            'value' => $optionValue->value
+                        ];
+                    }),
+                ];
+            })->toArray();
+        } else {
+            // Regular product without variants
+            $data['price'] = $product->target_price ?? $product->price;
+            $data['floor_price'] = $product->floor_price;
+            $data['target_price'] = $product->target_price;
+            $data['quantity'] = $product->quantity_on_hand;
+            $data['variants'] = [];
+        }
+
+        return $data;
     }
 
     public function pos2(): View
@@ -162,8 +237,13 @@ class PointOfSaleController extends Controller
         $query = $request->get('q', '');
         $categoryId = $request->get('category', '');
 
-        $products = Product::where('quantity_on_hand', '>', 0)
-            ->with('brand')
+        $products = Product::where(function($q) {
+                $q->where('quantity_on_hand', '>', 0)
+                  ->orWhereHas('activeVariants', function($vq) {
+                      $vq->where('quantity_on_hand', '>', 0);
+                  });
+            })
+            ->with(['brand', 'activeVariants.optionValues.option'])
             ->where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")
                   ->orWhere('sku', 'LIKE', "%{$query}%");
@@ -177,18 +257,7 @@ class PointOfSaleController extends Controller
             ->take(50)
             ->get()
             ->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'sku' => $product->sku,
-                    'price' => $product->target_price ?? $product->price,
-                    'cost_price' => $product->cost_price,
-                    'floor_price' => $product->floor_price,
-                    'target_price' => $product->target_price,
-                    'quantity' => $product->quantity_on_hand,
-                    'image' => $product->image_url,
-                    'brand' => $product->brand ? $product->brand->name : null,
-                ];
+                return $this->formatProductForPOS($product);
             });
 
         return response()->json([
@@ -201,34 +270,66 @@ class PointOfSaleController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
+            'variant_id' => 'nullable|exists:product_variants,id',
             'quantity' => 'required|integer|min:1'
         ]);
 
-        $product = Product::findOrFail($request->product_id);
+        $product = Product::with('activeVariants')->findOrFail($request->product_id);
+        $variant = null;
+        $availableStock = 0;
 
-        if ($product->quantity_on_hand < $request->quantity) {
+        // Check if adding a variant or regular product
+        if ($request->variant_id) {
+            $variant = \App\Modules\Products\Models\ProductVariant::findOrFail($request->variant_id);
+
+            // Verify variant belongs to product
+            if ($variant->product_id != $product->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid variant for this product.'
+                ], 400);
+            }
+
+            $availableStock = $variant->quantity_on_hand;
+            $cartKey = "{$product->id}-{$variant->id}";
+        } else {
+            // Regular product without variants
+            if ($product->has_variants) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please select a variant for this product.'
+                ], 400);
+            }
+
+            $availableStock = $product->quantity_on_hand;
+            $cartKey = (string)$product->id;
+        }
+
+        // Check stock availability
+        if ($availableStock < $request->quantity) {
             return response()->json([
                 'success' => false,
-                'message' => 'Insufficient stock. Only ' . $product->quantity_on_hand . ' units available.'
+                'message' => 'Insufficient stock. Only ' . $availableStock . ' units available.'
             ], 400);
         }
 
+        // Check cart quantity + new quantity
         $cart = $this->getCart();
-        $currentQuantity = $cart[$product->id]['quantity'] ?? 0;
+        $currentQuantity = $cart[$cartKey]['quantity'] ?? 0;
         $newQuantity = $currentQuantity + $request->quantity;
 
-        if ($product->quantity_on_hand < $newQuantity) {
+        if ($availableStock < $newQuantity) {
             return response()->json([
                 'success' => false,
-                'message' => 'Insufficient stock. Only ' . $product->quantity_on_hand . ' units available.'
+                'message' => 'Insufficient stock. Only ' . $availableStock . ' units available.'
             ], 400);
         }
 
-        $this->addItemToCart($product, $request->quantity);
+        $this->addItemToCart($product, $request->quantity, $variant);
 
         return response()->json([
             'success' => true,
-            'message' => 'Product added to cart',
+            'message' => $variant ? 'Variant added to cart' : 'Product added to cart',
             'cart' => $this->getCartData(),
             'cart_count' => $this->getCartCount()
         ]);
@@ -238,14 +339,16 @@ class PointOfSaleController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
+            'variant_id' => 'nullable|exists:product_variants,id',
             'quantity' => 'nullable|integer|min:1',
             'custom_price' => 'nullable|numeric|min:0'
         ]);
 
-        $productId = $request->product_id;
+        // Create cart key based on whether it's a variant or not
+        $cartKey = $request->variant_id ? "{$request->product_id}-{$request->variant_id}" : (string)$request->product_id;
         $cart = $this->getCart();
 
-        if (!isset($cart[$productId])) {
+        if (!isset($cart[$cartKey])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Item not found in cart'
@@ -255,32 +358,48 @@ class PointOfSaleController extends Controller
         // Update quantity if provided
         if ($request->has('quantity')) {
             $quantity = $request->quantity;
-            $product = Product::findOrFail($productId);
+            $availableStock = 0;
 
-            if ($product->quantity_on_hand < $quantity) {
+            if ($request->variant_id) {
+                $variant = \App\Modules\Products\Models\ProductVariant::findOrFail($request->variant_id);
+                $availableStock = $variant->quantity_on_hand;
+            } else {
+                $product = Product::findOrFail($request->product_id);
+                $availableStock = $product->quantity_on_hand;
+            }
+
+            if ($availableStock < $quantity) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Insufficient stock. Only ' . $product->quantity_on_hand . ' units available.'
+                    'message' => 'Insufficient stock. Only ' . $availableStock . ' units available.'
                 ], 400);
             }
 
-            $cart[$productId]['quantity'] = $quantity;
+            $cart[$cartKey]['quantity'] = $quantity;
         }
 
         // Update custom price if provided
         if ($request->has('custom_price')) {
             $customPrice = $request->custom_price;
-            $product = Product::findOrFail($productId);
+            $floorPrice = 0;
+
+            if ($request->variant_id) {
+                $variant = \App\Modules\Products\Models\ProductVariant::findOrFail($request->variant_id);
+                $floorPrice = $variant->getEffectiveFloorPrice();
+            } else {
+                $product = Product::findOrFail($request->product_id);
+                $floorPrice = $product->floor_price;
+            }
 
             // Validate that custom price is not below floor price
-            if ($product->floor_price && $customPrice < $product->floor_price) {
+            if ($floorPrice && $customPrice < $floorPrice) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Price cannot be below floor price (' . number_format($product->floor_price, 2) . ')'
+                    'message' => 'Price cannot be below floor price (' . number_format($floorPrice, 2) . ')'
                 ], 400);
             }
 
-            $cart[$productId]['price'] = $customPrice;
+            $cart[$cartKey]['price'] = $customPrice;
         }
 
         $this->setCart($cart);
@@ -295,10 +414,14 @@ class PointOfSaleController extends Controller
     public function removeFromCart(Request $request): JsonResponse
     {
         $request->validate([
-            'product_id' => 'required|exists:products,id'
+            'product_id' => 'required|exists:products,id',
+            'variant_id' => 'nullable|exists:product_variants,id'
         ]);
 
-        $this->removeItemFromCart($request->product_id);
+        // Create cart key based on whether it's a variant or not
+        $cartKey = $request->variant_id ? "{$request->product_id}-{$request->variant_id}" : (string)$request->product_id;
+
+        $this->removeItemFromCart($cartKey);
 
         return response()->json([
             'success' => true,
@@ -441,7 +564,8 @@ class PointOfSaleController extends Controller
                 SalesOrderItem::create([
                     'store_id' => auth()->user()->currentStoreId(),
                     'sales_order_id' => $salesOrder->id,
-                    'product_id' => $item['id'],
+                    'product_id' => $item['product_id'],
+                    'variant_id' => $item['variant_id'] ?? null,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['price'],
                     'cost_price' => $item['cost_price'],
@@ -451,9 +575,14 @@ class PointOfSaleController extends Controller
                     'profit_amount' => $itemProfit,
                 ]);
 
-                // Update product stock
-                $product = Product::find($item['id']);
-                $product->decrement('quantity_on_hand', $item['quantity']);
+                // Update stock using StockMovementService for proper tracking
+                \App\Services\StockMovementService::recordSale(
+                    $item['product_id'],
+                    $item['variant_id'] ?? null,
+                    $item['quantity'],
+                    $salesOrder->id,
+                    "POS Sale - Order #{$salesOrder->order_number}"
+                );
             }
 
             // Clear cart and session data
@@ -629,13 +758,17 @@ class PointOfSaleController extends Controller
         $subtotal = 0;
         $items = [];
 
-        foreach ($cart as $productId => $item) {
+        foreach ($cart as $cartKey => $item) {
             $itemSubtotal = $item['price'] * $item['quantity'];
             $subtotal += $itemSubtotal;
 
             $items[] = [
-                'id' => $item['id'],
+                'cart_key' => $cartKey, // Add cart key for operations
+                'id' => $item['product_id'], // Use product_id for id field
+                'product_id' => $item['product_id'],
+                'variant_id' => $item['variant_id'] ?? null,
                 'name' => $item['name'],
+                'variant_name' => $item['variant_name'] ?? null, // Add variant name
                 'sku' => $item['sku'],
                 'quantity' => $item['quantity'],
                 'price' => $item['price'],

@@ -19,10 +19,10 @@
 
         body {
             font-family: 'Courier New', monospace;
-            font-size: 12px;
-            line-height: 1.2;
+            font-size: 10px;
+            line-height: 1.1;
             margin: 0;
-            padding: 10px;
+            padding: 5px;
             width: 80mm;
             background: white;
             color: black;
@@ -36,14 +36,14 @@
         .header {
             text-align: center;
             border-bottom: 1px dashed #000;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
         }
 
         .store-name {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .store-info {
@@ -201,9 +201,9 @@
         <div class="items-section">
             @foreach($item->items as $orderItem)
                 <div class="item-row">
-                    <div class="item-name">{{ $orderItem->product->name }}</div>
-                    @if($orderItem->product->sku)
-                        <div style="font-size: 10px; color: #666;">SKU: {{ $orderItem->product->sku }}</div>
+                    <div class="item-name">{{ $orderItem->getDisplayName() }}</div>
+                    @if($orderItem->variant?->sku ?? $orderItem->product->sku)
+                        <div style="font-size: 10px; color: #666;">SKU: {{ $orderItem->variant?->sku ?? $orderItem->product->sku }}</div>
                     @endif
                     <div class="item-line">
                         <span>{{ number_format($orderItem->quantity) }} x ${{ number_format($orderItem->unit_price, 2) }}</span>

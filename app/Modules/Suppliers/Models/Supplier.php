@@ -42,10 +42,10 @@ class Supplier extends Model
         return $this->hasMany(PurchaseOrder::class);
     }
 
-    public function payments()
-    {
-        return $this->hasMany(\App\Models\SupplierPayment::class);
-    }
+    // public function payments()
+    // {
+    //     return $this->hasMany(\App\Models\SupplierPayment::class);
+    // }
 
     /**
      * Get total amount owed to this supplier (unpaid + partial)
@@ -63,7 +63,8 @@ class Supplier extends Model
      */
     public function getTotalPaidAttribute()
     {
-        return $this->payments()->sum('amount');
+        // Payment tracking is now handled directly in purchase_orders
+        return $this->purchaseOrders()->sum('paid_amount');
     }
 
     /**

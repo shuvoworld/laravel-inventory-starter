@@ -49,6 +49,12 @@ class StoreAdminRoleSeeder extends Seeder
             // Product Attribute permissions
             'product-attribute.view', 'product-attribute.create', 'product-attribute.edit', 'product-attribute.delete',
 
+            // Variant Options permissions
+            'variant-options.view', 'variant-options.create', 'variant-options.edit', 'variant-options.delete',
+
+            // Product Variant permissions
+            'product-variant.view', 'product-variant.create', 'product-variant.edit', 'product-variant.delete',
+
             // Customer permissions
             'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
 

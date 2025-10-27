@@ -15,7 +15,7 @@ class SalesOrderItem extends Model implements AuditableContract
     protected $table = 'sales_order_items';
 
     protected $fillable = [
-        'store_id', 'sales_order_id', 'product_id', 'quantity', 'unit_price', 'cost_price', 'total_price',
+        'store_id', 'sales_order_id', 'product_id', 'variant_id', 'quantity', 'unit_price', 'cost_price', 'total_price',
         'discount_amount', 'discount_type', 'discount_rate', 'final_price', 'discount_reason',
         'cogs_amount', 'profit_amount'
     ];
@@ -32,7 +32,7 @@ class SalesOrderItem extends Model implements AuditableContract
     ];
 
     protected $auditInclude = [
-        'sales_order_id', 'product_id', 'quantity', 'unit_price', 'cost_price', 'total_price',
+        'sales_order_id', 'product_id', 'variant_id', 'quantity', 'unit_price', 'cost_price', 'total_price',
         'discount_amount', 'discount_type', 'discount_rate', 'final_price', 'discount_reason',
         'cogs_amount', 'profit_amount'
     ];
@@ -47,6 +47,11 @@ class SalesOrderItem extends Model implements AuditableContract
         return $this->belongsTo(\App\Modules\Products\Models\Product::class);
     }
 
+    public function variant()
+    {
+        return $this->belongsTo(\App\Modules\Products\Models\ProductVariant::class, 'variant_id');
+    }
+
     protected static function boot()
     {
         parent::boot();
@@ -54,9 +59,13 @@ class SalesOrderItem extends Model implements AuditableContract
         static::saving(function ($item) {
             $item->total_price = $item->quantity * $item->unit_price;
 
-            // Set cost price from product if not already set
-            if (!$item->cost_price && $item->product) {
-                $item->cost_price = $item->product->cost_price ?? 0;
+            // Set cost price from variant or product if not already set
+            if (!$item->cost_price) {
+                if ($item->variant_id && $item->variant) {
+                    $item->cost_price = $item->variant->cost_price ?? $item->variant->product->cost_price ?? 0;
+                } elseif ($item->product) {
+                    $item->cost_price = $item->product->cost_price ?? 0;
+                }
             }
 
             // Calculate COGS
@@ -101,5 +110,19 @@ class SalesOrderItem extends Model implements AuditableContract
             return (($this->unit_price - $this->cost_price) / $this->cost_price) * 100;
         }
         return 0;
+    }
+
+    /**
+     * Get the full display name including variant information
+     */
+    public function getDisplayName(): string
+    {
+        $name = $this->product->name ?? 'Unknown Product';
+
+        if ($this->variant_id && $this->variant) {
+            $name .= ' (' . $this->variant->variant_name . ')';
+        }
+
+        return $name;
     }
 }

@@ -101,6 +101,7 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @if($item->items && $item->items->count() > 0)
                             @foreach($item->items as $orderItem)
                                 <tr>
                                     <td>
@@ -115,6 +116,13 @@
                                     <td class="text-end">${{ number_format($orderItem->total_price, 2) }}</td>
                                 </tr>
                             @endforeach
+                            @else
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        No items found for this purchase order.
+                                    </td>
+                                </tr>
+                            @endif
                         </tbody>
                     </table>
                 </div>
@@ -201,41 +209,6 @@
     </div>
 </div>
 
-@if($item->payments->count() > 0)
-    <div class="card mt-4">
-        <div class="card-header">
-            <h5 class="card-title mb-0">Payment History</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-sm">
-                    <thead>
-                        <tr>
-                            <th>Payment #</th>
-                            <th>Date</th>
-                            <th>Amount</th>
-                            <th>Method</th>
-                            <th>Reference</th>
-                            <th>Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($item->payments as $payment)
-                            <tr>
-                                <td>{{ $payment->payment_number }}</td>
-                                <td>{{ $payment->payment_date->format('M d, Y') }}</td>
-                                <td>${{ number_format($payment->amount, 2) }}</td>
-                                <td>{{ $payment->payment_method ? ucfirst($payment->payment_method) : 'N/A' }}</td>
-                                <td>{{ $payment->reference_number ?? 'N/A' }}</td>
-                                <td>{{ $payment->notes ?? '-' }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-@endif
 
 <!-- Add Payment Modal -->
 <div class="modal fade" id="addPaymentModal" tabindex="-1" aria-labelledby="addPaymentModalLabel" aria-hidden="true">

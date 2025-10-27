@@ -22,12 +22,25 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card border-info">
             <div class="card-body text-center">
+                <i class="fas fa-calendar-day fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Daily Sales Report</h5>
+                <p class="card-text text-muted">View daily sales performance, top products, and trends.</p>
+                <a href="{{ route('modules.reports.daily-sales') }}" class="btn btn-info">
+                    <i class="fas fa-calendar-day me-1"></i> Daily Sales
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card border-info">
+            <div class="card-body text-center">
                 <i class="fas fa-shopping-cart fa-3x text-info mb-3"></i>
-                <h5 class="card-title">Sales Report</h5>
-                <p class="card-text text-muted">Analyze sales performance, trends, and customer insights.</p>
-                <button class="btn btn-info" disabled>
-                    <i class="fas fa-shopping-cart me-1"></i> Coming Soon
-                </button>
+                <h5 class="card-title">Daily Purchase Report</h5>
+                <p class="card-text text-muted">View daily purchase performance, top products, and trends.</p>
+                <a href="{{ route('modules.reports.daily-purchase') }}" class="btn btn-info">
+                    <i class="fas fa-shopping-cart me-1"></i> Daily Purchase
+                </a>
             </div>
         </div>
     </div>
@@ -35,12 +48,12 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card border-success">
             <div class="card-body text-center">
-                <i class="fas fa-boxes fa-3x text-success mb-3"></i>
-                <h5 class="card-title">Inventory Report</h5>
+                <i class="fas fa-cubes fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Stock Report</h5>
                 <p class="card-text text-muted">Track stock levels, movements, and reorder recommendations.</p>
-                <button class="btn btn-success" disabled>
-                    <i class="fas fa-boxes me-1"></i> Coming Soon
-                </button>
+                <a href="{{ route('modules.reports.stock') }}" class="btn btn-success">
+                    <i class="fas fa-cubes me-1"></i> Stock Report
+                </a>
             </div>
         </div>
     </div>
@@ -49,11 +62,11 @@
         <div class="card border-warning">
             <div class="card-body text-center">
                 <i class="fas fa-users fa-3x text-warning mb-3"></i>
-                <h5 class="card-title">Customer Report</h5>
-                <p class="card-text text-muted">Customer analytics, purchase history, and loyalty metrics.</p>
-                <button class="btn btn-warning" disabled>
-                    <i class="fas fa-users me-1"></i> Coming Soon
-                </button>
+                <h5 class="card-title">Customer Due Report</h5>
+                <p class="card-text text-muted">Track outstanding payments and overdue customer orders.</p>
+                <a href="{{ route('modules.reports.customer-due') }}" class="btn btn-warning">
+                    <i class="fas fa-users me-1"></i> Customer Dues
+                </a>
             </div>
         </div>
     </div>
@@ -61,12 +74,12 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card border-secondary">
             <div class="card-body text-center">
-                <i class="fas fa-truck fa-3x text-secondary mb-3"></i>
-                <h5 class="card-title">Purchase Report</h5>
-                <p class="card-text text-muted">Supplier performance, purchase trends, and cost analysis.</p>
-                <button class="btn btn-secondary" disabled>
-                    <i class="fas fa-truck me-1"></i> Coming Soon
-                </button>
+                <i class="fas fa-user-friends fa-3x text-secondary mb-3"></i>
+                <h5 class="card-title">Supplier Due Report</h5>
+                <p class="card-text text-muted">Track outstanding payments and overdue supplier invoices.</p>
+                <a href="{{ route('modules.reports.supplier-due') }}" class="btn btn-secondary">
+                    <i class="fas fa-user-friends me-1"></i> Supplier Dues
+                </a>
             </div>
         </div>
     </div>
@@ -74,12 +87,25 @@
     <div class="col-md-6 col-lg-4 mb-4">
         <div class="card border-dark">
             <div class="card-body text-center">
-                <i class="fas fa-file-export fa-3x text-dark mb-3"></i>
-                <h5 class="card-title">Export Data</h5>
-                <p class="card-text text-muted">Export reports to CSV, Excel, or PDF formats.</p>
-                <button class="btn btn-dark" disabled>
-                    <i class="fas fa-file-export me-1"></i> Coming Soon
-                </button>
+                <i class="fas fa-calendar-week fa-3x text-dark mb-3"></i>
+                <h5 class="card-title">Weekly Performance</h5>
+                <p class="card-text text-muted">Analyze weekly product performance and trends.</p>
+                <a href="{{ route('modules.reports.weekly-performance') }}" class="btn btn-dark">
+                    <i class="fas fa-calendar-week me-1"></i> Weekly Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                <h5 class="card-title">Low Stock Alert</h5>
+                <p class="card-text text-muted">View products with low inventory levels.</p>
+                <a href="{{ route('modules.reports.low-stock-alert') }}" class="btn btn-danger">
+                    <i class="fas fa-exclamation-triangle me-1"></i> Low Stock
+                </a>
             </div>
         </div>
     </div>

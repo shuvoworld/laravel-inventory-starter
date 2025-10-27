@@ -6,6 +6,7 @@ use App\Modules\SalesOrder\Models\SalesOrder;
 use App\Modules\SalesOrderItem\Models\SalesOrderItem;
 use App\Modules\Products\Models\Product;
 use App\Modules\OperatingExpenses\Models\OperatingExpense;
+use App\Modules\Expense\Models\Expense;
 use App\Services\WeightedAverageCostService;
 use Carbon\Carbon;
 
@@ -122,10 +123,14 @@ class COGSService
             $cogs = $this->calculatePeriodCOGS($periodStart, $periodEnd);
             $revenue = $this->getRevenueForPeriod($periodStart, $periodEnd);
             $operatingExpenses = OperatingExpense::getExpensesForPeriod($periodStart, $periodEnd);
+            $generalExpenses = Expense::whereBetween('expense_date', [$periodStart, $periodEnd])
+                ->whereIn('status', ['active', 'completed'])
+                ->sum('amount');
+            $totalExpenses = $operatingExpenses + $generalExpenses;
             $ordersCount = $this->getOrdersCount($periodStart, $periodEnd);
 
             $grossProfit = $revenue - $cogs;
-            $netProfit = $grossProfit - $operatingExpenses;
+            $netProfit = $grossProfit - $totalExpenses;
 
             $trends[] = [
                 'period' => match($period) {
@@ -139,9 +144,12 @@ class COGSService
                 'cogs' => $cogs,
                 'revenue' => $revenue,
                 'operating_expenses' => $operatingExpenses,
+                'general_expenses' => $generalExpenses,
+                'total_expenses' => $totalExpenses,
                 'gross_profit' => $grossProfit,
                 'net_profit' => $netProfit,
                 'gross_profit_margin' => $revenue > 0 ? ($grossProfit / $revenue) * 100 : 0,
+                'net_profit_margin' => $revenue > 0 ? ($netProfit / $revenue) * 100 : 0,
                 'orders_count' => $ordersCount,
             ];
 

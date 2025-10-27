@@ -11,6 +11,7 @@ use App\Modules\StoreSettings\Models\StoreSetting;
 use App\Modules\StockMovement\Models\StockMovement;
 use App\Modules\PurchaseOrder\Models\PurchaseOrder;
 use App\Services\StockCalculationService;
+use App\Services\MonthlyFinancialDataService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -188,6 +189,13 @@ class DashboardController extends Controller
             $currentMonth->copy()->endOfMonth()
         );
 
+        // Get 12 months financial data for chart
+        $monthlyFinancialService = new MonthlyFinancialDataService();
+        $monthlyFinancialData = $monthlyFinancialService->get12MonthsFinancialData();
+
+        // Get recent transactions (combined from sales, purchases, and expenses)
+        $recentTransactions = $monthlyFinancialService->getRecentTransactions(10);
+
         // Get store settings for currency formatting
         $companyInfo = StoreSetting::getCompanyInfo();
         $currencySettings = StoreSetting::getCurrencySettings();
@@ -220,7 +228,9 @@ class DashboardController extends Controller
             'companyInfo',
             'currencySettings',
             'todayData',
-            'monthData'
+            'monthData',
+            'monthlyFinancialData',
+            'recentTransactions'
         ));
     }
 
@@ -427,9 +437,17 @@ class DashboardController extends Controller
         // Operating Expenses
         $operatingExpenses = OperatingExpense::getExpensesForPeriod($startDate, $endDate);
 
+        // General Expenses from Expense module
+        $generalExpenses = Expense::whereBetween('expense_date', [$startDate, $endDate])
+            ->whereIn('status', ['active', 'completed'])
+            ->sum('amount');
+
+        // Total expenses (operating + general)
+        $totalExpenses = $operatingExpenses + $generalExpenses;
+
         // Calculations
         $grossProfit = $revenue - $cogs;
-        $netProfit = $grossProfit - $operatingExpenses;
+        $netProfit = $grossProfit - $totalExpenses;
         $grossProfitMargin = $revenue > 0 ? ($grossProfit / $revenue) * 100 : 0;
         $netProfitMargin = $revenue > 0 ? ($netProfit / $revenue) * 100 : 0;
 
@@ -437,6 +455,8 @@ class DashboardController extends Controller
             'revenue' => $revenue,
             'cogs' => $cogs,
             'operating_expenses' => $operatingExpenses,
+            'general_expenses' => $generalExpenses,
+            'total_expenses' => $totalExpenses,
             'gross_profit' => $grossProfit,
             'net_profit' => $netProfit,
             'gross_profit_margin' => $grossProfitMargin,

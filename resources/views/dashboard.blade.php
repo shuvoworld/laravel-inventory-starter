@@ -523,156 +523,137 @@ function formatMoney($amount) {
     @endcan
 </div>
 
-<!-- Recent Transactions Section with Tabs -->
+<!-- Recent Transactions Section -->
 <div class="row mt-4">
     <div class="col-12">
         <div class="card shadow-sm">
             <div class="card-header bg-white">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-receipt me-2"></i>
-                    Recent Transactions
+                    Recent Transactions (Last 10)
                 </h5>
             </div>
             <div class="card-body p-0">
-                <ul class="nav nav-tabs px-3 pt-3" id="transactionTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales" type="button" role="tab" aria-controls="sales" aria-selected="true">
-                            <i class="fas fa-shopping-cart me-1"></i> Sales
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="purchase-tab" data-bs-toggle="tab" data-bs-target="#purchase" type="button" role="tab" aria-controls="purchase" aria-selected="false">
-                            <i class="fas fa-shopping-bag me-1"></i> Purchase
-                        </button>
-                    </li>
-                </ul>
-                <div class="tab-content" id="transactionTabsContent">
-                    <!-- Sales Tab -->
-                    <div class="tab-pane fade show active" id="sales" role="tabpanel" aria-labelledby="sales-tab">
-                        @can('sales-order.view')
-                            @if($recentSalesOrders->count() > 0)
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th class="text-start">Date</th>
-                                                <th>Amount</th>
-                                                <th>Customer</th>
-                                                <th class="text-end">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($recentSalesOrders as $sale)
-                                                <tr>
-                                                    <td>
-                                                        <div class="d-flex flex-column">
-                                                            <span class="fw-bold">{{ $sale->order_date->format('M j, Y') }}</span>
-                                                            <small class="text-muted">{{ $sale->order_number }}</small>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge bg-success fs-6">{{ formatMoney($sale->total_amount) }}</span>
-                                                    </td>
-                                                    <td>
-                                                        <div>
-                                                            <strong>{{ $sale->customer->name ?? 'Walk-in' }}</strong>
-                                                            @if($sale->customer && $sale->customer->email)
-                                                                <br><small class="text-muted">{{ $sale->customer->email }}</small>
-                                                            @endif
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-end">
-                                                        <a href="{{ route('modules.sales-order.show', $sale->id) }}" class="btn btn-sm btn-outline-primary">
-                                                            <i class="fas fa-eye"></i> View
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="p-3 text-center border-top">
-                                    <a href="{{ route('modules.sales-order.index') }}" class="text-primary">
-                                        View all sales <i class="fas fa-arrow-right ms-1"></i>
-                                    </a>
-                                </div>
-                            @else
-                                <div class="p-4 text-center text-muted">
-                                    <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
-                                    <p>No recent sales transactions</p>
-                                </div>
-                            @endif
-                        @else
-                            <div class="p-4 text-center text-muted">
-                                <i class="fas fa-lock fa-2x mb-3 opacity-25"></i>
-                                <p>You don't have permission to view sales orders</p>
-                            </div>
-                        @endcan
+                @if(isset($recentTransactions) && count($recentTransactions) > 0)
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Reference</th>
+                                    <th>Party</th>
+                                    <th>Date</th>
+                                    <th class="text-end">Amount</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($recentTransactions as $transaction)
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-{{ $transaction['color'] }}">
+                                                <i class="{{ $transaction['icon'] }} me-1"></i>
+                                                {{ $transaction['type_display'] }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold">{{ $transaction['reference'] }}</span>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ $transaction['party'] }}</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                <span class="text-muted">{{ $transaction['date'] }}</span>
+                                                <br>
+                                                <span class="text-muted">{{ $transaction['time'] }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="fw-bold">
+                                                @if($transaction['type'] === 'sale')
+                                                    <span class="text-success">{{ formatMoney($transaction['amount']) }}</span>
+                                                @elseif($transaction['type'] === 'purchase')
+                                                    <span class="text-warning">{{ formatMoney($transaction['amount']) }}</span>
+                                                @else
+                                                    <span class="text-danger">{{ formatMoney($transaction['amount']) }}</span>
+                                                @endif
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-{{
+                                                $transaction['status'] === 'completed' || $transaction['status'] === 'delivered' ? 'success' :
+                                                ($transaction['status'] === 'pending' ? 'warning' : 'secondary')
+                                            }}">
+                                                {{ ucfirst($transaction['status']) }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
+                    <div class="p-3 text-center border-top">
+                        <a href="#" class="text-primary">
+                            View all transactions <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                @else
+                    <div class="p-4 text-center text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
+                        <p>No recent transactions found</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
 
-                    <!-- Purchase Tab -->
-                    <div class="tab-pane fade" id="purchase" role="tabpanel" aria-labelledby="purchase-tab">
-                        @can('purchase-order.view')
-                            @if($recentPurchaseOrders->count() > 0)
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th class="text-start">Date</th>
-                                                <th>Amount</th>
-                                                <th>Supplier</th>
-                                                <th class="text-end">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($recentPurchaseOrders as $purchase)
-                                                <tr>
-                                                    <td>
-                                                        <div class="d-flex flex-column">
-                                                            <span class="fw-bold">{{ $purchase->order_date->format('M j, Y') }}</span>
-                                                            <small class="text-muted">{{ $purchase->po_number }}</small>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge bg-warning text-dark fs-6">{{ formatMoney($purchase->total_amount) }}</span>
-                                                    </td>
-                                                    <td>
-                                                        <div>
-                                                            <strong>{{ $purchase->supplier->name ?? $purchase->supplier_name }}</strong>
-                                                            @if($purchase->supplier && $purchase->supplier->email)
-                                                                <br><small class="text-muted">{{ $purchase->supplier->email }}</small>
-                                                            @endif
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-end">
-                                                        <a href="{{ route('modules.purchase-order.show', $purchase->id) }}" class="btn btn-sm btn-outline-primary">
-                                                            <i class="fas fa-eye"></i> View
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="p-3 text-center border-top">
-                                    <a href="{{ route('modules.purchase-order.index') }}" class="text-primary">
-                                        View all purchases <i class="fas fa-arrow-right ms-1"></i>
-                                    </a>
-                                </div>
-                            @else
-                                <div class="p-4 text-center text-muted">
-                                    <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
-                                    <p>No recent purchase transactions</p>
-                                </div>
-                            @endif
-                        @else
-                            <div class="p-4 text-center text-muted">
-                                <i class="fas fa-lock fa-2x mb-3 opacity-25"></i>
-                                <p>You don't have permission to view purchase orders</p>
-                            </div>
-                        @endcan
+<!-- 12-Month Financial Trends Chart -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    12-Month Financial Trends
+                </h5>
+            </div>
+            <div class="card-body">
+                @if(isset($monthlyFinancialData) && count($monthlyFinancialData) > 0)
+                    <div class="chart-container" style="position: relative; height: 400px;">
+                        <canvas id="monthlyFinancialChart"></canvas>
                     </div>
-                </div>
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h4 class="text-success">{{ formatMoney(array_sum(array_column($monthlyFinancialData, 'sales'))) }}</h4>
+                                <p class="text-muted mb-0">Total Sales (12 months)</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h4 class="text-warning">{{ formatMoney(array_sum(array_column($monthlyFinancialData, 'purchases'))) }}</h4>
+                                <p class="text-muted mb-0">Total Purchases (12 months)</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h4 class="text-{{ array_sum(array_column($monthlyFinancialData, 'profit')) >= 0 ? 'info' : 'danger' }}">
+                                    {{ formatMoney(array_sum(array_column($monthlyFinancialData, 'profit'))) }}
+                                </h4>
+                                <p class="text-muted mb-0">Total Profit (12 months)</p>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-chart-line fa-3x mb-3 opacity-25"></i>
+                        <p>No financial data available for the past 12 months</p>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -1160,6 +1141,278 @@ function formatMoney($amount) {
                 pageLength: 5,
                 pagingType: 'simple_numbers',
                 layout: { topStart: null, topEnd: null, bottomStart: null, bottomEnd: null }
+            });
+        }
+    });
+
+        // 12-Month Financial Trends Chart
+        const monthlyFinancialCtx = document.getElementById('monthlyFinancialChart');
+        if (monthlyFinancialCtx && @isset($monthlyFinancialData)) {
+            const monthlyData = @json($monthlyFinancialData);
+
+            new Chart(monthlyFinancialCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlyData.map(item => item.month),
+                    datasets: [
+                        {
+                            label: 'Sales',
+                            data: monthlyData.map(item => item.sales),
+                            borderColor: 'rgb(40, 167, 69)',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(40, 167, 69)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'Purchases',
+                            data: monthlyData.map(item => item.purchases),
+                            borderColor: 'rgb(255, 193, 7)',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(255, 193, 7)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'Profit',
+                            data: monthlyData.map(item => item.profit),
+                            borderColor: 'rgb(13, 202, 240)',
+                            backgroundColor: 'rgba(13, 202, 240, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(13, 202, 240)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', {
+                                            style: 'currency',
+                                            currency: 'USD'
+                                        }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        y: {
+                            display: true,
+                            position: 'left',
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 11
+                                },
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+
+        // 12-Month Financial Trends Chart
+        const monthlyFinancialCtx = document.getElementById('monthlyFinancialChart');
+        if (monthlyFinancialCtx && @isset($monthlyFinancialData)) {
+            const monthlyData = @json($monthlyFinancialData);
+
+            new Chart(monthlyFinancialCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlyData.map(item => item.month),
+                    datasets: [
+                        {
+                            label: 'Sales',
+                            data: monthlyData.map(item => item.sales),
+                            borderColor: 'rgb(40, 167, 69)',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(40, 167, 69)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'Purchases',
+                            data: monthlyData.map(item => item.purchases),
+                            borderColor: 'rgb(255, 193, 7)',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(255, 193, 7)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'Profit',
+                            data: monthlyData.map(item => item.profit),
+                            borderColor: 'rgb(13, 202, 240)',
+                            backgroundColor: 'rgba(13, 202, 240, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(13, 202, 240)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', {
+                                            style: 'currency',
+                                            currency: 'USD'
+                                        }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        y: {
+                            display: true,
+                            position: 'left',
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 11
+                                },
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
             });
         }
     });

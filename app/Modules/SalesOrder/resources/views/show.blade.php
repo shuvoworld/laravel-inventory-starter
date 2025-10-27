@@ -110,12 +110,19 @@
                             @foreach($item->items as $orderItem)
                                 <tr>
                                     <td>
-                                        <strong>{{ $orderItem->product->name }}</strong>
+                                        <strong>{{ $orderItem->getDisplayName() }}</strong>
+                                        @if($orderItem->variant)
+                                            <br><small class="text-primary">
+                                                {{ $orderItem->variant->optionValues->map(function($optionValue) {
+                                                    return $optionValue->option->name . ': ' . $optionValue->value;
+                                                })->implode(', ') }}
+                                            </small>
+                                        @endif
                                         @if($orderItem->product->unit)
                                             <br><small class="text-muted">Unit: {{ $orderItem->product->unit }}</small>
                                         @endif
                                     </td>
-                                    <td>{{ $orderItem->product->sku ?? 'N/A' }}</td>
+                                    <td>{{ $orderItem->variant?->sku ?? $orderItem->product->sku ?? 'N/A' }}</td>
                                     <td class="text-end">{{ number_format($orderItem->quantity) }}</td>
                                     <td class="text-end">${{ number_format($orderItem->unit_price, 2) }}</td>
                                     <td class="text-end">${{ number_format($orderItem->total_price, 2) }}</td>

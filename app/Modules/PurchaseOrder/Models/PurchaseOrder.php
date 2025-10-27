@@ -97,10 +97,10 @@ class PurchaseOrder extends Model implements AuditableContract
         return $this->belongsTo(Supplier::class);
     }
 
-    public function payments()
-    {
-        return $this->hasMany(\App\Models\SupplierPayment::class);
-    }
+    // public function payments()
+    // {
+    //     return $this->hasMany(\App\Models\SupplierPayment::class);
+    // }
 
     /**
      * Get the due amount for this purchase order
@@ -115,13 +115,14 @@ class PurchaseOrder extends Model implements AuditableContract
      */
     public function updatePaymentStatus()
     {
-        $totalPaid = $this->payments()->sum('amount');
+        // Payment tracking is now handled directly in the purchase_orders table
+        // $totalPaid = $this->payments()->sum('amount');
 
-        $this->paid_amount = $totalPaid;
+        // $this->paid_amount = $totalPaid;
 
-        if ($totalPaid == 0) {
+        if ($this->paid_amount == 0) {
             $this->payment_status = 'unpaid';
-        } elseif ($totalPaid >= $this->total_amount) {
+        } elseif ($this->paid_amount >= $this->total_amount) {
             $this->payment_status = 'paid';
         } else {
             $this->payment_status = 'partial';
@@ -139,17 +140,23 @@ class PurchaseOrder extends Model implements AuditableContract
     }
 
     /**
-     * Update Weighted Average Costs for all products in this purchase order
+     * Update Weighted Average Costs for all products/variants in this purchase order
      */
     public function updateWeightedAverageCosts()
     {
         foreach ($this->items as $item) {
-            WeightedAverageCostService::updateWACAfterPurchase($item->product_id);
+            if ($item->variant_id) {
+                // Update variant-specific WAC
+                WeightedAverageCostService::updateWACAfterPurchase($item->product_id, $item->variant_id);
+            } else {
+                // Update product WAC
+                WeightedAverageCostService::updateWACAfterPurchase($item->product_id);
+            }
         }
     }
 
     /**
-     * Get WAC analysis for products in this purchase order
+     * Get WAC analysis for products/variants in this purchase order
      */
     public function getWACAnalysis()
     {
@@ -158,16 +165,27 @@ class PurchaseOrder extends Model implements AuditableContract
         foreach ($this->items as $item) {
             $product = $item->product;
             if ($product) {
-                $currentWAC = WeightedAverageCostService::calculateWeightedAverageCost($item->product_id);
-                $previousWAC = $this->getPreviousWAC($item->product_id);
+                $displayName = $item->getDisplayName();
+                $sku = $item->getEffectiveSku();
+
+                if ($item->variant_id) {
+                    // Variant-specific WAC calculation
+                    $currentWAC = WeightedAverageCostService::calculateWeightedAverageCost($item->product_id, $item->variant_id);
+                    $previousWAC = $this->getPreviousWAC($item->product_id, $item->variant_id);
+                } else {
+                    // Product WAC calculation
+                    $currentWAC = WeightedAverageCostService::calculateWeightedAverageCost($item->product_id);
+                    $previousWAC = $this->getPreviousWAC($item->product_id);
+                }
 
                 $analysis[] = [
                     'product_id' => $item->product_id,
-                    'product_name' => $product->name,
-                    'sku' => $product->sku ?? 'N/A',
+                    'variant_id' => $item->variant_id,
+                    'display_name' => $displayName,
+                    'sku' => $sku,
                     'quantity' => $item->quantity,
-                    'unit_cost' => $item->unit_price, // Use unit_price
-                    'total_cost' => $item->total_price, // Use total_price
+                    'unit_cost' => $item->unit_price,
+                    'total_cost' => $item->total_price,
                     'previous_wac' => $previousWAC,
                     'new_wac' => $currentWAC,
                     'wac_change' => $currentWAC - $previousWAC,
@@ -182,12 +200,13 @@ class PurchaseOrder extends Model implements AuditableContract
     /**
      * Get WAC before this purchase order
      */
-    private function getPreviousWAC(int $productId): float
+    private function getPreviousWAC(int $productId, ?int $variantId = null): float
     {
         return WeightedAverageCostService::getWACForDateRange(
             $productId,
             Carbon::parse('1900-01-01'),
-            $this->order_date->copy()->subDay()
+            $this->order_date->copy()->subDay(),
+            $variantId
         );
     }
 

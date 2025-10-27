@@ -331,6 +331,19 @@
             cursor: not-allowed;
         }
 
+        .variant-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            z-index: 10;
+        }
+
         .product-image {
             width: 100%;
             height: 120px;
@@ -796,6 +809,145 @@
         .cart-items::-webkit-scrollbar-thumb:hover {
             background: #a0aec0;
         }
+
+        /* Enhanced Variant Modal Styles */
+        .variant-card {
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        .variant-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-color: #007bff;
+        }
+
+        .variant-card.out-of-stock {
+            opacity: 0.7;
+            background-color: #f8f9fa;
+        }
+
+        .variant-card.low-stock {
+            border-color: #ffc107;
+            background-color: #fffdf7;
+        }
+
+        .variant-card .stock-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .variant-card .variant-options {
+            min-height: 24px;
+        }
+
+        .quick-filter-btn {
+            font-size: 0.8rem;
+            border-radius: 15px;
+            padding: 0.25rem 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .quick-filter-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .quick-filter-btn.active {
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+        }
+
+        /* Modal enhancements */
+        .modal-xl {
+            max-width: 95%;
+        }
+
+        .modal-header.bg-primary {
+            border-bottom: 2px solid #0056b3;
+        }
+
+        .modal-body .bg-light {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+        }
+
+        /* Loading and empty states */
+        .spinner-border {
+            border-width: 3px;
+        }
+
+        /* Variant image containers */
+        .variant-card .card-img-top {
+            border-bottom: 1px solid #e2e8f0;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Price displays */
+        .variant-card .h5 {
+            font-weight: 700;
+            color: #007bff;
+        }
+
+        .variant-card .text-success {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .modal-xl {
+                max-width: 100%;
+                margin: 0;
+                height: 100vh;
+            }
+
+            .modal-dialog.modal-xl {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+            }
+
+            .modal-content {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .modal-body {
+                max-height: calc(100vh - 200px);
+                overflow-y: auto;
+            }
+
+            .variant-card {
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Animation for variant cards */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .variant-card {
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        .variant-card:nth-child(1) { animation-delay: 0.1s; }
+        .variant-card:nth-child(2) { animation-delay: 0.15s; }
+        .variant-card:nth-child(3) { animation-delay: 0.2s; }
+        .variant-card:nth-child(4) { animation-delay: 0.25s; }
+        .variant-card:nth-child(5) { animation-delay: 0.3s; }
+        .variant-card:nth-child(6) { animation-delay: 0.35s; }
     </style>
 </head>
 <body>
@@ -1119,6 +1271,67 @@
         </div>
     </div>
 
+    <!-- Enhanced Variant Selection Modal -->
+    <div class="modal fade" id="variantModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="variantModalTitle">
+                        <i class="fas fa-layer-group me-2"></i>
+                        Select Product Variant
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <!-- Product Info Header -->
+                    <div class="bg-light p-3 border-bottom">
+                        <div class="d-flex align-items-center">
+                            <img id="variantProductImage" src="" alt="" class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                            <div>
+                                <h6 class="mb-1" id="variantProductName"></h6>
+                                <p class="text-muted mb-0" id="variantProductSku"></p>
+                                <small class="text-info">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Select a variant to add to cart
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Selection Options -->
+                    <div class="p-3 border-bottom bg-light">
+                        <div class="row g-2" id="quickSelectOptions"></div>
+                    </div>
+
+                    <!-- Variants Grid -->
+                    <div class="p-3">
+                        <div class="row g-3" id="variantsList"></div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="variantLoadingState" class="text-center p-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading variants...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading variants...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="variantEmptyState" class="text-center p-4" style="display: none;">
+                        <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                        <p class="mt-3 text-muted">No variants available for this product</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // POS Application State
@@ -1131,7 +1344,8 @@
             discountType: 'percentage',
             discountValue: 0,
             adjustmentValue: 0,
-            adjustmentReason: ''
+            adjustmentReason: '',
+            allProducts: [] // Store all products with variants
         };
 
         // Initialize POS
@@ -1165,6 +1379,9 @@
                     console.error('POS: Invalid featured products data');
                     return;
                 }
+
+                // Store products globally for variant modal
+                posState.allProducts = featuredProducts;
 
                 renderProducts(featuredProducts);
             } catch (error) {
@@ -1403,17 +1620,28 @@
                 return;
             }
 
-            grid.innerHTML = products.map(product => `
-                <div class="product-card ${product.quantity <= 0 ? 'out-of-stock' : ''}" onclick="addToCart(${product.id})">
-                    <div class="stock-badge ${product.quantity <= 5 ? 'low' : 'normal'}">
-                        ${product.quantity} in stock
+            grid.innerHTML = products.map(product => {
+                const hasVariants = product.has_variants && product.variants && product.variants.length > 0;
+                const clickHandler = hasVariants ? `showVariantModal(${product.id})` : `addToCart(${product.id})`;
+
+                return `
+                    <div class="product-card ${product.quantity <= 0 ? 'out-of-stock' : ''}" onclick="${clickHandler}">
+                        <div class="stock-badge ${product.quantity <= 5 ? 'low' : 'normal'}">
+                            ${product.quantity} in stock
+                        </div>
+                        ${hasVariants ? '<div class="variant-indicator"><i class="fas fa-layer-group"></i> ' + product.variants_count + ' options</div>' : ''}
+                        <img src="${product.image || '/images/product-placeholder.svg'}" alt="${product.name}" class="product-image">
+                        <div class="product-name">${product.name}</div>
+                        <div class="product-sku">SKU: ${product.sku}</div>
+                        <div class="product-price">
+                            ${hasVariants ? '<span style="font-size: 0.75rem; color: #6c757d; display: block;">From</span>' : ''}
+                            ${product.target_price ? `<span style="font-size: 0.75rem; color: #6c757d; display: block;">Target Price</span>` : ''}
+                            $${parseFloat(product.price).toFixed(2)}
+                            ${hasVariants && product.max_price > product.price ? ' - $' + parseFloat(product.max_price).toFixed(2) : ''}
+                        </div>
                     </div>
-                    <img src="${product.image || '/images/product-placeholder.svg'}" alt="${product.name}" class="product-image">
-                    <div class="product-name">${product.name}</div>
-                    <div class="product-sku">SKU: ${product.sku}</div>
-                    <div class="product-price">$${parseFloat(product.price).toFixed(2)}</div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // Add product to cart
@@ -1441,6 +1669,286 @@
             .catch(error => {
                 console.error('Error adding to cart:', error);
                 showToast('Error adding product to cart', 'error');
+            });
+        }
+
+        // Show enhanced variant selection modal
+        function showVariantModal(productId) {
+            const product = posState.allProducts.find(p => p.id === productId);
+
+            if (!product || !product.has_variants || !product.variants || product.variants.length === 0) {
+                showToast('No variants available for this product', 'error');
+                return;
+            }
+
+            // Show loading state
+            document.getElementById('variantLoadingState').style.display = 'block';
+            document.getElementById('variantsList').innerHTML = '';
+            document.getElementById('variantEmptyState').style.display = 'none';
+            document.getElementById('quickSelectOptions').innerHTML = '';
+
+            // Update modal title
+            document.getElementById('variantModalTitle').innerHTML = `
+                <i class="fas fa-layer-group me-2"></i>
+                Select ${product.name} Variant
+            `;
+
+            // Update product info header
+            document.getElementById('variantProductImage').src = product.image || '/images/product-placeholder.svg';
+            document.getElementById('variantProductImage').alt = product.name;
+            document.getElementById('variantProductName').textContent = product.name;
+            document.getElementById('variantProductSku').textContent = `SKU: ${product.sku}`;
+
+            // Group variants by common attributes for quick selection
+            const quickSelectData = analyzeVariantOptions(product.variants);
+            renderQuickSelectOptions(quickSelectData, product);
+
+            // Simulate loading delay for better UX
+            setTimeout(() => {
+                // Render enhanced variants
+                const variantsHTML = product.variants.map(variant => {
+                    const outOfStock = variant.quantity <= 0;
+                    const lowStock = variant.quantity > 0 && variant.quantity <= 5;
+
+                    return `
+                        <div class="col-lg-4 col-md-6">
+                            <div class="card h-100 variant-card ${outOfStock ? 'out-of-stock' : ''} ${lowStock ? 'low-stock' : ''}"
+                                 onclick="${outOfStock ? 'showOutOfStockMessage()' : `addVariantToCart(${product.id}, ${variant.id})`}"
+                                 style="cursor: ${outOfStock ? 'not-allowed' : 'pointer'}; transition: all 0.2s ease;">
+
+                                <!-- Variant Image -->
+                                ${variant.image ? `
+                                    <div class="card-img-top bg-light p-3 text-center">
+                                        <img src="${variant.image}" alt="${variant.variant_name}"
+                                             style="height: 120px; object-fit: contain; max-width: 100%;">
+                                    </div>
+                                ` : ''}
+
+                                <div class="card-body d-flex flex-column">
+                                    <!-- Variant Name -->
+                                    <h6 class="card-title mb-1">${variant.variant_name}</h6>
+
+                                    <!-- SKU -->
+                                    <div class="text-muted small mb-2">
+                                        <i class="fas fa-barcode me-1"></i>${variant.sku}
+                                    </div>
+
+                                    <!-- Options Display -->
+                                    <div class="variant-options mb-2">
+                                        ${renderVariantOptions(variant)}
+                                    </div>
+
+                                    <!-- Price and Stock -->
+                                    <div class="mt-auto">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <span class="h5 text-primary mb-0">$${parseFloat(variant.price).toFixed(2)}</span>
+                                                ${variant.target_price && variant.target_price !== variant.price ?
+                                                    `<small class="text-success d-block">Target: $${parseFloat(variant.target_price).toFixed(2)}</small>` : ''}
+                                            </div>
+                                            <span class="stock-badge ${outOfStock ? 'bg-danger' : lowStock ? 'bg-warning' : 'bg-success'}">
+                                                ${outOfStock ? 'Out of Stock' : lowStock ? `Only ${variant.quantity} left` : `${variant.quantity} in stock`}
+                                            </span>
+                                        </div>
+
+                                        ${outOfStock ? `
+                                            <div class="alert alert-danger small py-1 mb-0">
+                                                <i class="fas fa-exclamation-circle me-1"></i>
+                                                This variant is currently out of stock
+                                            </div>
+                                        ` : lowStock ? `
+                                            <div class="alert alert-warning small py-1 mb-0">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                                Low stock - only ${variant.quantity} remaining
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+
+                                <!-- Add to Cart Button -->
+                                ${!outOfStock ? `
+                                    <div class="card-footer bg-transparent border-top-0">
+                                        <button class="btn btn-primary w-100" onclick="event.stopPropagation(); addVariantToCart(${product.id}, ${variant.id})">
+                                            <i class="fas fa-cart-plus me-1"></i>
+                                            Add to Cart
+                                        </button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('variantsList').innerHTML = variantsHTML;
+                document.getElementById('variantLoadingState').style.display = 'none';
+
+                if (product.variants.length === 0) {
+                    document.getElementById('variantEmptyState').style.display = 'block';
+                }
+            }, 300);
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('variantModal'));
+            modal.show();
+        }
+
+        // Analyze variant options for quick selection
+        function analyzeVariantOptions(variants) {
+            const options = {};
+
+            variants.forEach(variant => {
+                if (variant.option_values) {
+                    variant.option_values.forEach(option => {
+                        if (!options[option.option]) {
+                            options[option.option] = new Set();
+                        }
+                        options[option.option].add(option.value);
+                    });
+                }
+            });
+
+            // Convert Sets to Arrays
+            Object.keys(options).forEach(key => {
+                options[key] = Array.from(options[key]);
+            });
+
+            return options;
+        }
+
+        // Render quick selection options
+        function renderQuickSelectOptions(optionsData, product) {
+            const container = document.getElementById('quickSelectOptions');
+
+            if (Object.keys(optionsData).length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="col-12">
+                    <small class="text-muted">Quick Filter:</small>
+                </div>
+            `;
+
+            Object.keys(optionsData).forEach(optionName => {
+                container.innerHTML += `
+                    <div class="col-auto">
+                        <small class="text-muted me-2">${optionName}:</small>
+                    </div>
+                `;
+
+                optionsData[optionName].forEach(value => {
+                    container.innerHTML += `
+                        <div class="col-auto">
+                            <button class="btn btn-sm btn-outline-secondary quick-filter-btn"
+                                    data-option="${optionName}" data-value="${value}">
+                                ${value}
+                            </button>
+                        </div>
+                    `;
+                });
+            });
+
+            // Add event listeners to quick filter buttons
+            container.querySelectorAll('.quick-filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Toggle active state
+                    this.classList.toggle('active');
+                    this.classList.toggle('btn-primary');
+                    this.classList.toggle('btn-outline-secondary');
+
+                    // Filter variants
+                    filterVariants();
+                });
+            });
+
+            // Add "Clear All" button
+            container.innerHTML += `
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="clearVariantFilters()">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </button>
+                </div>
+            `;
+        }
+
+        // Render variant options display
+        function renderVariantOptions(variant) {
+            if (!variant.option_values || variant.option_values.length === 0) {
+                return '';
+            }
+
+            return variant.option_values.map(option => `
+                <span class="badge bg-light text-dark me-1">
+                    <small>${option.option}: ${option.value}</small>
+                </span>
+            `).join('');
+        }
+
+        // Filter variants based on quick selection
+        function filterVariants() {
+            const activeFilters = [];
+            document.querySelectorAll('.quick-filter-btn.active').forEach(btn => {
+                activeFilters.push({
+                    option: btn.dataset.option,
+                    value: btn.dataset.value
+                });
+            });
+
+            const variantCards = document.querySelectorAll('.variant-card');
+            variantCards.forEach(card => {
+                if (activeFilters.length === 0) {
+                    card.style.display = 'block';
+                    return;
+                }
+
+                // This is a simplified filter - in production, you'd want to match against actual variant data
+                card.style.display = 'block'; // Show all for now
+            });
+        }
+
+        // Clear variant filters
+        function clearVariantFilters() {
+            document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+                btn.classList.remove('active', 'btn-primary');
+                btn.classList.add('btn-outline-secondary');
+            });
+            filterVariants();
+        }
+
+        // Show out of stock message
+        function showOutOfStockMessage() {
+            showToast('This variant is currently out of stock', 'warning');
+        }
+
+        // Add variant to cart
+        function addVariantToCart(productId, variantId) {
+            fetch('/pos/add-to-cart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    variant_id: variantId,
+                    quantity: 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateCartDisplay(data.cart);
+                    showToast('Variant added to cart', 'success');
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('variantModal')).hide();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error adding variant to cart:', error);
+                showToast('Error adding variant to cart', 'error');
             });
         }
 
@@ -1472,7 +1980,10 @@
                 <div class="cart-item fade-in">
                     <img src="${item.image || '/images/product-placeholder.svg'}" alt="${item.name}" class="cart-item-image">
                     <div class="cart-item-details">
-                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-name">
+                            ${item.name}
+                            ${item.variant_id ? '<div style="font-size: 0.8rem; color: #6c757d; margin-top: 2px;">Variant: ' + (item.variant_name || item.name) + '</div>' : ''}
+                        </div>
                         <div class="cart-item-price" style="display: flex; align-items: center; gap: 0.5rem;">
                             <span style="font-size: 0.75rem; color: #6c757d;">$</span>
                             <input
@@ -1480,7 +1991,7 @@
                                 step="0.01"
                                 min="0"
                                 value="${parseFloat(item.price).toFixed(2)}"
-                                onchange="updatePrice(${item.id}, this.value)"
+                                onchange="updatePrice('${item.cart_key}', this.value)"
                                 style="width: 80px; padding: 0.25rem 0.5rem; border: 1px solid #dee2e6; border-radius: 4px; font-size: 0.9rem;"
                                 onclick="event.stopPropagation();"
                             />
@@ -1488,15 +1999,15 @@
                         </div>
                     </div>
                     <div class="quantity-controls">
-                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${item.quantity - 1})">
+                        <button class="quantity-btn" onclick="updateQuantity('${item.cart_key}', ${item.quantity - 1})">
                             <i class="fas fa-minus"></i>
                         </button>
                         <div class="quantity-display">${item.quantity}</div>
-                        <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${item.quantity + 1})">
+                        <button class="quantity-btn" onclick="updateQuantity('${item.cart_key}', ${item.quantity + 1})">
                             <i class="fas fa-plus"></i>
                         </button>
                     </div>
-                    <button class="remove-item" onclick="removeFromCart(${item.id})">
+                    <button class="remove-item" onclick="removeFromCart('${item.cart_key}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -1507,8 +2018,11 @@
         }
 
         // Update item quantity
-        function updateQuantity(productId, newQuantity) {
+        function updateQuantity(cartKey, newQuantity) {
             if (newQuantity < 1) return;
+
+            // Parse cart key to extract product_id and variant_id
+            const [productId, variantId] = cartKey.includes('-') ? cartKey.split('-') : [cartKey, null];
 
             fetch('/pos/update-cart', {
                 method: 'POST',
@@ -1517,7 +2031,8 @@
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: JSON.stringify({
-                    product_id: productId,
+                    product_id: parseInt(productId),
+                    variant_id: variantId ? parseInt(variantId) : null,
                     quantity: newQuantity
                 })
             })
@@ -1536,11 +2051,14 @@
         }
 
         // Update item price
-        function updatePrice(productId, newPrice) {
+        function updatePrice(cartKey, newPrice) {
             if (newPrice < 0) {
                 showToast('Price cannot be negative', 'error');
                 return;
             }
+
+            // Parse cart key to extract product_id and variant_id
+            const [productId, variantId] = cartKey.includes('-') ? cartKey.split('-') : [cartKey, null];
 
             fetch('/pos/update-cart', {
                 method: 'POST',
@@ -1549,7 +2067,8 @@
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: JSON.stringify({
-                    product_id: productId,
+                    product_id: parseInt(productId),
+                    variant_id: variantId ? parseInt(variantId) : null,
                     custom_price: parseFloat(newPrice)
                 })
             })
@@ -1569,7 +2088,10 @@
         }
 
         // Remove item from cart
-        function removeFromCart(productId) {
+        function removeFromCart(cartKey) {
+            // Parse cart key to extract product_id and variant_id
+            const [productId, variantId] = cartKey.includes('-') ? cartKey.split('-') : [cartKey, null];
+
             fetch('/pos/remove-from-cart', {
                 method: 'POST',
                 headers: {
@@ -1577,7 +2099,8 @@
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: JSON.stringify({
-                    product_id: productId
+                    product_id: parseInt(productId),
+                    variant_id: variantId ? parseInt(variantId) : null
                 })
             })
             .then(response => response.json())

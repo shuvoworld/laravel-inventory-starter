@@ -108,7 +108,11 @@ class SalesOrderController extends Controller
     public function create(): View
     {
         $customers = Customer::orderBy('name')->get();
-        $products = Product::where('quantity_on_hand', '>', 0)->orderBy('name')->get();
+        $products = Product::with('variants')->where(function($query) {
+            $query->where('quantity_on_hand', '>', 0)
+                  ->orWhere('has_variants', true); // Include products with variants even if product-level stock is 0
+        })->orderBy('name')->get();
+
         $salesOrder = new SalesOrder();
         $paymentMethods = $salesOrder->getPaymentMethods();
         $discountTypes = $salesOrder->getDiscountTypes();
@@ -128,6 +132,7 @@ class SalesOrderController extends Controller
             'reference_number' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.variant_id' => 'nullable|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.discount_type' => 'nullable|in:fixed,percentage,none',
@@ -147,8 +152,8 @@ class SalesOrderController extends Controller
             $discountAmount = 0;
             if ($request->discount_type === 'percentage' && $request->discount_rate) {
                 $discountAmount = $subtotal * ($request->discount_rate / 100);
-            } elseif ($request->discount_type === 'fixed') {
-                $discountAmount = $request->discount_rate;
+            } elseif ($request->discount_type === 'fixed' && $request->discount_amount) {
+                $discountAmount = $request->discount_amount;
             }
 
             $totalAmount = $subtotal - $discountAmount;
@@ -161,7 +166,7 @@ class SalesOrderController extends Controller
                 'payment_method' => $request->payment_method,
                 'paid_amount' => $request->paid_amount,
                 'discount_type' => $request->discount_type,
-                'discount_rate' => $request->discount_rate,
+                'discount_rate' => $request->discount_type === 'percentage' ? $request->discount_rate : 0,
                 'discount_reason' => $request->discount_reason,
                 'reference_number' => $request->reference_number,
                 'notes' => $request->notes,
@@ -176,16 +181,25 @@ class SalesOrderController extends Controller
             // Create sales order items and update stock
             foreach ($request->items as $itemData) {
                 $product = Product::findOrFail($itemData['product_id']);
+                $variantId = $itemData['variant_id'] ?? null;
 
                 // Check stock availability
-                if ($product->quantity_on_hand < $itemData['quantity']) {
-                    throw new \Exception("Insufficient stock for product: {$product->name}. Available: {$product->quantity_on_hand}, Required: {$itemData['quantity']}");
+                if ($variantId) {
+                    $variant = \App\Modules\Products\Models\ProductVariant::findOrFail($variantId);
+                    if ($variant->quantity_on_hand < $itemData['quantity']) {
+                        throw new \Exception("Insufficient stock for variant: {$variant->variant_name}. Available: {$variant->quantity_on_hand}, Required: {$itemData['quantity']}");
+                    }
+                } else {
+                    if ($product->quantity_on_hand < $itemData['quantity']) {
+                        throw new \Exception("Insufficient stock for product: {$product->name}. Available: {$product->quantity_on_hand}, Required: {$itemData['quantity']}");
+                    }
                 }
 
                 // Create sales order item
                 SalesOrderItem::create([
                     'sales_order_id' => $salesOrder->id,
                     'product_id' => $itemData['product_id'],
+                    'variant_id' => $variantId,
                     'quantity' => $itemData['quantity'],
                     'unit_price' => $itemData['unit_price'],
                     'discount_type' => $itemData['discount_type'] ?? 'none',
@@ -196,6 +210,7 @@ class SalesOrderController extends Controller
                 // Create stock movement (outbound) using service
                 StockMovementService::recordSale(
                     $itemData['product_id'],
+                    $variantId,
                     $itemData['quantity'],
                     $salesOrder->id,
                     "Sale - Order #{$salesOrder->order_number}"
@@ -232,15 +247,18 @@ class SalesOrderController extends Controller
 
     public function show(int $id): View
     {
-        $item = SalesOrder::with(['customer', 'items.product'])->findOrFail($id);
+        $item = SalesOrder::with(['customer', 'items.product', 'items.variant'])->findOrFail($id);
         return view('sales-order::show', compact('item'));
     }
 
     public function edit(int $id): View
     {
-        $item = SalesOrder::with(['customer', 'items.product'])->findOrFail($id);
+        $item = SalesOrder::with(['customer', 'items.product', 'items.variant'])->findOrFail($id);
         $customers = Customer::orderBy('name')->get();
-        $products = Product::orderBy('name')->get();
+        $products = Product::with('variants')->where(function($query) {
+            $query->where('quantity_on_hand', '>', 0)
+                  ->orWhere('has_variants', true); // Include products with variants even if product-level stock is 0
+        })->orderBy('name')->get();
         $paymentMethods = $item->getPaymentMethods();
         $discountTypes = $item->getDiscountTypes();
         return view('sales-order::edit', compact('item', 'customers', 'products', 'paymentMethods', 'discountTypes'));
@@ -260,6 +278,7 @@ class SalesOrderController extends Controller
             'reference_number' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.variant_id' => 'nullable|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_price' => 'required|numeric|min:0',
             'items.*.discount_type' => 'nullable|in:fixed,percentage,none',
@@ -322,6 +341,7 @@ class SalesOrderController extends Controller
 
                     $existingItem->update([
                         'product_id' => $itemData['product_id'],
+                        'variant_id' => $itemData['variant_id'] ?? null,
                         'quantity' => $newQuantity,
                         'unit_price' => $itemData['unit_price'],
                         'discount_type' => $itemData['discount_type'] ?? 'none',
@@ -331,14 +351,28 @@ class SalesOrderController extends Controller
 
                     // Adjust stock if quantity changed
                     if ($quantityDiff != 0) {
-                        StockMovement::create([
-                            'product_id' => $itemData['product_id'],
-                            'type' => $quantityDiff > 0 ? 'out' : 'in',
-                            'quantity' => abs($quantityDiff),
-                            'reference_type' => 'sales_order_adjustment',
-                            'reference_id' => $salesOrder->id,
-                            'notes' => "Quantity adjustment - Order #{$salesOrder->order_number}",
-                        ]);
+                        $movementType = $quantityDiff > 0 ? 'out' : 'in';
+                        $variantId = $itemData['variant_id'] ?? null;
+
+                        if ($movementType === 'out') {
+                            // Stock going out (sale/adjustment)
+                            \App\Services\StockMovementService::recordSale(
+                                $itemData['product_id'],
+                                $variantId,
+                                abs($quantityDiff),
+                                $salesOrder->id,
+                                "Quantity adjustment (OUT) - Order #{$salesOrder->order_number}"
+                            );
+                        } else {
+                            // Stock coming back (return/adjustment)
+                            \App\Services\StockMovementService::recordSaleReturn(
+                                $itemData['product_id'],
+                                $variantId,
+                                abs($quantityDiff),
+                                $salesOrder->id,
+                                "Quantity adjustment (IN) - Order #{$salesOrder->order_number}"
+                            );
+                        }
                     }
                 } else {
                     // Create new item
@@ -414,13 +448,13 @@ class SalesOrderController extends Controller
 
     public function invoice(int $id): View
     {
-        $item = SalesOrder::with(['customer', 'items.product'])->findOrFail($id);
+        $item = SalesOrder::with(['customer', 'items.product', 'items.variant'])->findOrFail($id);
         return view('sales-order::invoice', compact('item'));
     }
 
     public function posPrint(int $id): View
     {
-        $item = SalesOrder::with(['customer', 'items.product'])->findOrFail($id);
+        $item = SalesOrder::with(['customer', 'items.product', 'items.variant'])->findOrFail($id);
         return view('sales-order::pos-print', compact('item'));
     }
 
@@ -544,8 +578,10 @@ class SalesOrderController extends Controller
                 }
 
                 // Record stock movement (inbound) for return
+                $variantId = $orderItem->variant_id ?? null;
                 StockMovementService::recordSaleReturn(
                     $item['product_id'],
+                    $variantId,
                     $item['quantity'],
                     $salesOrder->id,
                     "Return - Order #{$salesOrder->order_number}. Reason: " . ($item['reason'] ?? 'No reason provided')

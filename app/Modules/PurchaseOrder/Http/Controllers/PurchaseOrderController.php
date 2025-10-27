@@ -10,7 +10,6 @@ use App\Modules\PurchaseOrderItem\Models\PurchaseOrderItem;
 use App\Modules\StockMovement\Models\StockMovement;
 use App\Modules\Products\Models\Product;
 use App\Modules\Suppliers\Models\Supplier;
-use App\Models\SupplierPayment;
 use App\Services\StockMovementService;
 use App\Services\AccountingService;
 use Illuminate\Http\RedirectResponse;
@@ -93,6 +92,7 @@ class PurchaseOrderController extends Controller
             'status' => 'required|in:pending,confirmed,processing,received,cancelled',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.variant_id' => 'nullable|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_price' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
@@ -123,10 +123,19 @@ class PurchaseOrderController extends Controller
 
             // Create purchase order items and update stock
             foreach ($request->items as $itemData) {
+                // Validate variant belongs to product if provided
+                if (isset($itemData['variant_id'])) {
+                    $variant = \App\Modules\Products\Models\ProductVariant::find($itemData['variant_id']);
+                    if (!$variant || $variant->product_id != $itemData['product_id']) {
+                        throw new \Exception('Variant does not belong to the specified product');
+                    }
+                }
+
                 // Create purchase order item
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $purchaseOrder->id,
                     'product_id' => $itemData['product_id'],
+                    'variant_id' => $itemData['variant_id'] ?? null,
                     'quantity' => $itemData['quantity'],
                     'unit_price' => $itemData['unit_price'],
                     'total_price' => $itemData['quantity'] * $itemData['unit_price'],
@@ -135,6 +144,7 @@ class PurchaseOrderController extends Controller
                 // Create stock movement (inbound) using service
                 StockMovementService::recordPurchase(
                     $itemData['product_id'],
+                    $itemData['variant_id'] ?? null,
                     $itemData['quantity'],
                     $purchaseOrder->id,
                     "Purchase - Order #{$purchaseOrder->po_number}"
@@ -147,7 +157,7 @@ class PurchaseOrderController extends Controller
 
     public function show(int $id): View
     {
-        $item = PurchaseOrder::with(['items.product', 'payments'])->findOrFail($id);
+        $item = PurchaseOrder::with(['items.product'])->findOrFail($id);
         return view('purchase-order::show', compact('item'));
     }
 
@@ -167,6 +177,7 @@ class PurchaseOrderController extends Controller
             'status' => 'required|in:pending,confirmed,processing,received,cancelled',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
+            'items.*.variant_id' => 'nullable|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_price' => 'required|numeric|min:0',
             'notes' => 'nullable|string',
@@ -215,6 +226,14 @@ class PurchaseOrderController extends Controller
 
             // Update or create items
             foreach ($request->items as $itemData) {
+                // Validate variant belongs to product if provided
+                if (isset($itemData['variant_id'])) {
+                    $variant = \App\Modules\Products\Models\ProductVariant::find($itemData['variant_id']);
+                    if (!$variant || $variant->product_id != $itemData['product_id']) {
+                        throw new \Exception('Variant does not belong to the specified product');
+                    }
+                }
+
                 if (isset($itemData['id']) && $existingItems->has($itemData['id'])) {
                     // Update existing item
                     $existingItem = $existingItems->get($itemData['id']);
@@ -224,6 +243,7 @@ class PurchaseOrderController extends Controller
 
                     $existingItem->update([
                         'product_id' => $itemData['product_id'],
+                        'variant_id' => $itemData['variant_id'] ?? null,
                         'quantity' => $newQuantity,
                         'unit_price' => $itemData['unit_price'],
                         'total_price' => $newQuantity * $itemData['unit_price'],
@@ -235,6 +255,7 @@ class PurchaseOrderController extends Controller
                             // Additional stock coming in
                             StockMovementService::recordPurchase(
                                 $itemData['product_id'],
+                                $itemData['variant_id'] ?? null,
                                 $quantityDiff,
                                 $purchaseOrder->id,
                                 "Quantity adjustment (+) - Order #{$purchaseOrder->po_number}"
@@ -243,6 +264,7 @@ class PurchaseOrderController extends Controller
                             // Stock being returned
                             StockMovementService::recordPurchaseReturn(
                                 $itemData['product_id'],
+                                $itemData['variant_id'] ?? null,
                                 abs($quantityDiff),
                                 $purchaseOrder->id,
                                 "Quantity adjustment (-) - Order #{$purchaseOrder->po_number}"
@@ -254,6 +276,7 @@ class PurchaseOrderController extends Controller
                     PurchaseOrderItem::create([
                         'purchase_order_id' => $purchaseOrder->id,
                         'product_id' => $itemData['product_id'],
+                        'variant_id' => $itemData['variant_id'] ?? null,
                         'quantity' => $itemData['quantity'],
                         'unit_price' => $itemData['unit_price'],
                         'total_price' => $itemData['quantity'] * $itemData['unit_price'],
@@ -262,6 +285,7 @@ class PurchaseOrderController extends Controller
                     // Create stock movement for new item
                     StockMovementService::recordPurchase(
                         $itemData['product_id'],
+                        $itemData['variant_id'] ?? null,
                         $itemData['quantity'],
                         $purchaseOrder->id,
                         "Purchase - Order #{$purchaseOrder->po_number}"
@@ -293,23 +317,12 @@ class PurchaseOrderController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $purchaseOrder) {
-            $supplierPayment = SupplierPayment::create([
-                'supplier_id' => $purchaseOrder->supplier_id,
-                'purchase_order_id' => $purchaseOrder->id,
-                'payment_date' => $request->payment_date,
-                'amount' => $request->amount,
-                'payment_method' => $request->payment_method,
-                'reference_number' => $request->reference_number,
-                'notes' => $request->notes,
-            ]);
+            // Update purchase order payment directly
+            $purchaseOrder->paid_amount += $request->amount;
+            $purchaseOrder->updatePaymentStatus();
 
-            // Post payment to accounting
-            try {
-                AccountingService::postSupplierPayment($supplierPayment);
-            } catch (\Exception $e) {
-                \Log::error('Error posting supplier payment to accounting: ' . $e->getMessage());
-                // Continue even if accounting posting fails
-            }
+            // TODO: Create payment history table if needed for tracking individual payments
+            // For now, payment tracking is handled in the purchase_orders table
         });
 
         return redirect()->route('modules.purchase-order.show', $id)->with('success', 'Payment added successfully.');

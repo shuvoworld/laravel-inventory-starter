@@ -182,7 +182,12 @@
         <div class="items-table">
             @foreach($salesOrder->items as $item)
             <div class="item-row">
-                <div class="item-name">{{ $item->product->name }}</div>
+                <div class="item-name">
+                    {{ $item->getDisplayName() }}
+                    <div style="font-size: 9pt; color: #666; margin-top: 2px;">
+                        SKU: {{ $item->variant?->sku ?? $item->product->sku }}
+                    </div>
+                </div>
                 <div class="item-details">
                     <span>{{ $item->quantity }} x ${{ number_format($item->unit_price, 2) }}</span>
                     <strong>${{ number_format($item->total_price, 2) }}</strong>

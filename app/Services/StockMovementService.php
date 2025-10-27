@@ -27,10 +27,11 @@ class StockMovementService
     /**
      * Record stock movement for purchase order (IN - increases inventory)
      */
-    public static function recordPurchase(int $productId, int $quantity, $referenceId = null, string $notes = ''): StockMovement
+    public static function recordPurchase(int $productId, ?int $variantId, int $quantity, $referenceId = null, string $notes = ''): StockMovement
     {
         return self::recordMovement([
             'product_id' => $productId,
+            'variant_id' => $variantId,
             'movement_type' => 'in',
             'transaction_type' => 'purchase',
             'quantity' => $quantity,
@@ -43,10 +44,11 @@ class StockMovementService
     /**
      * Record stock movement for purchase return (OUT - decreases inventory)
      */
-    public static function recordPurchaseReturn(int $productId, int $quantity, $referenceId = null, string $notes = ''): StockMovement
+    public static function recordPurchaseReturn(int $productId, ?int $variantId, int $quantity, $referenceId = null, string $notes = ''): StockMovement
     {
         return self::recordMovement([
             'product_id' => $productId,
+            'variant_id' => $variantId,
             'movement_type' => 'out',
             'transaction_type' => 'purchase_return',
             'quantity' => $quantity,
@@ -59,10 +61,11 @@ class StockMovementService
     /**
      * Record stock movement for sales order (OUT - decreases inventory)
      */
-    public static function recordSale(int $productId, int $quantity, $referenceId = null, string $notes = ''): StockMovement
+    public static function recordSale(int $productId, ?int $variantId, int $quantity, $referenceId = null, string $notes = ''): StockMovement
     {
         return self::recordMovement([
             'product_id' => $productId,
+            'variant_id' => $variantId,
             'movement_type' => 'out',
             'transaction_type' => 'sale',
             'quantity' => $quantity,
@@ -75,10 +78,11 @@ class StockMovementService
     /**
      * Record stock movement for sales return (IN - increases inventory)
      */
-    public static function recordSaleReturn(int $productId, int $quantity, $referenceId = null, string $notes = ''): StockMovement
+    public static function recordSaleReturn(int $productId, ?int $variantId, int $quantity, $referenceId = null, string $notes = ''): StockMovement
     {
         return self::recordMovement([
             'product_id' => $productId,
+            'variant_id' => $variantId,
             'movement_type' => 'in',
             'transaction_type' => 'sale_return',
             'quantity' => $quantity,
@@ -91,10 +95,11 @@ class StockMovementService
     /**
      * Record manual stock adjustment
      */
-    public static function recordAdjustment(int $productId, string $movementType, int $quantity, string $notes = ''): StockMovement
+    public static function recordAdjustment(int $productId, ?int $variantId, string $movementType, int $quantity, string $notes = ''): StockMovement
     {
         return self::recordMovement([
             'product_id' => $productId,
+            'variant_id' => $variantId,
             'movement_type' => $movementType,
             'transaction_type' => 'manual_adjustment',
             'quantity' => $quantity,
@@ -107,10 +112,11 @@ class StockMovementService
     /**
      * Record opening stock
      */
-    public static function recordOpeningStock(int $productId, int $quantity, string $notes = ''): StockMovement
+    public static function recordOpeningStock(int $productId, ?int $variantId, int $quantity, string $notes = ''): StockMovement
     {
         return self::recordMovement([
             'product_id' => $productId,
+            'variant_id' => $variantId,
             'movement_type' => 'in',
             'transaction_type' => 'opening_stock',
             'quantity' => $quantity,
@@ -124,10 +130,11 @@ class StockMovementService
     /**
      * Record stock theft
      */
-    public static function recordTheft(int $productId, int $quantity, string $notes = ''): StockMovement
+    public static function recordTheft(int $productId, ?int $variantId, int $quantity, string $notes = ''): StockMovement
     {
         return self::recordMovement([
             'product_id' => $productId,
+            'variant_id' => $variantId,
             'movement_type' => 'out',
             'transaction_type' => 'theft',
             'quantity' => $quantity,
@@ -161,10 +168,15 @@ class StockMovementService
     /**
      * Validate stock availability before recording outbound movement
      */
-    public static function validateStockAvailability(int $productId, int $quantity): bool
+    public static function validateStockAvailability(int $productId, ?int $variantId, int $quantity): bool
     {
-        $currentStock = self::getCurrentStock($productId);
-        return $currentStock >= $quantity;
+        if ($variantId) {
+            $variant = \App\Modules\Products\Models\ProductVariant::find($variantId);
+            return $variant ? $variant->quantity_on_hand >= $quantity : false;
+        } else {
+            $currentStock = self::getCurrentStock($productId);
+            return $currentStock >= $quantity;
+        }
     }
 
     /**

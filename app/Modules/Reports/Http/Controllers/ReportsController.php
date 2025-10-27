@@ -7,8 +7,13 @@ use App\Modules\SalesOrder\Models\SalesOrder;
 use App\Modules\PurchaseOrder\Models\PurchaseOrder;
 use App\Modules\Products\Models\Product;
 use App\Modules\OperatingExpenses\Models\OperatingExpense;
+use App\Modules\Expense\Models\Expense;
+use App\Modules\ExpenseCategory\Models\ExpenseCategory;
+use App\Modules\Customers\Models\Customer;
+use App\Modules\Suppliers\Models\Supplier;
 use App\Services\COGSService;
 use App\Services\DailySalesReportService;
+use App\Services\DailyPurchaseReportService;
 use App\Services\WeeklyProductPerformanceService;
 use App\Services\LowStockAlertService;
 use App\Services\StockReportService;
@@ -85,12 +90,52 @@ class ReportsController extends Controller
 
         // Operating Expenses
         $operatingExpenses = OperatingExpense::getExpensesForPeriod($startDate, $endDate);
-        $expensesByCategory = OperatingExpense::getExpensesByCategoryForPeriod($startDate, $endDate);
+
+        // General Expenses from Expense module
+        $generalExpenses = Expense::whereBetween('expense_date', [$startDate, $endDate])
+            ->whereIn('status', ['active', 'completed'])
+            ->sum('amount');
+
+        // Total expenses (operating + general)
+        $totalExpenses = $operatingExpenses + $generalExpenses;
+
+        // Combine expenses by category
+        $operatingExpensesByCategory = OperatingExpense::getExpensesByCategoryForPeriod($startDate, $endDate);
+        $generalExpensesByCategory = Expense::whereBetween('expense_date', [$startDate, $endDate])
+            ->whereIn('status', ['active', 'completed'])
+            ->with('category')
+            ->get()
+            ->groupBy('category.name')
+            ->map(function ($group) {
+                return [
+                    'category_name' => $group->first()->category->name ?? 'Uncategorized',
+                    'total' => $group->sum('amount')
+                ];
+            })->toArray();
+
+        $expensesByCategory = [];
+
+        // Combine both expense types
+        foreach ($operatingExpensesByCategory as $category => $amount) {
+            $expensesByCategory[] = [
+                'category_name' => $category,
+                'total' => $amount,
+                'type' => 'operating'
+            ];
+        }
+
+        foreach ($generalExpensesByCategory as $expense) {
+            $expensesByCategory[] = [
+                'category_name' => $expense['category_name'],
+                'total' => $expense['total'],
+                'type' => 'general'
+            ];
+        }
 
         // Calculate metrics
         $grossProfit = $totalRevenue - $cogs;
         $grossProfitMargin = $totalRevenue > 0 ? ($grossProfit / $totalRevenue) * 100 : 0;
-        $netProfit = $grossProfit - $operatingExpenses;
+        $netProfit = $grossProfit - $totalExpenses;
         $netProfitMargin = $totalRevenue > 0 ? ($netProfit / $totalRevenue) * 100 : 0;
 
         // Get enhanced product breakdown with COGS data
@@ -119,7 +164,8 @@ class ReportsController extends Controller
                 'cogs' => $cogs,
                 'total_purchases' => $totalPurchases,
                 'operating_expenses' => $operatingExpenses,
-                'total_expenses' => $cogs + $operatingExpenses,
+                'general_expenses' => $generalExpenses,
+                'total_expenses' => $totalExpenses,
             ],
             'profit' => [
                 'gross_profit' => $grossProfit,
@@ -223,9 +269,27 @@ class ReportsController extends Controller
         $dailySalesService = new DailySalesReportService();
 
         $report = $dailySalesService->generateDailyReport($date);
-        $weeklyTrends = $dailySalesService->getWeeklyTrends();
+        $monthlyTrends = $dailySalesService->getMonthlyTrends();
 
-        return view('reports::daily-sales', compact('report', 'weeklyTrends', 'date'));
+        return view('reports::daily-sales', compact('report', 'monthlyTrends', 'date'));
+    }
+
+    /**
+     * Generate daily purchase report
+     */
+    public function dailyPurchase(Request $request): View
+    {
+        $request->validate([
+            'date' => 'nullable|date',
+        ]);
+
+        $date = $request->date ? Carbon::parse($request->date) : Carbon::today();
+        $dailyPurchaseService = new DailyPurchaseReportService();
+
+        $report = $dailyPurchaseService->generateDailyReport($date);
+        $monthlyTrends = $dailyPurchaseService->getMonthlyTrends();
+
+        return view('reports::daily-purchase', compact('report', 'monthlyTrends', 'date'));
     }
 
     /**
@@ -356,5 +420,284 @@ class ReportsController extends Controller
         $overview = $stockService->getStockOverview();
 
         return view('reports::stock-valuation', compact('valuation', 'overview'));
+    }
+
+    /**
+     * Generate supplier due report
+     */
+    public function supplierDueReport(Request $request): View
+    {
+        $request->validate([
+            'status' => 'nullable|in:pending,overdue,paid,all',
+            'supplier_id' => 'nullable|integer|exists:suppliers,id',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'due_date_from' => 'nullable|date',
+            'due_date_to' => 'nullable|date|after_or_equal:due_date_from',
+        ]);
+
+        $status = $request->status ?? 'all';
+        $supplierId = $request->supplier_id;
+        $startDate = $request->start_date ? Carbon::parse($request->start_date) : null;
+        $endDate = $request->end_date ? Carbon::parse($request->end_date) : null;
+        $dueDateFrom = $request->due_date_from ? Carbon::parse($request->due_date_from) : null;
+        $dueDateTo = $request->due_date_to ? Carbon::parse($request->due_date_to) : null;
+
+        // Start building the query
+        $query = PurchaseOrder::with(['supplier', 'items'])
+            ->where(function($q) {
+                $q->where('payment_status', '!=', 'paid')
+                  ->orWhere('total_amount', '>', 'paid_amount');
+            });
+
+        // Apply filters
+        if ($status !== 'all') {
+            switch ($status) {
+                case 'pending':
+                    $query->where('payment_status', 'pending');
+                    break;
+                case 'overdue':
+                    $query->where('order_date', '<', Carbon::now()->subDays(30))
+                          ->where('payment_status', '!=', 'paid');
+                    break;
+                case 'paid':
+                    $query->where('payment_status', 'paid');
+                    break;
+            }
+        }
+
+        if ($supplierId) {
+            $query->where('supplier_id', $supplierId);
+        }
+
+        if ($startDate) {
+            $query->whereDate('order_date', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('order_date', '<=', $endDate);
+        }
+
+        if ($dueDateFrom) {
+            $query->whereDate('order_date', '>=', $dueDateFrom);
+        }
+
+        if ($dueDateTo) {
+            $query->whereDate('order_date', '<=', $dueDateTo);
+        }
+
+        // Get the purchase orders
+        $purchaseOrders = $query->orderBy('order_date', 'asc')->get();
+
+        // Calculate summary data
+        $summary = [
+            'total_due' => 0,
+            'total_overdue' => 0,
+            'total_pending' => 0,
+            'overdue_count' => 0,
+            'pending_count' => 0,
+            'supplier_count' => $purchaseOrders->pluck('supplier_id')->unique()->count(),
+        ];
+
+        $suppliers = [];
+        $overdueOrders = collect();
+        $pendingOrders = collect();
+
+        foreach ($purchaseOrders as $order) {
+            $dueAmount = $order->total_amount - $order->paid_amount;
+            $summary['total_due'] += $dueAmount;
+
+            if (!isset($suppliers[$order->supplier_id])) {
+                $suppliers[$order->supplier_id] = [
+                    'supplier' => $order->supplier,
+                    'total_due' => 0,
+                    'overdue' => 0,
+                    'pending' => 0,
+                    'order_count' => 0,
+                ];
+            }
+
+            $suppliers[$order->supplier_id]['total_due'] += $dueAmount;
+            $suppliers[$order->supplier_id]['order_count']++;
+
+            if ($order->order_date < Carbon::now()->subDays(30) && $order->payment_status !== 'paid') {
+                $suppliers[$order->supplier_id]['overdue'] += $dueAmount;
+                $summary['total_overdue'] += $dueAmount;
+                $summary['overdue_count']++;
+                $overdueOrders->push($order);
+            } elseif ($order->payment_status === 'pending') {
+                $suppliers[$order->supplier_id]['pending'] += $dueAmount;
+                $summary['total_pending'] += $dueAmount;
+                $summary['pending_count']++;
+                $pendingOrders->push($order);
+            }
+        }
+
+        // Get all suppliers for filter dropdown
+        $allSuppliers = Supplier::orderBy('name')->get();
+
+        return view('reports::supplier-due', compact(
+            'purchaseOrders',
+            'suppliers',
+            'overdueOrders',
+            'pendingOrders',
+            'summary',
+            'allSuppliers'
+        ))->with('filters', [
+            'status' => $status,
+            'supplier_id' => $supplierId,
+            'start_date' => $startDate?->format('Y-m-d'),
+            'end_date' => $endDate?->format('Y-m-d'),
+            'due_date_from' => $dueDateFrom?->format('Y-m-d'),
+            'due_date_to' => $dueDateTo?->format('Y-m-d'),
+        ]);
+    }
+
+    /**
+     * Generate customer due report
+     */
+    public function customerDueReport(Request $request): View
+    {
+        $request->validate([
+            'status' => 'nullable|in:pending,overdue,paid,all',
+            'customer_id' => 'nullable|integer|exists:customers,id',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'due_date_from' => 'nullable|date',
+            'due_date_to' => 'nullable|date|after_or_equal:due_date_from',
+        ]);
+
+        $status = $request->status ?? 'all';
+        $customerId = $request->customer_id;
+        $startDate = $request->start_date ? Carbon::parse($request->start_date) : null;
+        $endDate = $request->end_date ? Carbon::parse($request->end_date) : null;
+        $dueDateFrom = $request->due_date_from ? Carbon::parse($request->due_date_from) : null;
+        $dueDateTo = $request->due_date_to ? Carbon::parse($request->due_date_to) : null;
+
+        // Start building the query
+        $query = SalesOrder::with(['customer', 'items'])
+            ->where(function($q) {
+                $q->where('payment_status', '!=', 'paid')
+                  ->orWhere('total_amount', '>', 'paid_amount');
+            });
+
+        // Apply filters
+        if ($status !== 'all') {
+            switch ($status) {
+                case 'pending':
+                    $query->where('payment_status', 'pending');
+                    break;
+                case 'overdue':
+                    $query->where(function($q) {
+                        $q->where('payment_status', 'pending')
+                          ->orWhere('payment_status', 'partial');
+                    })->whereDate('created_at', '<', Carbon::now()->subDays(30));
+                    break;
+                case 'paid':
+                    $query->where('payment_status', 'paid');
+                    break;
+            }
+        }
+
+        if ($customerId) {
+            $query->where('customer_id', $customerId);
+        }
+
+        if ($startDate) {
+            $query->whereDate('order_date', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('order_date', '<=', $endDate);
+        }
+
+        if ($dueDateFrom) {
+            $query->whereDate('created_at', '>=', $dueDateFrom);
+        }
+
+        if ($dueDateTo) {
+            $query->whereDate('created_at', '<=', $dueDateTo);
+        }
+
+        // Get the sales orders
+        $salesOrders = $query->orderBy('order_date', 'desc')->get();
+
+        // Calculate summary data
+        $summary = [
+            'total_due' => 0,
+            'total_overdue' => 0,
+            'total_pending' => 0,
+            'overdue_count' => 0,
+            'pending_count' => 0,
+            'customer_count' => $salesOrders->pluck('customer_id')->unique()->count(),
+        ];
+
+        $customers = [];
+        $overdueOrders = collect();
+        $pendingOrders = collect();
+
+        foreach ($salesOrders as $order) {
+            $dueAmount = $order->total_amount - $order->paid_amount;
+            $summary['total_due'] += $dueAmount;
+
+            if (!isset($customers[$order->customer_id])) {
+                $customers[$order->customer_id] = [
+                    'customer' => $order->customer,
+                    'total_due' => 0,
+                    'overdue' => 0,
+                    'pending' => 0,
+                    'order_count' => 0,
+                    'last_order_date' => $order->order_date,
+                ];
+            }
+
+            $customers[$order->customer_id]['total_due'] += $dueAmount;
+            $customers[$order->customer_id]['order_count']++;
+
+            // Update last order date if more recent
+            if ($order->order_date > $customers[$order->customer_id]['last_order_date']) {
+                $customers[$order->customer_id]['last_order_date'] = $order->order_date;
+            }
+
+            // Check if order is overdue (older than 30 days and not fully paid)
+            $isOverdue = $order->order_date < Carbon::now()->subDays(30) &&
+                        in_array($order->payment_status, ['pending', 'partial']);
+
+            if ($isOverdue) {
+                $customers[$order->customer_id]['overdue'] += $dueAmount;
+                $summary['total_overdue'] += $dueAmount;
+                $summary['overdue_count']++;
+                $overdueOrders->push($order);
+            } elseif (in_array($order->payment_status, ['pending', 'partial'])) {
+                $customers[$order->customer_id]['pending'] += $dueAmount;
+                $summary['total_pending'] += $dueAmount;
+                $summary['pending_count']++;
+                $pendingOrders->push($order);
+            }
+        }
+
+        // Sort customers by total due amount (highest first)
+        uasort($customers, function($a, $b) {
+            return $b['total_due'] <=> $a['total_due'];
+        });
+
+        // Get all customers for filter dropdown
+        $allCustomers = Customer::orderBy('name')->get();
+
+        return view('reports::customer-due', compact(
+            'salesOrders',
+            'customers',
+            'overdueOrders',
+            'pendingOrders',
+            'summary',
+            'allCustomers'
+        ))->with('filters', [
+            'status' => $status,
+            'customer_id' => $customerId,
+            'start_date' => $startDate?->format('Y-m-d'),
+            'end_date' => $endDate?->format('Y-m-d'),
+            'due_date_from' => $dueDateFrom?->format('Y-m-d'),
+            'due_date_to' => $dueDateTo?->format('Y-m-d'),
+        ]);
     }
 }

@@ -16,6 +16,10 @@ Route::middleware(['auth'])->prefix('modules/reports')->name('modules.reports.')
         ->middleware('permission:reports.view')
         ->name('daily-sales');
 
+    Route::get('/daily-purchase', [ReportsController::class, 'dailyPurchase'])
+        ->middleware('permission:reports.view')
+        ->name('daily-purchase');
+
     Route::get('/weekly-performance', [ReportsController::class, 'weeklyPerformance'])
         ->middleware('permission:reports.view')
         ->name('weekly-performance');
@@ -43,6 +47,14 @@ Route::middleware(['auth'])->prefix('modules/reports')->name('modules.reports.')
     Route::get('/stock/valuation', [ReportsController::class, 'stockValuation'])
         ->middleware('permission:reports.view')
         ->name('stock.valuation');
+
+    Route::get('/supplier-due', [ReportsController::class, 'supplierDueReport'])
+        ->middleware('permission:reports.view')
+        ->name('supplier-due');
+
+    Route::get('/customer-due', [ReportsController::class, 'customerDueReport'])
+        ->middleware('permission:reports.view')
+        ->name('customer-due');
 });
 
 // Also add a shorter route name for easier access
@@ -50,6 +62,10 @@ Route::middleware(['auth'])->prefix('reports')->name('reports.')->group(function
     Route::get('/daily-sales', [ReportsController::class, 'dailySales'])
         ->middleware('permission:reports.view')
         ->name('daily-sales');
+
+    Route::get('/daily-purchase', [ReportsController::class, 'dailyPurchase'])
+        ->middleware('permission:reports.view')
+        ->name('daily-purchase');
 
     Route::get('/weekly-performance', [ReportsController::class, 'weeklyPerformance'])
         ->middleware('permission:reports.view')

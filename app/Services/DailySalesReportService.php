@@ -22,11 +22,14 @@ class DailySalesReportService
 
         // Calculate key metrics
         $totalRevenue = $salesOrders->sum('total_amount');
+        $totalSubtotal = $salesOrders->sum('subtotal');
+        $totalDiscount = $salesOrders->sum('discount_amount');
+        $totalTax = $salesOrders->sum('tax_amount');
         $totalTransactions = $salesOrders->count();
         $averageTransactionValue = $totalTransactions > 0 ? $totalRevenue / $totalTransactions : 0;
 
         // Get top selling products
-        $topProducts = $this->getTopSellingProducts($reportDate, 3);
+        $topProducts = $this->getTopSellingProducts($reportDate, 5);
 
         // Generate performance summary
         $performanceSummary = $this->generatePerformanceSummary($totalRevenue, $totalTransactions, $averageTransactionValue);
@@ -34,12 +37,16 @@ class DailySalesReportService
         return [
             'report_date' => $reportDate->format('F j, Y'),
             'total_revenue' => $totalRevenue,
+            'total_subtotal' => $totalSubtotal,
+            'total_discount' => $totalDiscount,
+            'total_tax' => $totalTax,
             'total_transactions' => $totalTransactions,
             'average_transaction_value' => $averageTransactionValue,
             'top_products' => $topProducts,
             'performance_summary' => $performanceSummary,
             'formatted_metrics' => [
                 'total_revenue' => number_format($totalRevenue, 2),
+                'total_discount' => number_format($totalDiscount, 2),
                 'total_transactions' => number_format($totalTransactions),
                 'average_transaction_value' => number_format($averageTransactionValue, 2),
             ]
@@ -90,7 +97,7 @@ class DailySalesReportService
         $revenueLevel = $this->categorizeRevenue($revenue);
         $performanceAdjective = $this->getPerformanceAdjective($revenue, $transactions);
 
-        return "Today was a {$performanceAdjective} day with {$transactions} transactions generating {$revenueLevel} of ${$revenue}, averaging ${$avgValue} per sale.";
+        return "Today was a {$performanceAdjective} day with {$transactions} transactions generating {$revenueLevel} of \${$revenue}, averaging \${$avgValue} per sale.";
     }
 
     /**
@@ -118,19 +125,23 @@ class DailySalesReportService
     }
 
     /**
-     * Get daily sales trends for the past week
+     * Get daily sales trends for the past 30 days
      */
-    public function getWeeklyTrends(): array
+    public function getMonthlyTrends(): array
     {
         $trends = [];
-        $startDate = Carbon::today()->subDays(6);
+        $startDate = Carbon::today()->subDays(29);
 
-        for ($i = 0; $i < 7; $i++) {
+        for ($i = 0; $i < 30; $i++) {
             $date = $startDate->copy()->addDays($i);
             $report = $this->generateDailyReport($date);
 
             $trends[] = [
                 'date' => $date->format('M j'),
+                'date_full' => $date->format('Y-m-d'),
+                'subtotal' => $report['total_subtotal'],
+                'discount' => $report['total_discount'],
+                'tax' => $report['total_tax'],
                 'revenue' => $report['total_revenue'],
                 'transactions' => $report['total_transactions'],
                 'avg_value' => $report['average_transaction_value'],

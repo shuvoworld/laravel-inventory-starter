@@ -131,12 +131,34 @@
                 <i class="fas fa-file-invoice fa-2x text-warning mb-2"></i>
                 <h4 class="text-warning">${{ number_format($data['costs']['operating_expenses'], 2) }}</h4>
                 <p class="card-text">Operating Expenses</p>
-                <small class="text-muted">Total expenses</small>
+                <small class="text-muted">Business expenses</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-secondary">
+            <div class="card-body text-center">
+                <i class="fas fa-receipt fa-2x text-secondary mb-2"></i>
+                <h4 class="text-secondary">${{ number_format($data['costs']['general_expenses'], 2) }}</h4>
+                <p class="card-text">General Expenses</p>
+                <small class="text-muted">Other expenses</small>
+            </div>
+        </div>
+    </div>
+</div>
+    <div class="col-md-3">
+        <div class="card border-dark">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-2x text-dark mb-2"></i>
+                <h4 class="text-dark">${{ number_format($data['costs']['total_expenses'], 2) }}</h4>
+                <p class="card-text">Total Expenses</p>
+                <small class="text-muted">COGS + All Expenses</small>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Net Profit Summary -->
 <div class="row mb-4">
     <div class="col-md-6">
         <div class="card border-primary">
@@ -192,9 +214,10 @@
                                 <h6 class="card-title text-danger mb-3">
                                     <i class="fas fa-arrow-up me-2"></i>Money Out (Costs)
                                 </h6>
-                                <h3 class="text-danger">${{ number_format($data['costs']['cogs'] + $data['costs']['operating_expenses'], 2) }}</h3>
+                                <h3 class="text-danger">${{ number_format($data['costs']['total_expenses'], 2) }}</h3>
                                 <p class="text-muted mb-1">${{ number_format($data['costs']['cogs'], 2) }} product costs</p>
-                                <p class="text-muted mb-0">${{ number_format($data['costs']['operating_expenses'], 2) }} expenses</p>
+                                <p class="text-muted mb-1">${{ number_format($data['costs']['operating_expenses'], 2) }} operating expenses</p>
+                                <p class="text-muted mb-0">${{ number_format($data['costs']['general_expenses'], 2) }} general expenses</p>
                             </div>
                         </div>
                     </div>
@@ -234,7 +257,7 @@
                         @foreach($data['expenses_by_category'] as $expense)
                             <div class="col-md-4 mb-2">
                                 <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
-                                    <span>{{ $expense['category_label'] }}</span>
+                                    <span>{{ $expense['category_name'] }}</span>
                                     <strong class="text-warning">${{ number_format($expense['total'], 2) }}</strong>
                                 </div>
                             </div>
@@ -363,6 +386,8 @@
                                 <th class="text-end">Revenue</th>
                                 <th class="text-end">COGS</th>
                                 <th class="text-end">Op. Expenses</th>
+                                <th class="text-end">Gen. Expenses</th>
+                                <th class="text-end">Total Expenses</th>
                                 <th class="text-end">Net Profit</th>
                                 <th class="text-end">Profit %</th>
                                 <th class="text-center">Orders</th>
@@ -378,6 +403,8 @@
                                     <td class="text-end text-success">${{ number_format($period['revenue'], 2) }}</td>
                                     <td class="text-end text-danger">${{ number_format($period['cogs'], 2) }}</td>
                                     <td class="text-end text-warning">${{ number_format($period['operating_expenses'], 2) }}</td>
+                                    <td class="text-end text-secondary">${{ number_format($period['general_expenses'], 2) }}</td>
+                                    <td class="text-end text-dark"><strong>${{ number_format($period['total_expenses'], 2) }}</strong></td>
                                     <td class="text-end">
                                         <span class="{{ $period['net_profit'] >= 0 ? 'text-success' : 'text-danger' }}">
                                             ${{ number_format($period['net_profit'], 2) }}
@@ -400,6 +427,8 @@
                                 <th class="text-end">${{ number_format($data['revenue']['total_revenue'], 2) }}</th>
                                 <th class="text-end">${{ number_format($data['costs']['cogs'], 2) }}</th>
                                 <th class="text-end">${{ number_format($data['costs']['operating_expenses'], 2) }}</th>
+                                <th class="text-end">${{ number_format($data['costs']['general_expenses'], 2) }}</th>
+                                <th class="text-end"><strong>${{ number_format($data['costs']['total_expenses'], 2) }}</strong></th>
                                 <th class="text-end">${{ number_format($data['profit']['net_profit'], 2) }}</th>
                                 <th class="text-end">{{ number_format($data['profit']['net_profit_margin'], 1) }}%</th>
                                 <th class="text-center">{{ $data['orders']['sales_orders_count'] }}</th>
@@ -448,6 +477,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     data: chartData.map(item => item.operating_expenses),
                     borderColor: 'rgb(255, 193, 7)',
                     backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'General Expenses',
+                    data: chartData.map(item => item.general_expenses),
+                    borderColor: 'rgb(108, 117, 125)',
+                    backgroundColor: 'rgba(108, 117, 125, 0.1)',
                     tension: 0.4,
                     fill: false
                 },

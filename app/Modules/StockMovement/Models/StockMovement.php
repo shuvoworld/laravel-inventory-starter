@@ -18,16 +18,21 @@ class StockMovement extends Model implements AuditableContract
     protected $table = 'stock_movements';
 
     protected $fillable = [
-        'store_id', 'product_id', 'movement_type', 'transaction_type', 'quantity', 'reference_type', 'reference_id', 'notes', 'user_id'
+        'store_id', 'product_id', 'variant_id', 'movement_type', 'transaction_type', 'quantity', 'reference_type', 'reference_id', 'notes', 'user_id'
     ];
 
     protected $auditInclude = [
-        'product_id', 'movement_type', 'transaction_type', 'quantity', 'reference_type', 'reference_id', 'notes', 'user_id'
+        'product_id', 'variant_id', 'movement_type', 'transaction_type', 'quantity', 'reference_type', 'reference_id', 'notes', 'user_id'
     ];
 
     public function product()
     {
         return $this->belongsTo(\App\Modules\Products\Models\Product::class);
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(\App\Modules\Products\Models\ProductVariant::class, 'variant_id');
     }
 
     public function reference()
@@ -206,6 +211,135 @@ class StockMovement extends Model implements AuditableContract
             ->get();
     }
 
+    /**
+     * Sync stock for all variants that have movements
+     */
+    public static function syncAllVariantStocks(): array
+    {
+        $variantsUpdated = 0;
+        $variantsWithDiscrepancies = 0;
+        $totalStockIn = 0;
+        $totalStockOut = 0;
+
+        // Get all variants that have stock movements
+        $variantIds = self::whereNotNull('variant_id')
+            ->distinct()
+            ->pluck('variant_id');
+
+        Log::info('Starting variant stock synchronization', [
+            'total_variants' => $variantIds->count()
+        ]);
+
+        foreach ($variantIds as $variantId) {
+            try {
+                $variant = \App\Modules\Products\Models\ProductVariant::find($variantId);
+                if (!$variant) {
+                    Log::warning('Variant not found during sync', ['variant_id' => $variantId]);
+                    continue;
+                }
+
+                // Calculate current stock from movements
+                $currentVariantStock = self::where('variant_id', $variantId)
+                    ->selectRaw("
+                        SUM(CASE WHEN movement_type = 'in' THEN quantity ELSE 0 END) as total_in,
+                        SUM(CASE WHEN movement_type = 'out' THEN quantity ELSE 0 END) as total_out
+                    ")
+                    ->first();
+
+                $calculatedVariantStock = ($currentVariantStock->total_in ?? 0) - ($currentVariantStock->total_out ?? 0);
+                $oldVariantStock = $variant->quantity_on_hand;
+                $difference = $oldVariantStock - $calculatedVariantStock;
+
+                if ($difference !== 0) {
+                    $variantsWithDiscrepancies++;
+                    Log::info('Variant stock discrepancy found and corrected', [
+                        'variant_id' => $variantId,
+                        'variant_name' => $variant->variant_name,
+                        'product_id' => $variant->product_id,
+                        'old_stock' => $oldVariantStock,
+                        'calculated_stock' => $calculatedVariantStock,
+                        'difference' => $difference
+                    ]);
+
+                    // Update variant stock
+                    $variant->quantity_on_hand = $calculatedVariantStock;
+                    $variant->save();
+                    $variantsUpdated++;
+                }
+
+                $totalStockIn += $currentVariantStock->total_in ?? 0;
+                $totalStockOut += $currentVariantStock->total_out ?? 0;
+
+            } catch (\Exception $e) {
+                Log::error('Failed to sync variant stock', [
+                    'variant_id' => $variantId,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        Log::info('Variant stock synchronization completed', [
+            'variants_updated' => $variantsUpdated,
+            'variants_with_discrepancies' => $variantsWithDiscrepancies,
+            'total_stock_in' => $totalStockIn,
+            'total_stock_out' => $totalStockOut,
+            'net_movement' => $totalStockIn - $totalStockOut
+        ]);
+
+        return [
+            'variants_updated' => $variantsUpdated,
+            'variants_with_discrepancies' => $variantsWithDiscrepancies,
+            'total_stock_in' => $totalStockIn,
+            'total_stock_out' => $totalStockOut,
+            'net_movement' => $totalStockIn - $totalStockOut
+        ];
+    }
+
+    /**
+     * Sync stock for a specific variant
+     */
+    public static function syncVariantStock(int $variantId): array
+    {
+        $variant = \App\Modules\Products\Models\ProductVariant::findOrFail($variantId);
+
+        // Calculate current stock from movements
+        $currentVariantStock = self::where('variant_id', $variantId)
+            ->selectRaw("
+                SUM(CASE WHEN movement_type = 'in' THEN quantity ELSE 0 END) as total_in,
+                SUM(CASE WHEN movement_type = 'out' THEN quantity ELSE 0 END) as total_out
+            ")
+            ->first();
+
+        $calculatedVariantStock = ($currentVariantStock->total_in ?? 0) - ($currentVariantStock->total_out ?? 0);
+        $oldVariantStock = $variant->quantity_on_hand;
+        $difference = $oldVariantStock - $calculatedVariantStock;
+        $updated = false;
+
+        if ($difference !== 0) {
+            $variant->quantity_on_hand = $calculatedVariantStock;
+            $variant->save();
+            $updated = true;
+
+            Log::info('Single variant stock synchronized', [
+                'variant_id' => $variantId,
+                'variant_name' => $variant->variant_name,
+                'product_id' => $variant->product_id,
+                'old_stock' => $oldVariantStock,
+                'new_stock' => $calculatedVariantStock,
+                'difference' => $difference
+            ]);
+        }
+
+        return [
+            'updated' => $updated,
+            'old_stock' => $oldVariantStock,
+            'new_stock' => $calculatedVariantStock,
+            'difference' => $difference,
+            'total_in' => $currentVariantStock->total_in ?? 0,
+            'total_out' => $currentVariantStock->total_out ?? 0
+        ];
+    }
+
     protected static function boot()
     {
         parent::boot();
@@ -215,6 +349,7 @@ class StockMovement extends Model implements AuditableContract
             Log::info('Stock movement created', [
                 'movement_id' => $movement->id,
                 'product_id' => $movement->product_id,
+                'variant_id' => $movement->variant_id,
                 'movement_type' => $movement->movement_type,
                 'transaction_type' => $movement->transaction_type,
                 'quantity' => $movement->quantity,
@@ -222,73 +357,235 @@ class StockMovement extends Model implements AuditableContract
                 'created_at' => $movement->created_at->format('Y-m-d H:i:s')
             ]);
 
-            // Schedule immediate stock sync for this product
-            // This ensures product stock is updated quickly while the hourly job handles comprehensive sync
-            dispatch(function () use ($movement) {
-                try {
-                    $product = $movement->product;
-                    if ($product) {
-                        // Calculate current stock from movements for this specific product
-                        $currentStock = StockMovement::where('product_id', $product->id)
-                            ->selectRaw("
-                                SUM(CASE WHEN movement_type = 'in' THEN quantity ELSE 0 END) as total_in,
-                                SUM(CASE WHEN movement_type = 'out' THEN quantity ELSE 0 END) as total_out
-                            ")
-                            ->first();
+            // Update stock immediately and also schedule backup sync
+        try {
+            // Update variant stock if this movement has a variant
+            if ($movement->variant_id) {
+                $variant = $movement->variant;
+                if ($variant) {
+                    // Calculate current stock from movements for this specific variant
+                    $currentVariantStock = StockMovement::where('variant_id', $variant->id)
+                        ->selectRaw("
+                            SUM(CASE WHEN movement_type = 'in' THEN quantity ELSE 0 END) as total_in,
+                            SUM(CASE WHEN movement_type = 'out' THEN quantity ELSE 0 END) as total_out
+                        ")
+                        ->first();
 
-                        $calculatedStock = ($currentStock->total_in ?? 0) - ($currentStock->total_out ?? 0);
-                        $oldStock = $product->quantity_on_hand;
+                    $calculatedVariantStock = ($currentVariantStock->total_in ?? 0) - ($currentVariantStock->total_out ?? 0);
+                    $oldVariantStock = $variant->quantity_on_hand;
 
-                        // Update product stock if there's a difference
-                        if ($oldStock !== $calculatedStock) {
-                            $product->quantity_on_hand = $calculatedStock;
-                            $product->save();
+                    // Update variant stock if there's a difference
+                    if ($oldVariantStock !== $calculatedVariantStock) {
+                        $variant->quantity_on_hand = $calculatedVariantStock;
+                        $variant->save();
 
-                            Log::info('Product stock updated immediately after movement', [
-                                'product_id' => $product->id,
-                                'product_name' => $product->name,
-                                'movement_id' => $movement->id,
-                                'old_stock' => $oldStock,
-                                'new_stock' => $calculatedStock,
-                                'difference' => $calculatedStock - $oldStock,
-                                'movement_type' => $movement->movement_type,
-                                'transaction_type' => $movement->transaction_type
-                            ]);
-                        }
+                        Log::info('Variant stock updated immediately after movement', [
+                            'variant_id' => $variant->id,
+                            'variant_name' => $variant->variant_name,
+                            'product_id' => $variant->product_id,
+                            'movement_id' => $movement->id,
+                            'old_stock' => $oldVariantStock,
+                            'new_stock' => $calculatedVariantStock,
+                            'difference' => $calculatedVariantStock - $oldVariantStock,
+                            'movement_type' => $movement->movement_type,
+                            'transaction_type' => $movement->transaction_type
+                        ]);
                     }
-                } catch (\Exception $e) {
-                    Log::error('Failed to update product stock after movement', [
+                }
+            }
+
+            // Update product stock (for non-variant products or as aggregate total)
+            $product = $movement->product;
+            if ($product) {
+                // Calculate current stock from movements for this specific product
+                $currentStock = StockMovement::where('product_id', $product->id)
+                    ->selectRaw("
+                        SUM(CASE WHEN movement_type = 'in' THEN quantity ELSE 0 END) as total_in,
+                        SUM(CASE WHEN movement_type = 'out' THEN quantity ELSE 0 END) as total_out
+                    ")
+                    ->first();
+
+                $calculatedStock = ($currentStock->total_in ?? 0) - ($currentStock->total_out ?? 0);
+                $oldStock = $product->quantity_on_hand;
+
+                // Update product stock if there's a difference
+                if ($oldStock !== $calculatedStock) {
+                    $product->quantity_on_hand = $calculatedStock;
+                    $product->save();
+
+                    Log::info('Product stock updated immediately after movement', [
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
                         'movement_id' => $movement->id,
-                        'product_id' => $movement->product_id,
-                        'error' => $e->getMessage()
+                        'old_stock' => $oldStock,
+                        'new_stock' => $calculatedStock,
+                        'difference' => $calculatedStock - $oldStock,
+                        'movement_type' => $movement->movement_type,
+                        'transaction_type' => $movement->transaction_type,
+                        'variant_id' => $movement->variant_id
                     ]);
                 }
-            })->onQueue('stock-sync');
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to update stock immediately after movement', [
+                'movement_id' => $movement->id,
+                'product_id' => $movement->product_id,
+                'variant_id' => $movement->variant_id,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        // Schedule backup sync as well
+        dispatch(function () use ($movement) {
+            try {
+                dispatch(new \App\Jobs\SyncProductStockFromMovements($movement->product_id))
+                    ->onQueue('stock-sync');
+            } catch (\Exception $e) {
+                Log::error('Failed to schedule backup stock sync', [
+                    'movement_id' => $movement->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        })->onQueue('stock-sync');
         });
 
         static::updated(function ($movement) {
             Log::info('Stock movement updated', [
                 'movement_id' => $movement->id,
                 'product_id' => $movement->product_id,
+                'variant_id' => $movement->variant_id,
                 'changes' => $movement->getDirty()
             ]);
 
-            // Schedule stock sync for updated movement
-            dispatch(new \App\Jobs\SyncProductStockFromMovements($movement->product_id))
-                ->onQueue('stock-sync');
+            // Update stock immediately
+        try {
+            // Update variant stock if this movement has a variant
+            if ($movement->variant_id) {
+                $variant = $movement->variant;
+                if ($variant) {
+                    $currentVariantStock = StockMovement::where('variant_id', $variant->id)
+                        ->selectRaw("
+                            SUM(CASE WHEN movement_type = 'in' THEN quantity ELSE 0 END) as total_in,
+                            SUM(CASE WHEN movement_type = 'out' THEN quantity ELSE 0 END) as total_out
+                        ")
+                        ->first();
+
+                    $calculatedVariantStock = ($currentVariantStock->total_in ?? 0) - ($currentVariantStock->total_out ?? 0);
+                    $oldVariantStock = $variant->quantity_on_hand;
+
+                    if ($oldVariantStock !== $calculatedVariantStock) {
+                        $variant->quantity_on_hand = $calculatedVariantStock;
+                        $variant->save();
+
+                        Log::info('Variant stock updated after movement update', [
+                            'variant_id' => $variant->id,
+                            'old_stock' => $oldVariantStock,
+                            'new_stock' => $calculatedVariantStock
+                        ]);
+                    }
+                }
+            }
+
+            // Update product stock
+            $product = $movement->product;
+            if ($product) {
+                $currentStock = StockMovement::where('product_id', $product->id)
+                    ->selectRaw("
+                        SUM(CASE WHEN movement_type = 'in' THEN quantity ELSE 0 END) as total_in,
+                        SUM(CASE WHEN movement_type = 'out' THEN quantity ELSE 0 END) as total_out
+                    ")
+                    ->first();
+
+                $calculatedStock = ($currentStock->total_in ?? 0) - ($currentStock->total_out ?? 0);
+                $oldStock = $product->quantity_on_hand;
+
+                if ($oldStock !== $calculatedStock) {
+                    $product->quantity_on_hand = $calculatedStock;
+                    $product->save();
+
+                    Log::info('Product stock updated after movement update', [
+                        'product_id' => $product->id,
+                        'old_stock' => $oldStock,
+                        'new_stock' => $calculatedStock
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to update stock after movement update', [
+                'movement_id' => $movement->id,
+                'error' => $e->getMessage()
+            ]);
+        }
         });
 
         static::deleted(function ($movement) {
             Log::warning('Stock movement deleted', [
                 'movement_id' => $movement->id,
                 'product_id' => $movement->product_id,
+                'variant_id' => $movement->variant_id,
                 'movement_type' => $movement->movement_type,
                 'quantity' => $movement->quantity
             ]);
 
-            // Schedule stock sync for affected product
-            dispatch(new \App\Jobs\SyncProductStockFromMovements($movement->product_id))
-                ->onQueue('stock-sync');
+            // Update stock immediately
+        try {
+            // Update variant stock if this movement had a variant
+            if ($movement->variant_id) {
+                $variant = \App\Modules\Products\Models\ProductVariant::find($movement->variant_id);
+                if ($variant) {
+                    $currentVariantStock = StockMovement::where('variant_id', $variant->id)
+                        ->selectRaw("
+                            SUM(CASE WHEN movement_type = 'in' THEN quantity ELSE 0 END) as total_in,
+                            SUM(CASE WHEN movement_type = 'out' THEN quantity ELSE 0 END) as total_out
+                        ")
+                        ->first();
+
+                    $calculatedVariantStock = ($currentVariantStock->total_in ?? 0) - ($currentVariantStock->total_out ?? 0);
+                    $oldVariantStock = $variant->quantity_on_hand;
+
+                    if ($oldVariantStock !== $calculatedVariantStock) {
+                        $variant->quantity_on_hand = $calculatedVariantStock;
+                        $variant->save();
+
+                        Log::info('Variant stock updated after movement deletion', [
+                            'variant_id' => $variant->id,
+                            'old_stock' => $oldVariantStock,
+                            'new_stock' => $calculatedVariantStock
+                        ]);
+                    }
+                }
+            }
+
+            // Update product stock
+            $product = \App\Modules\Products\Models\Product::find($movement->product_id);
+            if ($product) {
+                $currentStock = StockMovement::where('product_id', $product->id)
+                    ->selectRaw("
+                        SUM(CASE WHEN movement_type = 'in' THEN quantity ELSE 0 END) as total_in,
+                        SUM(CASE WHEN movement_type = 'out' THEN quantity ELSE 0 END) as total_out
+                    ")
+                    ->first();
+
+                $calculatedStock = ($currentStock->total_in ?? 0) - ($currentStock->total_out ?? 0);
+                $oldStock = $product->quantity_on_hand;
+
+                if ($oldStock !== $calculatedStock) {
+                    $product->quantity_on_hand = $calculatedStock;
+                    $product->save();
+
+                    Log::info('Product stock updated after movement deletion', [
+                        'product_id' => $product->id,
+                        'old_stock' => $oldStock,
+                        'new_stock' => $calculatedStock
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to update stock after movement deletion', [
+                'movement_id' => $movement->id,
+                'error' => $e->getMessage()
+            ]);
+        }
         });
     }
 }
