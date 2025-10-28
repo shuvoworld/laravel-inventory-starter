@@ -32,5 +32,9 @@ class DatabaseSeeder extends Seeder
             ]);
             $viewer->assignRole('viewer');
         }
+
+        // Clear permission cache - IMPORTANT for Spatie Laravel Permission
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        $this->command->info('✓ Permission cache cleared!');
     }
 }
