@@ -10,9 +10,6 @@ class ExpensePermissionsSeeder extends Seeder
 {
     public function run(): void
     {
-        // Clear existing permissions
-        DB::table('permissions')->where('name', 'like', 'expense%')->delete();
-
         // Expense Category permissions
         $categoryPermissions = [
             'expense-category.view' => 'View Expense Categories',
@@ -30,21 +27,15 @@ class ExpensePermissionsSeeder extends Seeder
         ];
 
         foreach ($categoryPermissions as $name => $description) {
-            Permission::create([
-                'name' => $name,
-                'guard_name' => 'web',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            Permission::firstOrCreate(
+                ['name' => $name, 'guard_name' => 'web']
+            );
         }
 
         foreach ($expensePermissions as $name => $description) {
-            Permission::create([
-                'name' => $name,
-                'guard_name' => 'web',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            Permission::firstOrCreate(
+                ['name' => $name, 'guard_name' => 'web']
+            );
         }
 
         echo "Expense permissions seeded successfully.\n";
