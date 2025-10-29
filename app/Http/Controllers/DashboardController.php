@@ -23,6 +23,11 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
+        // Check if user is a superadmin first (is_superadmin = 1)
+        if ($user->is_superadmin) {
+            return $this->superadminDashboard();
+        }
+
         // Route to role-specific dashboard
         if ($user->hasRole('store-user')) {
             return $this->storeUserDashboard();
@@ -32,8 +37,8 @@ class DashboardController extends Controller
             return $this->storeAdminDashboard();
         }
 
-        // Default/Superadmin dashboard
-        return $this->superadminDashboard();
+        // Default to store admin dashboard for users without specific roles
+        return $this->storeAdminDashboard();
     }
 
     /**
@@ -317,12 +322,293 @@ class DashboardController extends Controller
     }
 
     /**
-     * Superadmin Dashboard - System-wide overview
+     * Superadmin Dashboard - System-wide overview across all stores
      */
     private function superadminDashboard(): View
     {
-        // Use the full admin dashboard for superadmins
-        return $this->storeAdminDashboard();
+        $currentMonth = Carbon::now();
+        $previousMonth = Carbon::now()->subMonth();
+        $last30Days = Carbon::now()->subDays(30);
+        $today = Carbon::now();
+
+        // Get all stores
+        $stores = \App\Modules\Stores\Models\Store::with('users')->get();
+        $totalStores = $stores->count();
+        $activeStores = $stores->where('is_active', true)->count();
+
+        // System-wide metrics (all stores combined)
+        $systemWideCurrentMonth = $this->getSystemWideFinancialData(
+            $currentMonth->copy()->startOfMonth(),
+            $currentMonth->copy()->endOfMonth()
+        );
+
+        $systemWidePreviousMonth = $this->getSystemWideFinancialData(
+            $previousMonth->copy()->startOfMonth(),
+            $previousMonth->copy()->endOfMonth()
+        );
+
+        // Calculate growth
+        $systemRevenueGrowth = $this->calculateGrowthPercentage(
+            $systemWideCurrentMonth['revenue'],
+            $systemWidePreviousMonth['revenue']
+        );
+
+        $systemProfitGrowth = $this->calculateGrowthPercentage(
+            $systemWideCurrentMonth['net_profit'],
+            $systemWidePreviousMonth['net_profit']
+        );
+
+        // Store-by-store performance comparison
+        $storePerformance = $this->getStoreByStorePerformance($currentMonth);
+
+        // Top performing stores
+        $topStores = collect($storePerformance)
+            ->sortByDesc('revenue')
+            ->take(5)
+            ->values();
+
+        // System-wide inventory metrics
+        $totalProducts = Product::count();
+        $totalCustomers = Customer::count();
+        $totalUsers = \App\Models\User::where('is_active', true)->count();
+
+        // Low stock across all stores
+        $lowStockCount = Product::lowStock()->count();
+        $outOfStockCount = Product::where('quantity_on_hand', '<=', 0)->count();
+
+        // Recent system-wide transactions
+        $recentSalesOrders = SalesOrder::with(['customer', 'store'])
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+
+        $recentPurchaseOrders = PurchaseOrder::with(['supplier', 'store'])
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+
+        // 30-day trend across all stores
+        $systemWideTrend = $this->getSystemWideTrend($last30Days, $today);
+
+        // Store settings for currency
+        $companyInfo = StoreSetting::getCompanyInfo();
+        $currencySettings = StoreSetting::getCurrencySettings();
+
+        // Monthly comparison for last 6 months
+        $monthlyComparison = $this->getMonthlySystemComparison(6);
+
+        // Store health metrics
+        $storeHealthMetrics = $this->calculateStoreHealthMetrics($stores);
+
+        return view('dashboards.superadmin', compact(
+            'stores',
+            'totalStores',
+            'activeStores',
+            'systemWideCurrentMonth',
+            'systemWidePreviousMonth',
+            'systemRevenueGrowth',
+            'systemProfitGrowth',
+            'storePerformance',
+            'topStores',
+            'totalProducts',
+            'totalCustomers',
+            'totalUsers',
+            'lowStockCount',
+            'outOfStockCount',
+            'recentSalesOrders',
+            'recentPurchaseOrders',
+            'systemWideTrend',
+            'companyInfo',
+            'currencySettings',
+            'monthlyComparison',
+            'storeHealthMetrics'
+        ));
+    }
+
+    /**
+     * Get financial data across all stores
+     */
+    private function getSystemWideFinancialData(Carbon $startDate, Carbon $endDate): array
+    {
+        // Sales across all stores
+        $salesOrders = SalesOrder::whereBetween('order_date', [$startDate, $endDate])
+            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+            ->get();
+
+        $revenue = $salesOrders->sum('total_amount');
+        $ordersCount = $salesOrders->count();
+
+        // COGS calculation
+        $cogs = 0;
+        foreach ($salesOrders as $order) {
+            foreach ($order->items as $item) {
+                $cogs += $item->quantity * ($item->product->cost_price ?? 0);
+            }
+        }
+
+        // Operating expenses across all stores
+        $operatingExpenses = OperatingExpense::getExpensesForPeriod($startDate, $endDate);
+        $generalExpenses = Expense::whereBetween('expense_date', [$startDate, $endDate])
+            ->whereIn('status', ['active', 'completed'])
+            ->sum('amount');
+
+        $totalExpenses = $operatingExpenses + $generalExpenses;
+
+        // Calculations
+        $grossProfit = $revenue - $cogs;
+        $netProfit = $grossProfit - $totalExpenses;
+        $grossProfitMargin = $revenue > 0 ? ($grossProfit / $revenue) * 100 : 0;
+        $netProfitMargin = $revenue > 0 ? ($netProfit / $revenue) * 100 : 0;
+
+        return [
+            'revenue' => $revenue,
+            'cogs' => $cogs,
+            'operating_expenses' => $operatingExpenses,
+            'general_expenses' => $generalExpenses,
+            'total_expenses' => $totalExpenses,
+            'gross_profit' => $grossProfit,
+            'net_profit' => $netProfit,
+            'gross_profit_margin' => $grossProfitMargin,
+            'net_profit_margin' => $netProfitMargin,
+            'orders_count' => $ordersCount,
+            'average_order_value' => $ordersCount > 0 ? $revenue / $ordersCount : 0,
+        ];
+    }
+
+    /**
+     * Get performance metrics for each store
+     */
+    private function getStoreByStorePerformance(Carbon $month): array
+    {
+        $stores = \App\Modules\Stores\Models\Store::all();
+        $performance = [];
+
+        foreach ($stores as $store) {
+            // Get sales for this store
+            $sales = SalesOrder::where('store_id', $store->id)
+                ->whereBetween('order_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+                ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+                ->get();
+
+            $revenue = $sales->sum('total_amount');
+            $ordersCount = $sales->count();
+
+            // Get expenses for this store
+            $expenses = OperatingExpense::where('store_id', $store->id)
+                ->whereBetween('expense_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+                ->sum('amount');
+
+            // Get stock count for this store
+            $productsCount = Product::where('store_id', $store->id)->count();
+            $lowStock = Product::where('store_id', $store->id)->lowStock()->count();
+
+            $performance[] = [
+                'store' => $store,
+                'revenue' => $revenue,
+                'orders_count' => $ordersCount,
+                'expenses' => $expenses,
+                'profit' => $revenue - $expenses,
+                'products_count' => $productsCount,
+                'low_stock_count' => $lowStock,
+                'avg_order_value' => $ordersCount > 0 ? $revenue / $ordersCount : 0,
+            ];
+        }
+
+        return $performance;
+    }
+
+    /**
+     * Get system-wide trend data for visualization
+     */
+    private function getSystemWideTrend(Carbon $startDate, Carbon $endDate): array
+    {
+        $trend = [];
+        $currentDate = $startDate->copy();
+
+        while ($currentDate->lte($endDate)) {
+            $dayStart = $currentDate->copy()->startOfDay();
+            $dayEnd = $currentDate->copy()->endOfDay();
+
+            $dayData = $this->getSystemWideFinancialData($dayStart, $dayEnd);
+
+            $trend[] = [
+                'date' => $currentDate->format('M j'),
+                'revenue' => $dayData['revenue'],
+                'expenses' => $dayData['total_expenses'],
+                'net_profit' => $dayData['net_profit'],
+            ];
+
+            $currentDate->addDay();
+        }
+
+        return $trend;
+    }
+
+    /**
+     * Get monthly comparison data for system-wide performance
+     */
+    private function getMonthlySystemComparison(int $months): array
+    {
+        $comparison = [];
+        $currentDate = Carbon::now();
+
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $month = $currentDate->copy()->subMonths($i);
+            $monthData = $this->getSystemWideFinancialData(
+                $month->copy()->startOfMonth(),
+                $month->copy()->endOfMonth()
+            );
+
+            $comparison[] = [
+                'month' => $month->format('M Y'),
+                'revenue' => $monthData['revenue'],
+                'expenses' => $monthData['total_expenses'],
+                'profit' => $monthData['net_profit'],
+                'orders' => $monthData['orders_count'],
+            ];
+        }
+
+        return $comparison;
+    }
+
+    /**
+     * Calculate health metrics for each store
+     */
+    private function calculateStoreHealthMetrics($stores): array
+    {
+        $metrics = [];
+        $currentMonth = Carbon::now();
+
+        foreach ($stores as $store) {
+            $sales = SalesOrder::where('store_id', $store->id)
+                ->whereBetween('order_date', [$currentMonth->copy()->startOfMonth(), $currentMonth->copy()->endOfMonth()])
+                ->whereIn('status', ['confirmed', 'processing', 'shipped', 'delivered'])
+                ->get();
+
+            $revenue = $sales->sum('total_amount');
+            $activeUsers = $store->users()->where('is_active', true)->count();
+            $products = Product::where('store_id', $store->id)->count();
+            $lowStock = Product::where('store_id', $store->id)->lowStock()->count();
+
+            // Health score calculation (0-100)
+            $healthScore = 100;
+            if ($revenue == 0) $healthScore -= 40;
+            if ($activeUsers == 0) $healthScore -= 20;
+            if ($products == 0) $healthScore -= 20;
+            if ($lowStock > ($products * 0.2)) $healthScore -= 20; // More than 20% low stock
+
+            $metrics[] = [
+                'store' => $store,
+                'health_score' => max(0, $healthScore),
+                'status' => $healthScore >= 80 ? 'excellent' : ($healthScore >= 60 ? 'good' : ($healthScore >= 40 ? 'warning' : 'critical')),
+                'revenue' => $revenue,
+                'active_users' => $activeUsers,
+                'products' => $products,
+                'low_stock' => $lowStock,
+            ];
+        }
+
+        return $metrics;
     }
 
     private function getFinancialData(Carbon $startDate, Carbon $endDate): array

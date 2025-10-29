@@ -21,7 +21,8 @@
                 x-transition:leave-start="opacity-100 transform translate-x-0" x-transition:leave-end="opacity-0 transform -translate-x-2"
                 class="ml-3 whitespace-nowrap">{{ $title }}</span>
         </div>
-        <svg x-show="sidebarOpen" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform"
+        <svg x-show="sidebarOpen" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
+            style="transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);"
             :class="{ 'rotate-90': open }" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -29,7 +30,9 @@
     </button>
 
     <!-- Level 2 submenu -->
-    <div x-show="open && sidebarOpen" class="mt-1 ml-4 space-y-1">
+    <div x-show="open && sidebarOpen"
+         x-collapse
+         class="mt-1 ml-4 space-y-1">
         {{ $slot }}
     </div>
 </li>

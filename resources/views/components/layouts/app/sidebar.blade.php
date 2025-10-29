@@ -580,7 +580,7 @@
 }
 
 .transition-transform {
-    transition: transform 0.2s ease-in-out;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Submenu styling */
@@ -592,5 +592,18 @@
 /* Parent menu hover effect */
 .nav-link:hover {
     background-color: rgba(var(--bs-primary-rgb), 0.1);
+}
+
+/* Smoother collapse transitions */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Override Alpine collapse duration for smoother animation */
+[x-collapse] {
+    transition-property: height, opacity;
+    transition-duration: 0.35s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
 }
 </style>
